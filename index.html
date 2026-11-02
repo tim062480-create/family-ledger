@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>家庭記帳本｜全家一起記帳的免費網頁 App</title>
+<meta name="description" content="家庭記帳本是免費的網頁記帳 App：用 Google 帳號登入，傳連結邀請家人加入。每人一本帳、自己決定分享多少，也能一起記全家的共同開銷。支援說一句話記帳、預算提醒、優惠券、照片與 Google 地圖、國曆農曆日曆和生日提醒。">
+<meta name="keywords" content="家庭記帳本,家庭記帳,記帳,記帳App,家用記帳,共同記帳,零用錢,預算,記帳網頁">
+<link rel="canonical" href="https://tim062480-create.github.io/family-ledger/">
+<meta name="theme-color" content="#d9694c">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="家庭記帳本">
+<meta property="og:title" content="家庭記帳本｜全家一起記帳的免費網頁 App">
+<meta property="og:description" content="用 Google 帳號登入，傳連結邀請家人。每人一本帳、自己決定分享多少，也能一起記全家的共同開銷。免費、不用下載 App。">
+<meta property="og:url" content="https://tim062480-create.github.io/family-ledger/">
+<meta property="og:image" content="https://tim062480-create.github.io/family-ledger/og.png">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="家庭記帳本">
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
+ {"@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":"家庭記帳本要錢嗎？","acceptedAnswer":{"@type":"Answer","text":"完全免費，也不用下載 App，用手機或電腦的瀏覽器就能用。"}},
+  {"@type":"Question","name":"我的記帳資料誰看得到？","acceptedAnswer":{"@type":"Answer","text":"你的帳只有你自己看得到，要不要分享給家人、分享多少由你決定。全家共同帳只有加入這個家的成員看得到。"}},
+  {"@type":"Question","name":"怎麼邀請家人一起記帳？","acceptedAnswer":{"@type":"Answer","text":"登入後在「設定 → 家庭成員與邀請」建立你的家，按「產生邀請連結」，用 LINE 或簡訊傳給家人。家人點開、用 Google 帳號登入就會加入。"}},
+  {"@type":"Question","name":"可以放到手機主畫面嗎？","acceptedAnswer":{"@type":"Answer","text":"可以。iPhone 用 Safari 打開，按分享再選「加入主畫面」；Android 用 Chrome 選「加到主畫面」。"}}
+ ]}
+]}
+</script>
+</head>
+<body class="signedout">
+<div id="bgLayer"></div>
+<main id="main">
+<header>
+  <h1>家庭記帳本</h1>
+  <div class="hd">
+    <button type="button" id="musicBtn" class="ghost" aria-label="輕音樂" hidden>♪</button>
+    <button type="button" id="backBtn" class="ghost" hidden>← 返回</button>
+    <button type="button" id="acctBtn" class="ghost acct" aria-label="帳號" hidden><img id="acctImg" alt="" referrerpolicy="no-referrer" hidden><span id="acctIni"></span></button>
+  </div>
+</header>
+<div class="seg ledsw" id="ledgerSw" role="group" aria-label="切換帳本" hidden><button type="button" data-k="me">我的帳</button><button type="button" data-k="fam">全家的帳</button></div>
+<section class="card" id="musicPop" hidden>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <b id="mQ">要播放輕音樂嗎？</b>
+    <button type="button" id="mClose" class="ghost" aria-label="關閉並停止" style="padding:4px 10px">×</button>
+  </div>
+  <div class="bt" id="mAsk"><button type="button" id="mYes">播放</button><button type="button" id="mNo" class="ghost">不用了</button></div>
+  <div class="bt" id="mCtl" hidden><button type="button" id="mNext" class="ghost">下一首</button><button type="button" id="mStopBtn" class="ghost">停止</button><label class="m" style="display:flex;align-items:center;gap:6px;font-size:13px">音量<input type="range" id="mVol" min="0" max="1" step="0.05" value="0.6" style="width:110px;padding:0"></label></div>
+  <small class="m">原創輕音樂，由網頁即時產生。手機若開靜音可能聽不到。</small>
+</section>
+
+<section id="landing">
+  <div class="lhero">
+    <p class="kicker">免費・不用下載 App・手機電腦都能用</p>
+    <h2 class="ltitle">全家一起記帳，<br>各自的帳也顧得好。</h2>
+    <p class="lsub">用 Google 帳號登入，傳一個連結邀請家人。每個人有自己的帳、自己決定給家人看多少；家裡一起花的錢，記在「全家的帳」。</p>
+    <div class="tip invite" id="joinHint" hidden><b>你收到家人的邀請！</b>用 Google 帳號登入後，就會加入家人的記帳本。</div>
+    <div class="tip" id="inapp" hidden>
+      <b>請用 Safari 或 Chrome 打開</b>
+      <p style="margin:4px 0 8px">Google 不允許在 LINE、Facebook、Instagram 這類 App 內建的瀏覽器登入。請點右上角「⋯」選「用瀏覽器開啟」，或複製網址貼到 Safari／Chrome。</p>
+      <button type="button" id="copyUrl" class="ghost sm">複製網址</button>
+    </div>
+    <button type="button" class="loginBtn gbtn"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>用 Google 帳號登入</span></button>
+    <p class="m" id="loginMsg" role="alert"></p>
+    <p class="m" id="nocfg" hidden>網站還在設定中，暫時不能登入。</p>
+  </div>
+
+  <div class="demo card" aria-hidden="true">
+    <div class="dhead"><b>10 月・我的帳</b><span>剩 NT$3,234</span></div>
+    <div class="sbar"><i style="flex:2283;background:var(--s4)"></i><i style="flex:1300;background:var(--s1)"></i><i style="flex:576;background:var(--s2)"></i><i style="flex:317;background:var(--s5)"></i><i style="flex:900;background:var(--s3)"></i></div>
+    <div class="legend"><span><i style="background:var(--s4)"></i><b>餐飲</b> 42%</span><span><i style="background:var(--s1)"></i><b>交通</b> 24%</span><span><i style="background:var(--s2)"></i><b>娛樂</b> 11%</span><span><i style="background:var(--s5)"></i><b>運動</b> 6%</span><span><i style="background:var(--s3)"></i><b>日用品</b> 17%</span></div>
+    <div class="drow"><span>10-21</span><span>活大素食（午餐）</span><b>NT$90</b></div>
+    <div class="drow"><span>10-21</span><span>捷運</span><b>NT$30</b></div>
+    <div class="drow"><span>10-20</span><span>全聯・媽媽記的</span><b>NT$478</b></div>
+  </div>
+
+  <h2 class="lsec">可以做什麼</h2>
+  <div class="feats">
+    <div class="feat"><span class="fi">說</span><div><h3>說一句話就記帳</h3><p>打「午餐 120、捷運 30」或用語音，一次記好好幾筆，日期、類別自動分好。</p></div></div>
+    <div class="feat"><span class="fi">人</span><div><h3>每人一本帳</h3><p>自己決定家人看得到多少：不公開、只看總額、看類別，或完整明細。</p></div></div>
+    <div class="feat"><span class="fi">家</span><div><h3>全家的共同帳</h3><p>伙食、日用品、水電一起記，看得到是誰記的，月底一目了然。</p></div></div>
+    <div class="feat"><span class="fi">算</span><div><h3>預算與超支提醒</h3><p>每個類別設預算，用到一半、用完或花太快的時候提醒你。</p></div></div>
+    <div class="feat"><span class="fi">券</span><div><h3>優惠券另外算</h3><p>禮券、商品券有自己的餘額，用券付的錢不會混進每月收支。</p></div></div>
+    <div class="feat"><span class="fi">照</span><div><h3>照片和地點</h3><p>附上吃了什麼的照片，會自動帶入拍照地點，下次點照片就能用 Google 地圖找回那家店。</p></div></div>
+    <div class="feat"><span class="fi">曆</span><div><h3>國曆農曆日曆</h3><p>節氣、節日，還有家人朋友的生日（農曆也可以），提前提醒。</p></div></div>
+    <div class="feat"><span class="fi">存</span><div><h3>家庭存錢目標</h3><p>旅遊基金大家一起存，每個人存了多少都看得到。</p></div></div>
+  </div>
+
+  <h2 class="lsec">三步開始</h2>
+  <ol class="steps">
+    <li><b>用 Google 帳號登入</b><span>回答幾個問題：每月預算、要記哪些類別。</span></li>
+    <li><b>建立你的家，邀請家人</b><span>在「設定 → 家庭成員與邀請」產生連結，用 LINE 傳給家人。</span></li>
+    <li><b>家人點連結、登入</b><span>就加入了。之後各記各的，也能一起記全家的帳。</span></li>
+  </ol>
+  <button type="button" class="loginBtn gbtn wide"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>用 Google 帳號登入，開始記帳</span></button>
+
+  <h2 class="lsec">常見問題</h2>
+  <div class="faq">
+    <details><summary>要錢嗎？</summary><p>完全免費，也不用下載 App，用手機或電腦的瀏覽器就能用。</p></details>
+    <details><summary>我的資料誰看得到？</summary><p>你的帳只有你自己看得到，要不要分享給家人、分享多少由你決定。全家的帳只有加入這個家的成員看得到。資料存在 Google 的 Firebase 雲端資料庫。詳見<a href="privacy.html">隱私權說明</a>。</p></details>
+    <details><summary>可以放到手機主畫面嗎？</summary><p>可以。iPhone 用 Safari 打開，按「分享」再選「加入主畫面」；Android 用 Chrome 選「加到主畫面」。</p></details>
+    <details><summary>家人沒有 Google 帳號怎麼辦？</summary><p>目前只能用 Google 帳號登入。申請一個 Gmail 就有 Google 帳號了。</p></details>
+    <details><summary>每天可以提醒我記帳嗎？</summary><p>可以。在「設定 → 每日記帳提醒」選時間，會下載一個行事曆檔，加到手機行事曆後每天會提醒你。</p></details>
+  </div>
+  <footer class="lfoot"><a href="privacy.html">隱私權說明</a>・<a href="https://github.com/tim062480-create/family-ledger" rel="noopener">原始碼（GitHub）</a>・<a href="https://github.com/tim062480-create/family-ledger/issues" rel="noopener">回報問題</a></footer>
+</section>
+
+<section class="card" id="joinCard" hidden></section>
+<p class="sub" id="subline" hidden></p>
+<div class="datebar" id="datebar" hidden></div>
+<div class="card quote" id="quote" hidden></div>
+<p class="status" id="status" hidden>載入中…</p>
+
+<section class="card" id="wizard" hidden>
+  <div class="wzhead"><span id="wzStep"></span><span id="wzDots"></span></div>
+  <div id="wzBody"></div>
+  <small class="m" id="wzMsg"></small>
+</section>
+
+<div id="app" hidden>
+  <div id="vHome">
+  <section class="card" id="voice" hidden>
+    <h2>記一筆</h2>
+    <textarea id="vtext" placeholder="例如：10/2 活大素食60 備註晚餐，捷運30"></textarea>
+    <div class="bt">
+      <button type="button" id="mic" class="ghost" hidden>🎤 語音</button>
+      <button type="button" id="attachBtn" class="ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-7.5 8"/></svg>附照片</button>
+      <button type="button" id="photoBtn" class="ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>讀收據</button>
+      <button type="button" id="parse">解析</button>
+      <input type="date" id="vdate" aria-label="預設日期">
+      <small class="m" id="vmsg"></small>
+    </div>
+    <div class="phs" id="vPhs" hidden></div>
+    <div class="tip" id="photoTip" hidden>
+      <b>用手機把收據上的字變成文字：</b>
+      <ol>
+        <li><b>截圖或相簿裡的照片</b>：在「照片」App 打開它，長按上面的字，選「全選」→「拷貝」，回來貼到上面的框，再按「解析」。</li>
+        <li><b>手上的收據</b>：點一下上面的輸入框，再點一下，選「掃描文字」，用相機對著收據，字就會直接打進去，再按「解析」。</li>
+        <li>Android 可以用 Google 相簿或 Google 智慧鏡頭的「文字」功能，複製後貼上。</li>
+      </ol>
+      <button type="button" id="photoTipClose" class="ghost sm">知道了</button>
+    </div>
+    <div id="preview"></div>
+    <div class="bt" id="confirmRow" hidden><button type="button" id="confirm">確認記帳</button><button type="button" id="cancel" class="ghost">取消</button></div>
+  </section>
+
+  <section class="card" id="monthCard"><h2>每月帳本</h2><div id="netSum"></div><p class="sub" style="margin-bottom:8px">點進去看那個月的花費</p><div id="monthList"></div></section>
+  <section class="card" id="cpCard" hidden></section>
+  <section class="card" id="goalCard" hidden></section>
+  </div>
+
+  <div id="vMonth" hidden>
+  <h2 id="monthTitle" style="margin:0 0 12px;font-size:20px"></h2>
+  <section class="hero">
+    <div id="hAllowBox" role="button" tabindex="0"><small>額度</small><b id="hAllow">–</b><small id="hInc" class="inc"></small></div>
+    <div><small>已支出</small><b id="hSpent">–</b></div>
+    <div><small>結餘</small><b id="hLeft">–</b></div>
+  </section>
+  <p class="sub" id="hCmp" style="margin:-6px 4px 12px"></p>
+  <div id="alerts"></div>
+  <section class="card"><h2>各類預算</h2><div id="share"></div><div id="catRows"></div></section>
+  <section class="card">
+    <div class="lhead"><h2>明細</h2><span><button type="button" id="expAdd" class="ghost sm">＋ 支出</button> <button type="button" id="incAdd" class="ghost sm">＋ 收入</button></span></div>
+    <p class="sub" style="margin:-4px 0 6px">點一筆可以修改或刪除</p>
+    <table><tbody id="rows"></tbody></table>
+    <form id="add" hidden>
+      <input type="date" name="date" required>
+      <select name="category" id="addCat"></select>
+      <input type="number" name="amount" min="1" placeholder="金額" required>
+      <input name="note" placeholder="描述"><input name="remark" placeholder="備註（可空）">
+      <button>新增</button>
+    </form>
+  </section>
+  <section class="card" id="phCard" hidden><h2 id="phTitle">這個月的照片</h2><div class="pgrid" id="phGrid"></div></section>
+  <section class="card" id="fam" hidden>
+    <h2>家人分享的帳</h2>
+    <div class="bt" style="margin:0 0 8px"><select id="famWho" hidden aria-label="選擇家人"></select></div>
+    <div id="famBody"></div>
+  </section>
+  </div>
+
+  <div id="vCal" hidden>
+  <section class="card" id="bdCard"></section>
+  <section class="card cal">
+    <div class="calhead">
+      <button type="button" class="ghost cnav" id="calPrev" aria-label="上個月">‹</button>
+      <div class="calttl"><b id="calTitle"></b><small id="calSub"></small></div>
+      <button type="button" class="ghost cnav" id="calNext" aria-label="下個月">›</button>
+    </div>
+    <div class="calgrid calwk"><span class="we">日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="we">六</span></div>
+    <div class="calgrid" id="calGrid"></div>
+    <div class="callegend"><span><i class="lg-bd"></i>生日</span><span><i class="lg-term"></i>節氣</span><span><i class="lg-fest"></i>節日</span><span><i class="lg-dot"></i>有記帳</span><button type="button" class="ghost sm" id="calToday">回到今天</button></div>
+  </section>
+  <section class="card" id="calDay"></section>
+  </div>
+
+  <div id="vBd" hidden>
+  <div id="bdHead"><button type="button" id="bdBack" class="ghost">‹ 日曆</button><h2 style="margin:0;font-size:20px">生日名單</h2></div>
+  <section class="card" id="bdList"></section>
+  </div>
+
+  <div id="vSet" hidden>
+  <div id="setHead"><button type="button" id="setBack" class="ghost" hidden>‹ 設定</button><h2 id="setTitle">設定</h2></div>
+  <div class="card menu" id="setMenu"></div>
+  <div class="subpg" data-sub="cat" hidden>
+  <section class="card" id="setup">
+    <h2>額度與類別</h2>
+    <div class="setrow" hidden><label>我是</label><select id="roleSel"></select></div>
+    <div class="setrow"><label for="allow">這個月的額度（零用錢／預算）</label><input type="number" id="allow" min="0" inputmode="numeric" placeholder="例如 12000"></div>
+    <p class="sub" style="margin-bottom:8px">勾選要用的類別，並填每月預算（不想設預算就留空）：</p>
+    <div id="catSetup"></div>
+    <div class="bt"><input id="customName" placeholder="自訂類別名稱"><button type="button" id="addCustom" class="ghost">新增類別</button></div>
+    <div class="bt"><button type="button" id="saveSetup">儲存</button><button type="button" id="cancelSetup" class="ghost" hidden>返回</button><small class="m" id="setupMsg"></small></div>
+  </section>
+  </div>
+  <div class="subpg" data-sub="recur" hidden>
+  <section class="card">
+    <h2>固定支出</h2>
+    <p class="sub">每個月到了指定日期，會自動幫你記一筆，例如 Netflix 訂閱、手機月租。</p>
+    <div id="recurList"></div>
+    <div class="grid2" style="margin-top:10px">
+      <label>名稱<input id="rcName" placeholder="例如 Netflix"></label>
+      <label>金額<input id="rcAmt" type="number" min="1" inputmode="numeric" placeholder="300"></label>
+      <label>類別<select id="rcCat"></select></label>
+      <label>每月幾號<input id="rcDay" type="number" min="1" max="28" value="1"></label>
+    </div>
+    <div class="bt"><button type="button" id="rcAdd">加入</button><small class="m" id="rcMsg"></small></div>
+  </section>
+  </div>
+  <div class="subpg" data-sub="family" hidden><section class="card" id="famCard"></section></div>
+  <div class="subpg" data-sub="remind" hidden>
+  <section class="card rm" id="remind">
+    <h2>每日記帳提醒</h2>
+    <div id="remindBody"></div>
+    <small class="m" id="remindMsg"></small>
+  </section>
+  </div>
+  <div class="subpg" data-sub="share" hidden>
+  <section class="card" id="privacy">
+    <h2>分享給家人</h2>
+    <p class="sub" id="shareNoHH">要先在「家庭成員與邀請」建立或加入一個家，才能分享給家人。</p>
+    <p class="sub" style="margin-bottom:8px">你自己決定家人能看到多少，家人只看得到你選的那一層（預設不公開）：</p>
+    <select id="shareLevel" aria-label="分享程度">
+      <option value="none">不公開</option>
+      <option value="total">只看每月總支出</option>
+      <option value="cats">看各類別合計與預算</option>
+      <option value="full">看完整明細（含備註）</option>
+    </select>
+    <small class="m" id="shareMsg"></small>
+  </section>
+  </div>
+  <div class="subpg" data-sub="goal" hidden>
+  <section class="card">
+    <h2>家庭存錢目標</h2>
+    <p class="sub" id="goalNoHH">要先在「家庭成員與邀請」建立或加入一個家，才能設定全家一起存的目標。</p>
+    <div id="goalForm">
+    <p class="sub">全家一起存的目標，例如家庭旅遊基金。家裡每個人都看得到進度，也都可以存一筆。</p>
+    <div class="grid2">
+      <label>目標名稱<input id="goalName" placeholder="例如 日本旅遊基金"></label>
+      <label>目標金額<input id="goalTarget" type="number" min="1" inputmode="numeric" placeholder="60000"></label>
+    </div>
+    <div class="bt"><button type="button" id="goalSave">儲存</button><button type="button" id="goalDel" class="ghost">刪除目標</button><small class="m" id="goalMsg"></small></div>
+    </div>
+  </section>
+  </div>
+  <div class="subpg" data-sub="look" hidden>
+  <section class="card" id="bgCard">
+    <h2>背景</h2>
+    <p class="sub" style="margin-bottom:8px">選一張照片當背景，只有你自己看得到。照片會固定在螢幕上，不會被拉長。</p>
+    <input type="file" id="bgFile" accept="image/*">
+    <div class="bt"><button type="button" id="bgClear" class="ghost">清除背景</button><small class="m" id="bgMsg"></small></div>
+  </section>
+  <section class="card">
+    <h2>每日一句</h2>
+    <label class="tg"><input type="checkbox" id="quoteOn"><span>在首頁顯示每日一句（《太上感應篇彙編》，每天換一則）</span></label>
+  </section>
+  </div>
+  <div class="subpg" data-sub="feedback" hidden>
+  <section class="card">
+    <h2>意見回饋</h2>
+    <p class="sub">覺得哪裡好用、哪裡不好用，或想要什麼新功能，都可以寫在這裡。</p>
+    <div id="fbStars" class="stars" role="radiogroup" aria-label="評分"></div>
+    <textarea id="fbText" maxlength="2000" placeholder="寫下你的想法…"></textarea>
+    <div class="bt"><button type="button" id="fbSend">送出</button><small class="m" id="fbMsg"></small></div>
+    <p class="sub" style="margin:12px 0 0">也可以到 <a href="https://github.com/tim062480-create/family-ledger/issues" rel="noopener" target="_blank">GitHub</a> 回報問題。</p>
+  </section>
+  </div>
+  <div class="subpg" data-sub="export" hidden>
+  <section class="card">
+    <h2>匯出成表格</h2>
+    <p class="sub" id="bkScope"></p>
+    <p class="sub">下載成 CSV 檔，可以用 Excel、Numbers 或 Google 試算表打開。</p>
+    <div class="bt"><button type="button" id="expMonth">下載這個月</button><button type="button" id="expAll" class="ghost">下載全部</button></div>
+    <small class="m" id="expMsg"></small>
+  </section>
+  <section class="card">
+    <h2>備份與匯入</h2>
+    <p class="sub">備份檔包含支出、收入、優惠券和照片，可以存起來，或匯入到別的帳號。</p>
+    <div class="bt"><button type="button" id="bkExport">下載備份檔</button><button type="button" id="bkImport" class="ghost">從備份檔匯入</button></div>
+    <input type="file" id="bkFile" accept="application/json,.json" hidden>
+    <div id="bkConfirm" class="tip" hidden></div>
+    <small class="m" id="bkMsg"></small>
+  </section>
+  </div>
+  <div class="subpg" data-sub="account" hidden><section class="card" id="acctCard"></section></div>
+  </div>
+</div>
+</main>
+<div id="sheetBg" hidden></div>
+<section class="card" id="sheet" hidden>
+  <h2 id="shTitle">修改這一筆</h2>
+  <div class="grid2">
+    <label>日期<input type="date" id="shDate"></label>
+    <label id="shCatL">類別<select id="shCat"></select></label>
+    <label>金額<input type="number" id="shAmt" min="1" inputmode="numeric"></label>
+    <label>描述<input id="shNote"></label>
+    <label id="shRemL" class="full">備註<input id="shRem" placeholder="可空"></label>
+    <label id="shPlaceL" class="full">地點（連到 Google 地圖）<span class="plrow"><input id="shPlace" placeholder="店名或地址，也可以貼 Google 地圖的分享連結"><a id="shMap" class="maplink sm" target="_blank" rel="noopener noreferrer" hidden>看地圖</a></span></label>
+  </div>
+  <div id="shPhL"><div class="sub" style="margin:12px 0 6px;font-size:12px">照片</div><div class="phs" id="shPhs"></div></div>
+  <div class="bt"><button type="button" id="shSave">儲存</button><button type="button" id="shDel" class="ghost">刪除</button><button type="button" id="shCancel" class="ghost">取消</button><small class="m" id="shMsg"></small></div>
+</section>
+<section class="card" id="fsheet" hidden>
+  <h2 id="fsTitle"></h2>
+  <p class="sub" id="fsSub" hidden></p>
+  <div class="grid2" id="fsFields"></div>
+  <div class="bt"><button type="button" id="fsSave">儲存</button><button type="button" id="fsDel" class="ghost" hidden>刪除</button><button type="button" id="fsCancel" class="ghost">取消</button><small class="m" id="fsMsg"></small></div>
+</section>
+<section class="card" id="csheet" hidden>
+  <div class="cshead"><h2 id="csTitle"></h2><button type="button" id="csClose" class="ghost" aria-label="關閉">✕</button></div>
+  <div id="csSum"></div>
+  <div class="seg" id="csSort"><button type="button" data-k="date">依日期</button><button type="button" data-k="amt">依金額</button></div>
+  <div id="csList"></div>
+</section>
+<input type="file" id="phFile" accept="image/*" multiple hidden>
+<div id="viewer" role="dialog" aria-label="照片" hidden>
+  <span id="vwCount"></span>
+  <button type="button" id="vwClose" aria-label="關閉">✕</button>
+  <div class="vwimg"><img id="vwImg" alt=""></div>
+  <div id="vwCap"></div>
+  <a id="vwMap" class="maplink" target="_blank" rel="noopener noreferrer" hidden></a>
+  <button type="button" id="vwPrev" aria-label="上一張">‹</button>
+  <button type="button" id="vwNext" aria-label="下一張">›</button>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<nav id="tabbar" hidden>
+  <button type="button" id="tabRec" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg><span>記帳</span></button>
+  <button type="button" id="tabCal" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>日曆</span></button>
+  <button type="button" id="tabSet" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>設定</span></button>
+</nav>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

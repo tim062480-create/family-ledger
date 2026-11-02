@@ -1,0 +1,132 @@
+// End-to-end smoke test with a mock Firebase: node tests/run.js
+// Needs Playwright (and a Chromium it can launch). Optional: BACKUP=path/to/backup.json to test importing it.
+const { chromium } = require("playwright");
+const http = require("http"), fs = require("fs"), path = require("path");
+const ROOT = path.resolve(__dirname, ".."), PORT = 8765, BASE = `http://localhost:${PORT}/family-ledger/`;
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json", ".webmanifest": "application/manifest+json", ".txt": "text/plain", ".xml": "application/xml" };
+const server = http.createServer((req, res) => {
+  let p = decodeURIComponent(new URL(req.url, BASE).pathname).replace(/^\/family-ledger/, "");
+  if (p.endsWith("/")) p += "index.html";
+  if (p === "/config.js") { res.writeHead(200, { "content-type": "text/javascript" }); return res.end('window.FIREBASE_CONFIG={apiKey:"test",authDomain:"x",projectId:"x"};'); }
+  const f = path.join(ROOT, p);
+  if (!f.startsWith(ROOT) || !fs.existsSync(f)) { res.writeHead(404); return res.end("nf"); }
+  res.writeHead(200, { "content-type": TYPES[path.extname(f)] || "application/octet-stream" }); fs.createReadStream(f).pipe(res);
+});
+let errs = [];
+const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { process.exitCode = 1; if (errs.length) console.log("     page errors so far:", JSON.stringify(errs)); } };
+(async () => {
+  await new Promise(r => server.listen(PORT, r));
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM || "/opt/pw-browsers/chromium" }).catch(() => chromium.launch());
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, acceptDownloads: true });
+  const mock = fs.readFileSync(path.join(__dirname, "mock-firebase.js"), "utf8");
+  await ctx.route("https://www.gstatic.com/**", r => r.fulfill({ contentType: "text/javascript", body: r.request().url().includes("app-compat") ? mock : "" }));
+  await ctx.route("https://fonts.googleapis.com/**", r => r.fulfill({ contentType: "text/css", body: "" }));
+  const pg = await ctx.newPage(); pg.on("pageerror", e => errs.push(e.message)); pg.on("console", m => { if (m.type() === "error") errs.push("console: " + m.text()) });
+  const shot = n => pg.screenshot({ path: path.join(process.env.SHOTS || "/tmp", n + ".png") });
+  const wait = ms => pg.waitForTimeout(ms);
+
+  // 1. landing
+  await pg.goto(BASE); await wait(400);
+  ok(await pg.isVisible("#landing"), "landing page shows when signed out");
+  ok((await pg.title()).includes("家庭記帳本"), "title has 家庭記帳本");
+  await shot("01-landing");
+
+  // 2. sign in as u1 -> wizard
+  await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u1", name: "測試弟弟" })));
+  await pg.click(".loginBtn >> nth=0"); await wait(500);
+  ok(await pg.isVisible("#wizard"), "wizard after first sign-in");
+  await pg.fill("#wzBody input", "14000"); await pg.click("#wizard button:has-text('下一題')");
+  await wait(100); await pg.click("#wizard button:has-text('下一題')"); await wait(100);
+  await pg.click("#wizard button:has-text('下一題')"); await wait(100);
+  const [ics] = await Promise.all([pg.waitForEvent("download"), pg.click("#wizard button:has-text('好，加到行事曆')")]);
+  ok(ics.suggestedFilename().endsWith(".ics"), "reminder downloads a calendar file");
+  const icsText = fs.readFileSync(await ics.path(), "utf8"); ok(/RRULE:FREQ=DAILY/.test(icsText) && /TZID=Asia\/Taipei/.test(icsText), "calendar file repeats daily in Taipei time");
+  await pg.click("#wizard button:has-text('完成')"); await wait(400);
+  ok(await pg.isVisible("#voice"), "home with 記一筆 after wizard");
+
+  // 3. rule-based parsing
+  await pg.fill("#vtext", "午餐一百二十元 備註好吃，捷運 30"); await pg.click("#parse"); await wait(150);
+  const pv = await pg.$$eval("#preview .pv", rs => rs.map(r => [...r.querySelectorAll("input,select")].map(i => i.value).join("|")));
+  ok(pv.length === 2 && pv[0].includes("|120|") && pv[1].includes("|30|"), "parses 中文數字 and two items: " + JSON.stringify(pv));
+  await pg.click("#confirm"); await wait(300);
+  ok((await pg.innerText("#vmsg")).includes("已記帳"), "confirm writes entries");
+
+  // 4. create a household + invite
+  await pg.click("#tabSet"); await wait(150); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(150);
+  await pg.fill("#famCard input", "簡家"); await pg.click("#famCard button:has-text('建立')"); await wait(400);
+  ok((await pg.innerText("#famCard")).includes("簡家"), "household created");
+  await pg.click("#famCard button:has-text('產生邀請連結')"); await wait(300);
+  const invite = await pg.inputValue("#famCard .invurl");
+  ok(/\?join=[^.]+\.[0-9a-f]{32}&openExternalBrowser=1$/.test(invite), "invite link: " + invite);
+  await shot("02-family");
+
+  // 5. family ledger
+  ok(await pg.isVisible("#ledgerSw"), "ledger switch appears after joining a household");
+  await pg.click("#ledgerSw button[data-k=fam]"); await wait(300);
+  ok(await pg.isVisible("#wizard"), "family ledger wizard");
+  await pg.fill("#wzBody input", "30000"); await pg.click("#wizard button:has-text('下一題')"); await wait(100);
+  await pg.click("#wizard button:has-text('下一題')"); await wait(100);
+  await pg.click("#wizard button:has-text('完成')"); await wait(300);
+  await pg.fill("#vtext", "全聯 478"); await pg.click("#parse"); await wait(100); await pg.click("#confirm"); await wait(300);
+  const famExp = await pg.evaluate(() => Object.entries(__store).filter(([k]) => k.includes("/ledgers/main/expenses/") && k.startsWith("households/")).map(([, v]) => v));
+  ok(famExp.length === 1 && famExp[0].byName === "測試弟弟", "family expense records who wrote it");
+  await pg.click("#ledgerSw button[data-k=me]"); await wait(200);
+  await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('分享給家人')"); await pg.selectOption("#shareLevel", "full"); await wait(1200);
+
+  // 6. second user joins with the invite link
+  await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
+  ok(await pg.isVisible("#landing"), "signed out -> landing");
+  await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u2", name: "測試媽媽" })));
+  const local = invite.replace(/^https?:\/\/[^/]+\/family-ledger\//, BASE);
+  await pg.goto(local); await wait(400);
+  ok(await pg.isVisible("#joinHint"), "invite hint on landing");
+  await pg.click(".loginBtn >> nth=0"); await wait(600);
+  ok((await pg.innerText("#joinCard")).includes("簡家"), "join card names the household");
+  await shot("03-join");
+  await pg.fill("#joinCard input", "媽媽"); await pg.click("#joinCard button:has-text('加入')"); await wait(600);
+  ok(!pg.url().includes("join="), "join param removed from URL");
+  ok(await pg.isVisible("#wizard"), "new member gets own ledger wizard");
+  for (let i = 0; i < 3; i++) { await pg.click("#wizard button:has-text('下一題')"); await wait(80); }
+  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300);
+  await pg.click("#ledgerSw button[data-k=fam]"); await wait(400);
+  ok(!(await pg.isVisible("#wizard")) && (await pg.innerText("#monthList")).includes("花"), "member sees the shared family ledger");
+  await pg.click(".mrow >> nth=0"); await wait(300);
+  ok((await pg.innerText("#rows")).includes("測試弟弟"), "shows who recorded each family entry");
+  await shot("04-family-ledger");
+  await pg.click("#ledgerSw button[data-k=me]"); await wait(300);
+  await pg.click(".mrow >> nth=0"); await wait(300);
+  ok((await pg.isVisible("#fam")) && (await pg.innerText("#fam")).includes("測試弟弟") && (await pg.innerText("#famBody")).includes("本月已支出"), "member sees what the other shared");
+
+  // 7. owner sees the new member
+  await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
+  await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u1", name: "測試弟弟" })));
+  await pg.click(".loginBtn >> nth=0"); await wait(600);
+  await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
+  ok((await pg.innerText("#famCard")).includes("媽媽"), "owner sees the new member");
+
+  // 8. import a backup (optional real file)
+  if (process.env.BACKUP) {
+    await pg.click("#setBack"); await pg.click("#setMenu .mi:has-text('匯出與備份')"); await wait(150);
+    // Playwright drops change events for non-ASCII paths, so copy to an ASCII name first
+    const tmp = path.join(require("os").tmpdir(), "fl-backup-test.json"); fs.copyFileSync(process.env.BACKUP, tmp);
+    const [fc] = await Promise.all([pg.waitForEvent("filechooser"), pg.click("#bkImport")]); await fc.setFiles(tmp); await wait(500);
+    ok((await pg.innerText("#bkConfirm")).includes("筆支出"), "backup preview: " + (await pg.innerText("#bkConfirm")).slice(0, 60));
+    await pg.click("#bkConfirm button:has-text('匯入')"); await wait(2500);
+    ok((await pg.innerText("#bkMsg")).includes("匯入完成"), "import finished: " + await pg.innerText("#bkMsg"));
+    const [dl] = await Promise.all([pg.waitForEvent("download"), pg.click("#bkExport")]);
+    const back = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
+    ok(back.app === "family-ledger" && back.expenses.length > 0, "backup export round-trips");
+  }
+
+  // 9. member leaves
+  await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
+  await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u2", name: "測試媽媽" })));
+  await pg.click(".loginBtn >> nth=0"); await wait(600);
+  await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
+  await pg.click("#famCard button:has-text('離開這個家')"); await pg.click("#fsSave"); await wait(600);
+  ok(!(await pg.evaluate(() => "households/" + Object.keys(__store).find(k => /^households\/[^/]+$/.test(k)).split("/")[1] + "/members/u2" in __store)), "member left the household");
+  ok(await pg.isHidden("#ledgerSw"), "ledger switch hidden after leaving");
+
+  ok(errs.length === 0, "no page errors " + JSON.stringify(errs));
+  await b.close(); server.close();
+})();

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://tim062480-create.github.io/family-ledger/sitemap.xml
