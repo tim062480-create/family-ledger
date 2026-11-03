@@ -233,11 +233,17 @@ function renderPage(p){
   $("npPastLast").checked=pastLast();
   const tbl=pageMode()==="table";$("npModeT").classList.toggle("on",tbl);$("npModeL").classList.toggle("on",!tbl);
   $("npModeT").setAttribute("aria-pressed",tbl?"true":"false");$("npModeL").setAttribute("aria-pressed",tbl?"false":"true");
-  if(tbl){const dated=its.filter(x=>x.date);if(dated.length)box.appendChild(weekTable(dated))}
-  else if(pastLast()){const dd=its.filter(x=>x.date),fu=dd.filter(x=>nDays(x.date)>=0),pa=dd.filter(x=>nDays(x.date)<0);
+  // 一頁可以分好幾段（例如「課程」和「小組討論」），每段各一張表，不會混在一起
+  const datedAll=its.filter(x=>x.date),secNames=[...new Set(datedAll.map(x=>x.sec||""))].sort((a,b)=>(a?1:0)-(b?1:0));
+  const multi=secNames.length>1;
+  secNames.forEach(sn=>{
+    const dated=datedAll.filter(x=>(x.sec||"")===sn);if(!dated.length)return;
+    if(multi)box.appendChild(mkEl("div","nsec",sn||"課程"));
+    if(tbl){box.appendChild(weekTable(dated,datedAll));return}
     const grp=list=>{let lastM="";list.forEach(it=>{const mk=it.date.slice(0,7);if(mk!==lastM){lastM=mk;box.appendChild(mkEl("div","nmh",`${+mk.slice(0,4)} 年 ${+mk.slice(5,7)} 月`))}box.appendChild(itemRow(it,false))})};
-    grp(fu);if(pa.length){box.appendChild(mkEl("div","npast","已經過去"));grp(pa)}}
-  else{let lastM="";its.filter(x=>x.date).forEach(it=>{const mk=it.date.slice(0,7);if(mk!==lastM){lastM=mk;box.appendChild(mkEl("div","nmh",`${+mk.slice(0,4)} 年 ${+mk.slice(5,7)} 月`))}box.appendChild(itemRow(it,false))})}
+    if(pastLast()){const fu=dated.filter(x=>nDays(x.date)>=0),pa=dated.filter(x=>nDays(x.date)<0);grp(fu);if(pa.length){box.appendChild(mkEl("div","npast","已經過去"));grp(pa)}}
+    else grp(dated);
+  });
   const ta=$("npText");if(document.activeElement!==ta&&!noteTxtTimer)ta.value=p.text||"";
   renderPageImgs();
 }
@@ -245,9 +251,9 @@ function renderPage(p){
 const pastLast=()=>!!(curPrefs&&curPrefs.notePastLast);
 const pageMode=()=>(curPrefs&&curPrefs.noteView)==="list"?"list":"table";
 const nMon=k=>{const t=new Date(k+"T00:00:00Z");t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7));return t.toISOString().slice(0,10)};
-function weekTable(items){
+function weekTable(items,ref){
   let m0=null,n0=0;
-  for(const it of items){const m=/第\s*(\d+)\s*週/.exec(it.note||"");if(m){m0=nMon(it.date);n0=+m[1];break}}
+  for(const it of (ref||items)){const m=/第\s*(\d+)\s*週/.exec(it.note||"");if(m){m0=nMon(it.date);n0=+m[1];break}}
   const rows=new Map();
   items.forEach(it=>{const mk=nMon(it.date);if(!rows.has(mk))rows.set(mk,[]);rows.get(mk).push(it)});
   const t=mkEl("table","ntbl"),hd=document.createElement("tr");
@@ -339,10 +345,11 @@ function itemFields(it,pageSel){
     {key:"st",label:"顯示在總日曆",options:[["1","★ 顯示"],["0","不顯示"]],value:it.id?(it.star?"1":"0"):(autoStar(it.title)?"1":"0")},
     {key:"rm",label:"通知",options:RM_OPTS,value:nHasRm(it)?String(it.remind):""},
     {key:"td",label:"放進待辦",options:[["1","✓ 放進待辦"],["0","不放"]],value:(it.todo!==undefined?it.todo:it.date==="")?"1":"0"},
+    ...(it.date!==""&&!it.todo?[{key:"sec",label:"分段（可不填，例如「小組討論」）",value:it.sec||"",full:true,list:[...new Set(notes.flatMap(p=>(p.items||[]).map(x=>x.sec).filter(Boolean)))]}]:[]),
     {key:"pr",label:"分類",options:PRI_OPTS.concat(it.pri&&!PRI_OPTS.some(o=>o[0]===it.pri)?[[it.pri,PRI[it.pri]+" "+PRI_TXT[it.pri]]]:[]),value:it.pri!==undefined&&it.pri!==null?it.pri:(it.date?"":autoCat(it.title)),full:true});
   return f;
 }
-function readItem(id){const rm=fv("rm"),pr=fv("pr"),dd=fv("d");return{id,pri:pr||null,todo:!dd||fv("td")==="1",date:dd,time:fv("tm"),title:fv("ti").slice(0,80),note:fv("no").slice(0,120),star:fv("st")!=="0",remind:rm===""?null:+rm}}
+function readItem(id){const rm=fv("rm"),pr=fv("pr"),dd=fv("d");return{id,pri:pr||null,todo:!dd||fv("td")==="1",sec:(fv("sec")||"").slice(0,20),date:dd,time:fv("tm"),title:fv("ti").slice(0,80),note:fv("no").slice(0,120),star:fv("st")!=="0",remind:rm===""?null:+rm}}
 function wireAutoStar(){
   const ti=$("fs_ti"),st=$("fs_st"),pr=$("fs_pr"),d=$("fs_d");if(!ti||!st)return;let manual=false,manualP=false;
   st.addEventListener("change",()=>{manual=true});if(pr)pr.addEventListener("change",()=>{manualP=true});

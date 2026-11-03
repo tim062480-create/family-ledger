@@ -82,6 +82,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "第三次作業");
   ok((await pg.inputValue("#fs_st")) === "1", "作業 is starred automatically"); await pg.click("#fsSave"); await wait(400);
   ok((await pg.$$eval("#npItems .ntbl tbody tr", r => r.length)) >= 1, "page shows a table by default");
+  await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "小組討論"); await pg.fill("#fs_sec", "小組討論"); await pg.click("#fsSave"); await wait(400);
+  ok(JSON.stringify(await pg.$$eval("#npItems .nsec", s => s.map(x => x.textContent))) === JSON.stringify(["課程", "小組討論"]) && (await pg.$$eval("#npItems .ntbl", t => t.length)) === 2, "a page can be split into sections, each with its own table");
   await pg.check("#npPastLast"); await wait(300);
   ok(await pg.evaluate(() => { const rs = [...document.querySelectorAll("#npItems .ntbl tbody tr")]; const i = rs.findIndex(r => r.classList.contains("sep")); return i < 0 || rs.slice(0, i).every(r => !r.classList.contains("past")); }), "過去的放最後 moves past weeks to the end");
   await pg.uncheck("#npPastLast"); await wait(200);

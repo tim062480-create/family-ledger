@@ -549,3 +549,5 @@ body.signedout #tabbar{display:none!important}
 .fold>:first-child h2,.fold>h2:first-child{margin:0}
 .fold.open>:first-child{margin-bottom:8px}
 .farr{font-size:12.5px;color:var(--accent);font-weight:600;white-space:nowrap;margin-left:auto}
+.nsec{margin:16px 0 6px;font-size:15px;font-weight:800;color:var(--accent);border-left:4px solid var(--accent);padding-left:8px}
+.nsec:first-child{margin-top:4px}
