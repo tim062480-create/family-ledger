@@ -20,7 +20,7 @@ const PRI={s:"📚",a:"📌",r:"🔴",h:"🏠",g:"🟢",y:"🟡"},PRI_TXT={s:"�
 const SCHOOL_KEY=/考|測驗|作業|功課|報告|課|作文|簡報|quiz|exam|homework|hw|assignment|report|presentation|proposal|專題|主題|project|論文|讀書|複習/i;
 const autoCat=t=>SCHOOL_KEY.test(String(t||""))?"s":"a";
 const PRI_OPTS=[["","不分類"],["s","📚 學校"],["a","📌 事務"]];
-const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??9)-(PRI_ORD[b.pri]??9)||(a.ts||0)-(b.ts||0);
+const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??9)-(PRI_ORD[b.pri]??9)||(a.date||"9999").localeCompare(b.date||"9999")||(a.ts||0)-(b.ts||0);
 const nRel=d=>d===0?"今天":d===1?"明天":d===2?"後天":`${d} 天後`;
 
 // 頁面簡稱：顯示在總日曆上，看得出是哪堂課；沒設定就用頁名前兩個字（英文最多 6 個字母）
@@ -60,7 +60,9 @@ function renderRemindCard(box,compact){
 // 標題裡有考試、作業、報告這類字，就自動標 ★；一般上課不標
 const NOTE_KEY=/考|測驗|作業|報告|截止|計畫書|quiz|exam|test|homework|assignment|report|presentation|proposal|deadline|due/i;
 const autoStar=t=>NOTE_KEY.test(String(t||""));
-function itemRow(it,showPage){
+// 待辦：沒有日期的事一定是待辦；有日期的事也可以「放進待辦」（todo:true），在待辦裡打勾
+const isTodo=it=>!it.date||it.todo===true;
+function itemRow(it,showPage,inTodo){
   const und=!it.date,d=und?0:nDays(it.date);
   const r=mkEl("div","nit"+(!und&&d<0?" past":"")+(it.star?" star":"")+(und?" todo":"")+(it.done?" done":""));
   const mb=mkEl("button","nmain");mb.type="button";
@@ -77,12 +79,15 @@ function itemRow(it,showPage){
   mb.append(dt,t,ic);
   mb.setAttribute("aria-label",(und?`待辦${PRI_TXT[it.pri]?"（"+PRI_TXT[it.pri]+"）":""}${it.done?"，已完成":""}`:`${nMD(it.date)} 週${nDow(it.date)}`)+`${it.time?" "+it.time:""}，${it.title||""}${it.note?"，"+it.note:""}${nHasRm(it)?"，提醒"+RM_TXT[+it.remind]:""}，點一下修改`);
   mb.onclick=()=>{const p=notes.find(x=>x.id===it.pid);if(p)editItem(p,p.items.find(x=>x.id===it.id))};
-  if(und){const cb=mkEl("button","ncheck"+(it.done?" on":""),it.done?"✓":"");cb.type="button";cb.setAttribute("aria-pressed",it.done?"true":"false");cb.setAttribute("aria-label",`${it.title||""}：完成`);cb.title=it.done?"已完成，點一下改回未完成":"做完了就勾起來";
+  if(und||inTodo){const cb=mkEl("button","ncheck"+(it.done?" on":""),it.done?"✓":"");cb.type="button";cb.setAttribute("aria-pressed",it.done?"true":"false");cb.setAttribute("aria-label",`${it.title||""}：完成`);cb.title=it.done?"已完成，點一下改回未完成":"做完了就勾起來";
     cb.onclick=()=>toggleField(it.pid,it.id,"done",cb);r.append(mb,cb);return r}
   const sb=mkEl("button","nstar"+(it.star?" on":""),it.star?"★":"☆");sb.type="button";
   sb.setAttribute("aria-pressed",it.star?"true":"false");sb.setAttribute("aria-label",`${it.title||""}：顯示在總日曆`);sb.title=it.star?"已顯示在總日曆，點一下取消":"點一下顯示在總日曆";
   sb.onclick=()=>toggleField(it.pid,it.id,"star",sb);
-  r.append(mb,sb);
+  const tb=mkEl("button","ntodo"+(it.todo?" on":""),it.todo?"✓待辦":"＋待辦");tb.type="button";
+  tb.setAttribute("aria-pressed",it.todo?"true":"false");tb.setAttribute("aria-label",`${it.title||""}：放進待辦`);
+  tb.onclick=()=>toggleTodo(it.pid,it.id,tb);
+  r.append(mb,tb,sb);
   return r;
 }
 async function toggleField(pid,id,k,btn){
@@ -90,6 +95,12 @@ async function toggleField(pid,id,k,btn){
   const list=(p.items||[]).map(x=>x.id===id?{...x,[k]:!x[k]}:x),v=!!list.find(x=>x.id===id)[k];
   if(btn){btn.classList.toggle("on",v);btn.textContent=k==="star"?(v?"★":"☆"):(v?"✓":"");btn.setAttribute("aria-pressed",v?"true":"false");btn.disabled=true;const row=btn.closest(".nit,.nl");if(row)row.classList.toggle(k==="star"?"star":"done",v)}
   try{await notesRef.doc(pid).update({items:list});toast(k==="star"?(v?"已顯示在總日曆 ★":"已從總日曆拿掉"):(v?"完成 ✓":"改回還沒做"))}catch(e){toast("沒有存到，請再試一次");if(btn)btn.disabled=false}
+}
+async function toggleTodo(pid,id,btn){
+  const p=notes.find(x=>x.id===pid);if(!p||!notesRef)return;
+  const list=(p.items||[]).map(x=>x.id===id?{...x,todo:!x.todo,pri:x.pri||(!x.todo?autoCat(x.title):x.pri)||null}:x),v=!!list.find(x=>x.id===id).todo;
+  if(btn){btn.classList.toggle("on",v);btn.textContent=v?"✓待辦":"＋待辦";btn.setAttribute("aria-pressed",v?"true":"false");btn.disabled=true}
+  try{await notesRef.doc(pid).update({items:list});toast(v?"已放進待辦 ✓":"已從待辦拿掉")}catch(e){toast("沒有存到，請再試一次");if(btn)btn.disabled=false}
 }
 async function toggleMany(pid,ids,v,btn){
   const p=notes.find(x=>x.id===pid);if(!p||!notesRef)return;const set=new Set(ids);
@@ -99,10 +110,11 @@ async function toggleMany(pid,ids,v,btn){
 }
 function renderTodos(){
   const box=$("nTodoList");box.innerHTML="";
-  const all=noteItems().filter(x=>!x.date).sort(todoSort),open=all.filter(x=>!x.done);
+  const grp=x=>x.pri&&PRI[x.pri]?x.pri:autoCat(x.title);
+  const all=noteItems().filter(isTodo).map(x=>({...x,pri:grp(x)})).sort(todoSort),open=all.filter(x=>!x.done);
   $("nTodoCount").textContent=all.length?`還有 ${open.length} 件沒做`:"";
-  if(!all.length){box.appendChild(mkEl("p","sub","沒有日期的事放這裡，例如「領貨」「準備面試」。做完就打勾。"));return}
-  let last=null;all.forEach(it=>{const g=it.done?"done":(it.pri||"");if(g!==last){last=g;box.appendChild(mkEl("div","nmh",g==="done"?"✓ 做完了":(PRI[g]?PRI[g]+" "+PRI_TXT[g]:"其他")))}box.appendChild(itemRow(it,true))});
+  if(!all.length){box.appendChild(mkEl("p","sub","要做的事放這裡，例如「領貨」「準備面試」；有日期的行程按「＋待辦」也會出現在這裡。做完就打勾。"));return}
+  let last=null;all.forEach(it=>{const g=it.done?"done":(it.pri||"");if(g!==last){last=g;box.appendChild(mkEl("div","nmh",g==="done"?"✓ 做完了":(PRI[g]?PRI[g]+" "+PRI_TXT[g]:"其他")))}box.appendChild(itemRow(it,true,true))});
 }
 function renderTabs(p){
   const box=$("nTabs");box.innerHTML="";
@@ -236,14 +248,15 @@ function itemFields(it,pageSel){
     {key:"no",label:"備註（可不填）",value:it.note||"",full:true,placeholder:"例如：第 3 週、教室、範圍"},
     {key:"st",label:"顯示在總日曆",options:[["1","★ 顯示"],["0","不顯示"]],value:it.id?(it.star?"1":"0"):(autoStar(it.title)?"1":"0")},
     {key:"rm",label:"通知",options:RM_OPTS,value:nHasRm(it)?String(it.remind):""},
+    {key:"td",label:"放進待辦",options:[["1","✓ 放進待辦"],["0","不放"]],value:(it.todo!==undefined?it.todo:it.date==="")?"1":"0"},
     {key:"pr",label:"分類",options:PRI_OPTS.concat(it.pri&&!PRI_OPTS.some(o=>o[0]===it.pri)?[[it.pri,PRI[it.pri]+" "+PRI_TXT[it.pri]]]:[]),value:it.pri!==undefined&&it.pri!==null?it.pri:(it.date?"":autoCat(it.title)),full:true});
   return f;
 }
-function readItem(id){const rm=fv("rm"),pr=fv("pr");return{id,pri:pr||null,date:fv("d"),time:fv("tm"),title:fv("ti").slice(0,80),note:fv("no").slice(0,120),star:fv("st")!=="0",remind:rm===""?null:+rm}}
+function readItem(id){const rm=fv("rm"),pr=fv("pr"),dd=fv("d");return{id,pri:pr||null,todo:!dd||fv("td")==="1",date:dd,time:fv("tm"),title:fv("ti").slice(0,80),note:fv("no").slice(0,120),star:fv("st")!=="0",remind:rm===""?null:+rm}}
 function wireAutoStar(){
   const ti=$("fs_ti"),st=$("fs_st"),pr=$("fs_pr"),d=$("fs_d");if(!ti||!st)return;let manual=false,manualP=false;
   st.addEventListener("change",()=>{manual=true});if(pr)pr.addEventListener("change",()=>{manualP=true});
-  ti.addEventListener("input",()=>{if(!manual)st.value=autoStar(ti.value)?"1":"0";if(pr&&!manualP&&!(d&&d.value))pr.value=autoCat(ti.value)});
+  ti.addEventListener("input",()=>{if(!manual)st.value=autoStar(ti.value)?"1":"0";if(pr&&!manualP&&(!(d&&d.value)||($("fs_td")&&$("fs_td").value==="1")))pr.value=autoCat(ti.value)});
 }
 function editItem(p,it){
   if(!p)return;const isNew=!it;it=it||{};
@@ -349,7 +362,7 @@ function initNotes(){
   $("tabNote").onclick=()=>{flushText();goNotes()};
   $("npEdit").onclick=editPage;
   $("npModeT").onclick=()=>setPageMode("table");$("npModeL").onclick=()=>setPageMode("list");
-  $("nTodoAdd").onclick=()=>newItemOn("");
+  $("nTodoAdd").onclick=()=>newItemOn("",{todo:true});
   $("nMemo").oninput=()=>{$("nMemoMsg").textContent="";clearTimeout(renderMemoSum._t);renderMemoSum._t=setTimeout(renderMemoSum,300);clearTimeout(memoTimer);memoTimer=setTimeout(flushMemo,800)};
   $("nMemo").onblur=()=>{if(memoTimer){clearTimeout(memoTimer);flushMemo()}};
   $("nSoon").onchange=e=>{const v=e.target.checked;curPrefs={...(curPrefs||{}),noteSoon:v};if(prefsRef)prefsRef.set({noteSoon:v},{merge:true}).catch(()=>{});render()};

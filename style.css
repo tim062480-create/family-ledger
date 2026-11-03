@@ -431,3 +431,6 @@ body.signedout #tabbar{display:none!important}
 .msr .ma{flex:none;padding:4px 10px;font-size:12.5px}
 .msr.past{opacity:.5}
 #appTitle,.vhd h2{font-size:26px}
+
+.ntodo{flex:none;padding:4px 8px;font-size:12px;border-radius:999px;background:none;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.ntodo.on{border-color:var(--good);color:var(--good);font-weight:600}

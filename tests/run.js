@@ -91,6 +91,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#nTodoAdd"); await pg.fill("#fs_ti", "AI 作業");
   ok((await pg.inputValue("#fs_pr")) === "s", "homework to-do defaults to 學校"); await pg.click("#fsSave"); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("📚 學校") && (await pg.innerText("#nTodoList")).includes("📌 事務"), "to-dos grouped into 學校 and 事務");
+  await pg.locator("#nRemind .nit", { hasText: "普化期中考" }).locator(".ntodo").click(); await wait(400);
+  ok((await pg.innerText("#nTodoList")).includes("普化期中考"), "dated item can be put into 待辦 from the calendar lists: " + (await pg.innerText("#nRemind")).replace(/\n/g," ") + " || " + (await pg.innerText("#nTodoList")).replace(/\n/g," "));
   await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");
   await pg.fill("#nMemo", "學校 不要忘東忘西！\n\n活動：\n12/30 17:40 牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題\n🟡學習\n ◦ 複習"); await wait(1200);
