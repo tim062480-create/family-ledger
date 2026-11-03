@@ -15,9 +15,9 @@ const nSort=(a,b)=>(!a.date)-(!b.date)||((a.date||"")+(a.time||"")).localeCompar
 const nMD=k=>`${+k.slice(5,7)}/${+k.slice(8,10)}`;
 const EN_SHORT=[[/Assignment\s*(\d+)/i,m=>"作業"+m[1]],[/Quiz Portal\s*(M\dQ\d)/i,m=>m[1]],[/Quiz\s*-\s*Module\s*(\d)/i,m=>"Quiz"+m[1]],[/Intragroup|Peer evaluation|Marking/i,()=>"互評"],[/Individual report/i,()=>"個人報告"],[/presentation/i,()=>"報告"],[/Proposal/i,()=>"計畫書"],[/Split into groups/i,()=>"分組"]];
 const nShort=t=>{let s=String(t||"");for(const [re,f] of EN_SHORT){const m=re.exec(s);if(m)return f(m)}const ps=s.split("・");if(ps.length>1)s=ps.find(x=>/作業|考|報告|截止|測驗/.test(x))||ps[0];s=s.replace(/^開/,"").replace(/[（(].*$/,"").trim()||s;return s.slice(0,4)};
-const PRI={r:"🔴",g:"🟢",y:"🟡"},PRI_TXT={r:"現在要做",g:"之後要做",y:"學習"},PRI_ORD={r:0,g:1,y:2};
-const PRI_OPTS=[["","不分類"],["r","🔴 現在要做"],["g","🟢 之後要做"],["y","🟡 學習"]];
-const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??3)-(PRI_ORD[b.pri]??3)||(a.ts||0)-(b.ts||0);
+const PRI={r:"🔴",h:"🏠",g:"🟢",y:"🟡"},PRI_TXT={r:"現在要做",h:"家庭",g:"之後要做",y:"學習"},PRI_ORD={r:0,h:1,g:2,y:3};
+const PRI_OPTS=[["","不分類"],["r","🔴 現在要做"],["h","🏠 家庭"],["g","🟢 之後要做"],["y","🟡 學習"]];
+const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??4)-(PRI_ORD[b.pri]??4)||(a.ts||0)-(b.ts||0);
 const nRel=d=>d===0?"今天":d===1?"明天":d===2?"後天":`${d} 天後`;
 
 // 頁面簡稱：顯示在總日曆上，看得出是哪堂課；沒設定就用頁名前兩個字（英文最多 6 個字母）
@@ -274,8 +274,8 @@ function parseMemo(text){
     const line=raw.replace(/\s+$/,"");if(!line.trim())return;
     const b=MEMO_BUL.exec(line);
     if(b){if(!cur){cur={h:"",c:"",items:[]};secs.push(cur)}cur.items.push(b[1].trim());return}
-    const t=line.trim(),emo=/^(🔴|🟢|🟡|🟠|🔵|⚪|⭐)/.exec(t);
-    if(emo||/[：:]$/.test(t)){cur={h:t.replace(/^(🔴|🟢|🟡|🟠|🔵|⚪|⭐)\s*/,"").replace(/[：:]$/,""),c:emo?emo[1]:"",items:[]};secs.push(cur);return}
+    const t=line.trim(),emo=/^(🔴|🟢|🟡|🏠|🟠|🔵|⚪|⭐)/.exec(t);
+    if(emo||/[：:]$/.test(t)){cur={h:t.replace(/^(🔴|🟢|🟡|🏠|🟠|🔵|⚪|⭐)\s*/,"").replace(/[：:]$/,""),c:emo?emo[1]:"",items:[]};secs.push(cur);return}
     if(cur&&memoDate(t)){cur.items.push(t);return}
   });
   return secs.filter(s=>s.items.length);
