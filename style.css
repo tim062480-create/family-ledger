@@ -380,3 +380,6 @@ body.signedout #tabbar{display:none!important}
 .nstar{flex:none;width:44px;height:44px;padding:0;border:none;border-radius:12px;background:none;color:var(--muted);font-size:22px;line-height:1}
 .nstar.on{color:var(--s1)}
 .nstar:active{background:var(--track)}
+
+.hd{margin-left:auto}
+#appTitle[hidden]{display:none}

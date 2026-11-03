@@ -54,6 +54,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   // 3b. 記事本：頁面、行程、總日曆、提醒、行事曆檔、筆記
   await pg.click("#tabNote"); await wait(200);
   ok(await pg.isVisible("#nlView") && await pg.isVisible("#ncGrid") && await pg.isVisible("#nTabCal"), "notebook tab shows the overall calendar and page buttons");
+  ok(await pg.isHidden("#appTitle"), "app title hidden outside the home page");
   await pg.click("#npAdd"); await pg.fill("#fs_t", "期中考"); await pg.click("#fsSave"); await wait(400);
   ok(await pg.isVisible("#npView") && (await pg.innerText("#nHead")) === "期中考", "new page opens");
   const tmr = await pg.evaluate(() => new Date(Date.now() + 8 * 3600e3 + 864e5).toISOString().slice(0, 10));
@@ -84,6 +85,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) >= 1, "main 日曆 shows ★ items too");
   await pg.click("#tabRec"); await wait(300);
   ok((await pg.innerText("#homeRemind")).includes("普化期中考"), "home shows the reminder");
+  ok(await pg.isVisible("#appTitle"), "app title shows on the home page");
+  ok((await pg.innerText("#tabCal")).trim() === "生日", "second tab is named 生日");
   await shot("03b-notes");
 
   // 4. create a household + invite

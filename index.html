@@ -23,7 +23,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261103e">
+<link rel="stylesheet" href="style.css?v=20261103f">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -40,7 +40,7 @@
 <div id="bgLayer"></div>
 <main id="main">
 <header>
-  <h1>家庭記帳本</h1>
+  <h1 id="appTitle">家庭記帳本</h1>
   <div class="hd">
     <button type="button" id="musicBtn" class="ghost" aria-label="輕音樂" hidden>♪</button>
     <button type="button" id="backBtn" class="ghost" hidden>← 返回</button>
@@ -205,7 +205,7 @@
   </div>
 
   <div id="vBd" hidden>
-  <div id="bdHead"><button type="button" id="bdBack" class="ghost">‹ 日曆</button><h2 style="margin:0;font-size:20px">生日名單</h2></div>
+  <div id="bdHead"><button type="button" id="bdBack" class="ghost">‹ 生日</button><h2 style="margin:0;font-size:20px">生日名單</h2></div>
   <section class="card" id="bdList"></section>
   </div>
 
@@ -386,7 +386,7 @@
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <nav id="tabbar" hidden>
   <button type="button" id="tabRec" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg><span>記帳</span></button>
-  <button type="button" id="tabCal" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>日曆</span></button>
+  <button type="button" id="tabCal" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20.5h16"/><path d="M5.5 20.5v-6.5a1.5 1.5 0 0 1 1.5-1.5h10a1.5 1.5 0 0 1 1.5 1.5v6.5"/><path d="M5.5 16.5c1.2 0 1.6-1 2.6-1s1.4 1 2.6 1 1.6-1 2.6-1 1.4 1 2.6 1 1.6-1 2.6-1"/><path d="M12 12.5V9.5"/><path d="M12 7.2c-.9-.8-.9-2 0-3.2.9 1.2.9 2.4 0 3.2z"/></svg><span>生日</span></button>
   <button type="button" id="tabNote" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h10.5a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6z"/><path d="M6 3.5v17M9.5 8h6M9.5 11.5h6M9.5 15h4"/></svg><span>記事本</span></button>
   <button type="button" id="tabSet" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>設定</span></button>
 </nav>
@@ -394,7 +394,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
-<script src="notes.js?v=20261103e"></script>
-<script src="app.js?v=20261103e"></script>
+<script src="notes.js?v=20261103f"></script>
+<script src="app.js?v=20261103f"></script>
 </body>
 </html>

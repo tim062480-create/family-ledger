@@ -43,6 +43,7 @@ const allowanceOf=m=>{const a=settings&&settings.allowance&&settings.allowance[m
 
 function render(){
   $("tabbar").hidden=true;
+  $("appTitle").hidden=!!(curKey&&loaded&&settings&&view!=="home");
   renderMonths();
   $("vHome").hidden=view!=="home";$("vMonth").hidden=view!=="month";$("vSet").hidden=view!=="set";$("vCal").hidden=view!=="cal";$("vBd").hidden=view!=="bd";$("vNote").hidden=view!=="note";
   $("backBtn").hidden=view!=="month"||!settings;
