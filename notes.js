@@ -13,7 +13,8 @@ const nDays=k=>Math.round((new Date(k+"T00:00:00Z")-new Date(today()+"T00:00:00Z
 const nHasRm=it=>it.remind!==null&&it.remind!==undefined&&it.remind!=="";
 const nSort=(a,b)=>(!a.date)-(!b.date)||((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||""));
 const nMD=k=>`${+k.slice(5,7)}/${+k.slice(8,10)}`;
-const nShort=t=>{let s=String(t||"");const ps=s.split("・");if(ps.length>1)s=ps.find(x=>/作業|考|報告|截止|測驗/.test(x))||ps[0];s=s.replace(/^開/,"").replace(/[（(].*$/,"").trim()||s;return s.slice(0,4)};
+const EN_SHORT=[[/Assignment\s*(\d+)/i,m=>"作業"+m[1]],[/Quiz Portal\s*(M\dQ\d)/i,m=>m[1]],[/Quiz\s*-\s*Module\s*(\d)/i,m=>"Quiz"+m[1]],[/Intragroup|Peer evaluation|Marking/i,()=>"互評"],[/Individual report/i,()=>"個人報告"],[/presentation/i,()=>"報告"],[/Proposal/i,()=>"計畫書"],[/Split into groups/i,()=>"分組"]];
+const nShort=t=>{let s=String(t||"");for(const [re,f] of EN_SHORT){const m=re.exec(s);if(m)return f(m)}const ps=s.split("・");if(ps.length>1)s=ps.find(x=>/作業|考|報告|截止|測驗/.test(x))||ps[0];s=s.replace(/^開/,"").replace(/[（(].*$/,"").trim()||s;return s.slice(0,4)};
 const PRI={r:"🔴",g:"🟢",y:"🟡"},PRI_TXT={r:"現在要做",g:"之後要做",y:"學習"},PRI_ORD={r:0,g:1,y:2};
 const PRI_OPTS=[["","不分類"],["r","🔴 現在要做"],["g","🟢 之後要做"],["y","🟡 學習"]];
 const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??3)-(PRI_ORD[b.pri]??3)||(a.ts||0)-(b.ts||0);
