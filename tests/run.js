@@ -314,11 +314,13 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.evaluate(() => window.scrollTo(0, 0)); await pg.click("#musicBtn"); await wait(150);
   await pg.click("#mGenre button[data-g='classic']"); await wait(100);
   ok((await pg.innerText("#mQ")).includes("古典樂"), "music pop-up offers 古典樂");
-  ok(await pg.evaluate(() => CLASSICS.every(c => { const s = c.build(); return s.ev.length > 50 && s.ev.every(e => e.m > 20 && e.m < 100 && e.t >= 0 && e.d > 0); })), "every classical piece builds valid notes");
+  ok(await pg.evaluate(() => CLASSICS.length >= 10 && FOLK.length >= 4 && [...CLASSICS, ...FOLK].every(c => { const s = c.build(); return s.ev.length > 50 && s.ev.every(e => e.m > 20 && e.m < 100 && e.t >= 0 && e.d > 0); })), "every classical piece builds valid notes");
   const e0 = errs.length; await pg.click("#mYes"); await wait(700); await pg.click("#mNext"); await wait(500);
   ok(errs.length === e0 && (await pg.innerText("#mQ")).includes("CLASSICS" ? "《" : ""), "classical music plays and skips without errors");
   const nm1 = await pg.innerText("#mQ"); await pg.click("#mPrev"); await wait(300);
   ok((await pg.innerText("#mQ")) !== nm1 && (await pg.innerText("#mQ")).includes("巴哈"), "上一首 goes back a song");
+  const e1 = errs.length; await pg.click("#mGenre button[data-g='folk']"); await wait(600);
+  ok(errs.length === e1 && (await pg.innerText("#mQ")).includes("綠袖子"), "民謠 plays too");
   await pg.click("#mClose"); await wait(100);
   // 7c. 一鍵邀請全家：一個連結，加入時選「我是哪一位」
   await pg.click("#acctBtn"); await wait(300);

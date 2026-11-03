@@ -1103,13 +1103,56 @@ const CLASSICS=[
     const total=mel.reduce((a,[,d])=>a+d,0),nb=Math.ceil(total/3)+8;for(let i=0;i<nb;i++){const[b,c]=bars[i%2],t0=i*3;ev.push({t:t0,m:b,d:3.4,v:.07});c.forEach(m=>ev.push({t:t0+1,m,d:2.4,v:.035}))}
     let t=24;mel.forEach(([m,d])=>{if(m)ev.push({t,m,d:d*1.3,v:.07});t+=d});return{ev,len:nb*3+3}}}
 ];
+// 依旋律＋和弦自動配伴奏（曲子都是公有領域：作曲家過世超過百年，或是傳統民謠）
+const NN={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+function pn(x){const m=/^([A-G])([#b]?)(-?\d)$/.exec(x);return m?12*(+m[3]+1)+NN[m[1]]+(m[2]==="#"?1:m[2]==="b"?-1:0):0}
+function chordOf(c){const m=/^([A-G][#b]?)(m?)(7?)$/.exec(c);const r=pn(m[1]+"3")%12,iv=m[2]?[0,3,7]:[0,4,7];if(m[3])iv.push(10);
+  return{bass:(r<5?48:36)+r,tri:iv.map(i=>{let n=r+i;while(n<55)n+=12;while(n>67)n-=12;return n})}}
+function tune(name,bpm,meter,mel,chords,rep=2){return{name,bpm,build(){
+  const ev=[],M=mel.trim().split(/\s+/).map(t=>{const[a,b]=t.split(":");return[a==="r"?0:pn(a),b?+b:1]}),C=chords.trim().split(/\s+/);let t=0;
+  const len=C.length*meter;
+  for(let r=0;r<rep;r++){
+    let u=t;M.forEach(([m,d])=>{if(m)ev.push({t:u,m,d:d*1.15,v:.08});u+=d});
+    C.forEach((cc,bi)=>{const parts=cc.split("|"),pl=meter/parts.length;parts.forEach((p,pi)=>{const{bass,tri}=chordOf(p),t0=t+bi*meter+pi*pl;
+      ev.push({t:t0,m:bass,d:pl*1.1,v:.06});
+      if(meter===3)[1,2].forEach(k=>tri.forEach(m=>ev.push({t:t0+k,m,d:.9,v:.025})));
+      else if(meter===6&&pl===6)[1,2,3,4,5].forEach(k=>ev.push({t:t0+k,m:tri[[0,1,2,1,0][k-1]],d:1.4,v:.03}));
+      else{const st=pl>=4?[.5,1,1.5,2,2.5,3,3.5]:pl>=3?[1,1.5,2]:[.5,1,1.5];st.filter(k=>k<pl).forEach((k,i)=>ev.push({t:t0+k,m:k===2?bass+7:tri[i%3],d:.9,v:.028}))}})});
+    t+=len}
+  const{bass,tri}=chordOf(C[C.length-1].split("|").pop());[bass,...tri].forEach(m=>ev.push({t,m,d:4,v:.05}));return{ev,len:t+4}}}}
+const MORE_CLASSICS=[
+  tune("貝多芬《快樂頌》",104,4,"E5 E5 F5 G5 G5 F5 E5 D5 C5 C5 D5 E5 E5:1.5 D5:.5 D5:2 E5 E5 F5 G5 G5 F5 E5 D5 C5 C5 D5 E5 D5:1.5 C5:.5 C5:2 D5 D5 E5 C5 D5 E5:.5 F5:.5 E5 C5 D5 E5:.5 F5:.5 E5 D5 C5 D5 G4:2 E5 E5 F5 G5 G5 F5 E5 D5 C5 C5 D5 E5 D5:1.5 C5:.5 C5:2",
+    "C G C G C G C G|C G G|C G C|G C G C G|C"),
+  tune("巴哈《G 大調小步舞曲》",104,3,"D5 G4:.5 A4:.5 B4:.5 C5:.5 D5 G4 G4 E5 C5:.5 D5:.5 E5:.5 F#5:.5 G5 G4 G4 C5 D5:.5 C5:.5 B4:.5 A4:.5 B4 C5:.5 B4:.5 A4:.5 G4:.5 F#4 G4:.5 A4:.5 B4:.5 G4:.5 A4:3 D5 G4:.5 A4:.5 B4:.5 C5:.5 D5 G4 G4 E5 C5:.5 D5:.5 E5:.5 F#5:.5 G5 G4 G4 C5 D5:.5 C5:.5 B4:.5 A4:.5 B4 C5:.5 B4:.5 A4:.5 G4:.5 A4 B4:.5 A4:.5 G4:.5 F#4:.5 G4:3",
+    "G G C G C G D D G G C G C G D G"),
+  tune("布拉姆斯《搖籃曲》",84,3,"r:2 E5:.5 E5:.5 G5:2 E5:.5 E5:.5 G5:2 E5:.5 G5:.5 C6 B5:1.5 A5:.5 A5 G5 D5:.5 E5:.5 F5 D5 D5:.5 E5:.5 F5:2 D5:.5 F5:.5 B5:.5 A5:.5 G5 B5 C6:3",
+    "C C C F C G G G C",3),
+  tune("莫札特《小星星變奏曲》主題",92,4,"C5 C5 G5 G5 A5 A5 G5:2 F5 F5 E5 E5 D5 D5 C5:2 G5 G5 F5 F5 E5 E5 D5:2 G5 G5 F5 F5 E5 E5 D5:2 C5 C5 G5 G5 A5 A5 G5:2 F5 F5 E5 E5 D5 D5 C5:2",
+    "C F|C F|C G|C C|F C|G C|F C|G C F|C F|C G|C"),
+  tune("德弗札克《新世界》慢板",54,4,"E5:1.5 G5:.5 G5:2 E5:1.5 D5:.5 C5:2 D5 E5 G5 E5 D5:4 E5:1.5 G5:.5 G5:2 E5:1.5 D5:.5 C5:2 D5 E5 D5 C5 C5:4",
+    "C C G G C C|F G C"),
+  tune("莫札特《小夜曲》",120,4,"G5 r:.5 D5:.5 G5 r:.5 D5:.5 G5:.5 D5:.5 G5:.5 B5:.5 D6:2 C6 r:.5 A5:.5 C6 r:.5 A5:.5 C6:.5 A5:.5 F#5:.5 A5:.5 D5:2 G5 G5:.5 B5:.5 A5:.5 G5:.5 G5:.5 F#5:.5 F#5:.5 A5:.5 C6:.5 F#5:.5 A5:.5 G5:.5 G5:1 G5:2 D5 G4",
+    "G G D D G|D D|G G")
+];
+const FOLK=[
+  tune("英格蘭民謠《綠袖子》",150,6,"r:5 A4 C5:2 D5 E5:1.5 F5:.5 E5 D5:2 B4 G4:1.5 A4:.5 B4 C5:2 A4 A4:1.5 G#4:.5 A4 B4:2 G#4 E4:2 A4 C5:2 D5 E5:1.5 F5:.5 E5 D5:2 B4 G4:1.5 A4:.5 B4 C5:1.5 B4:.5 A4 G#4:1.5 F#4:.5 G#4 A4:6 G5:3 G5:1.5 F#5:.5 E5 D5:2 B4 G4:1.5 A4:.5 B4 C5:2 A4 A4:1.5 G#4:.5 A4 B4:2 G#4 E4:3 G5:3 G5:1.5 F#5:.5 E5 D5:2 B4 G4:1.5 A4:.5 B4 C5:1.5 B4:.5 A4 G#4:1.5 F#4:.5 G#4 A4:6",
+    "Am Am G Am E Am G Am|E Am C G Am E C G Am|E Am"),
+  tune("美國聖詩《奇異恩典》",76,3,"r:2 G4 C5:2 E5:.5 C5:.5 E5:2 D5 C5:2 A4 G4:2 G4 C5:2 E5:.5 C5:.5 E5:2 D5 G5:3 G5:2 E5 G5:2 E5:.5 G5:.5 E5:2 C5 G4:2 A4 C5:2 A4 G4:2 G4 C5:2 E5:.5 C5:.5 E5:2 D5 C5:3",
+    "C C C F C C C G G C C F C C C G C"),
+  tune("中國民謠《茉莉花》",72,4,"E5 E5:.5 G5:.5 A5:.5 C6:.5 C6:.5 A5:.5 G5 G5:.5 A5:.5 G5:2 E5 E5:.5 G5:.5 A5:.5 C6:.5 C6:.5 A5:.5 G5 G5:.5 A5:.5 G5:2 G5 G5 G5 E5:.5 G5:.5 A5 A5 G5:2 E5 D5:.5 E5:.5 G5 E5:.5 D5:.5 C5 C5:.5 D5:.5 C5:2 E5:.5 D5:.5 C5:.5 E5:.5 D5:1.5 E5:.5 G5 A5:.5 C6:.5 G5:2 D5 E5:.5 G5:.5 D5:.5 E5:.5 C5:.5 A4:.5 G4:2 A4 C5 D5 E5:.5 C5:.5 D5:.5 C5:.5 A4:.5 G4:.5 G4:4",
+    "C C C C C F|C C|G C C|G F|C G|Am C|F G|C C"),
+  tune("蘇格蘭民謠《驪歌》",80,4,"r:3 G4 C5:1.5 C5:.5 C5 E5 D5:1.5 C5:.5 D5 E5:.5 D5:.5 C5:1.5 C5:.5 E5 G5 A5:3 A5 G5:1.5 E5:.5 E5 C5 D5:1.5 C5:.5 D5 E5:.5 D5:.5 C5:1.5 A4:.5 A4 G4 C5:3 A5 G5:1.5 E5:.5 E5 C5 D5:1.5 C5:.5 D5 A5 G5:1.5 E5:.5 E5 G5 A5:3 C6 G5:1.5 E5:.5 E5 C5 D5:1.5 C5:.5 D5 E5:.5 D5:.5 C5:1.5 A4:.5 A4 G4 C5:4",
+    "C C G C F C G F|G C C G C F C G F|G C")
+];
+CLASSICS.push(...MORE_CLASSICS);
+const MLIST={classic:CLASSICS,folk:FOLK},mList=()=>MLIST[mGenre]||CLASSICS,isSeq=()=>!!MLIST[mGenre];
 let mGenre="soft";try{mGenre=localStorage.getItem("mGenre")||"soft"}catch(e){}
-let cIdx=0,cSong=null,cEv=0,cT0=0;
-function cStart(at){cSong=CLASSICS[cIdx].build();cSong.ev.sort((a,b)=>a.t-b.t);cEv=0;cT0=at}
+let cIdxs={classic:0,folk:0};let cIdx=0,cSong=null,cEv=0,cT0=0;
+function cStart(at){cIdx=cIdxs[mGenre]||0;cSong=mList()[cIdx].build();cSong.ev.sort((a,b)=>a.t-b.t);cEv=0;cT0=at}
 function cSchedule(){
-  const S=CLASSICS[cIdx],sec=60/S.bpm;
+  const S=mList()[cIdx],sec=60/S.bpm;
   while(cEv<cSong.ev.length){const e=cSong.ev[cEv],at=cT0+e.t*sec;if(at>AC.currentTime+.5)break;if(at>=AC.currentTime-.05)mNote(e.m,at,Math.max(.4,e.d*sec),e.v,"triangle");cEv++}
-  if(cEv>=cSong.ev.length&&AC.currentTime>cT0+cSong.len*sec){cIdx=(cIdx+1)%CLASSICS.length;cStart(AC.currentTime+.3);mUI()}
+  if(cEv>=cSong.ev.length&&AC.currentTime>cT0+cSong.len*sec){cIdxs[mGenre]=(cIdx+1)%mList().length;cStart(AC.currentTime+.3);mUI()}
 }
 let AC=null,mOut=null,mIn=null,mTimer=null,mPlaying=false,mIdx=0,nextT=0,stepN=0;
 const mf=m=>440*Math.pow(2,(m-69)/12);
@@ -1149,10 +1192,10 @@ function silentWav(){
 }
 function mUI(){
   $("mAsk").hidden=mPlaying;$("mCtl").hidden=!mPlaying;
-  const cl=mGenre==="classic";
-  $("mQ").textContent=mPlaying?"正在播放："+(cl?CLASSICS[cIdx].name:MOODS[mIdx].name):(cl?"要播放古典樂嗎？":"要播放輕音樂嗎？");
+  const cl=isSeq(),gn={soft:"輕音樂",classic:"古典樂",folk:"民謠"}[mGenre]||"音樂";
+  $("mQ").textContent=mPlaying?"正在播放："+(cl?mList()[cIdxs[mGenre]||0].name:MOODS[mIdx].name):`要播放${gn}嗎？`;
   document.querySelectorAll("#mGenre button").forEach(b=>{const on=b.dataset.g===mGenre;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false")});
-  $("mFoot").textContent=cl?"古典名曲（作曲家都已過世百年，曲子是公有領域），由網頁即時用合成音色演奏。手機若開靜音可能聽不到。":"原創輕音樂，由網頁即時產生。手機若開靜音可能聽不到。";
+  $("mFoot").textContent=cl?(mGenre==="folk"?"傳統民謠（公有領域），":"古典名曲（作曲家都已過世百年，曲子是公有領域），")+"由網頁即時用合成音色演奏，沒有用任何人的錄音。手機若開靜音可能聽不到。":"原創輕音樂，由網頁即時產生。手機若開靜音可能聽不到。";
   $("musicBtn").classList.toggle("on",mPlaying);
 }
 function mPlay(){
@@ -1161,8 +1204,8 @@ function mPlay(){
     if(!mSilent){mSilent=new Audio(silentWav());mSilent.loop=true}
     const pr=mSilent.play();if(pr&&pr.catch)pr.catch(()=>{});
     if(!AC)mInit();AC.resume();nextT=AC.currentTime+.1;stepN=0;clearInterval(mTimer);
-    if(mGenre==="classic")cStart(AC.currentTime+.15);
-    mTimer=setInterval(()=>{if(mGenre==="classic")return cSchedule();mSchedule();if(stepN>=8*40){mIdx=(mIdx+1)%MOODS.length;stepN=0;mUI()}},100);mPlaying=true;
+    if(isSeq())cStart(AC.currentTime+.15);
+    mTimer=setInterval(()=>{if(isSeq())return cSchedule();mSchedule();if(stepN>=8*40){mIdx=(mIdx+1)%MOODS.length;stepN=0;mUI()}},100);mPlaying=true;
   }catch(e){$("mQ").textContent="這台裝置沒辦法播放"}
   mUI();
 }
@@ -1172,10 +1215,10 @@ $("mYes").onclick=()=>mPlay();
 $("mNo").onclick=()=>{$("musicPop").hidden=true};
 $("mClose").onclick=()=>{mStop();$("musicPop").hidden=true};
 $("mStopBtn").onclick=()=>mStop();
-function mSkip(d){if(mGenre==="classic"){cIdx=(cIdx+d+CLASSICS.length)%CLASSICS.length;if(AC&&mPlaying)cStart(AC.currentTime+.4)}else{mIdx=(mIdx+d+MOODS.length)%MOODS.length;stepN=0;if(AC)nextT=AC.currentTime+.15}mUI()}
+function mSkip(d){if(isSeq()){const L=mList().length;cIdxs[mGenre]=((cIdxs[mGenre]||0)+d+L)%L;if(AC&&mPlaying)cStart(AC.currentTime+.4)}else{mIdx=(mIdx+d+MOODS.length)%MOODS.length;stepN=0;if(AC)nextT=AC.currentTime+.15}mUI()}
 $("mNext").onclick=()=>mSkip(1);$("mPrev").onclick=()=>mSkip(-1);
 document.querySelectorAll("#mGenre button").forEach(b=>b.onclick=()=>{if(mGenre===b.dataset.g)return;mGenre=b.dataset.g;try{localStorage.setItem("mGenre",mGenre)}catch(e){}
-  if(mPlaying&&AC){nextT=AC.currentTime+.4;stepN=0;if(mGenre==="classic")cStart(AC.currentTime+.4)}mUI()});
+  if(mPlaying&&AC){nextT=AC.currentTime+.4;stepN=0;if(isSeq())cStart(AC.currentTime+.4)}mUI()});
 $("mVol").oninput=e=>{if(mOut)mOut.gain.value=+e.target.value};
 
 
