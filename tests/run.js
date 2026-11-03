@@ -61,6 +61,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(pv.length === 2 && pv[0].includes("|120|") && pv[1].includes("|30|"), "parses 中文數字 and two items: " + JSON.stringify(pv));
   await pg.click("#confirm"); await wait(300);
   ok((await pg.innerText("#vmsg")).includes("已記帳"), "confirm writes entries");
+  ok(JSON.stringify(await pg.evaluate(() => localParse("活大素食 62 晚餐").map(x => [x.note, x.amount, x.remark]))) === JSON.stringify([["活大素食", 62, "晚餐"]]), "text after the amount becomes 備註");
 
   // 3b. 記事本：頁面、行程、總日曆、提醒、行事曆檔、筆記
   await pg.evaluate(() => { localStorage.setItem("fl_fold_remind", "1"); localStorage.setItem("fl_fold_month", "1"); });

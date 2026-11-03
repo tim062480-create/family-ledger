@@ -222,8 +222,14 @@ function localParse(t0){
   const re=/([^\d]*?)(\d+)\s*(?:元|塊|块)?\s*(?:備注\s*([^\d\s,，、;；。\n]*))?/g;let m;
   const clean=s=>s.replace(/^[\s元塊块,，、;；。.]+/,"").replace(/NT\$?|花了|花|共|買了|買|還有|然後|以及|和|跟|加上/gi," ").replace(/[,，、;；。.]/g," ").replace(/\s+/g," ").trim();
   const raw=x=>x.replace(/^[\s,，、;；。.]+|[\s,，、;；。.]+$/g,"");
+  const addRem=(it,x)=>{x=ub(clean(x));if(!x||!it)return;it.remark=it.remark?it.remark+"・"+x:x};
+  let lastEnd=0;
   while((m=re.exec(rest))){
-    const pre=m[1]||"";let desc="",remark="";const k=pre.indexOf("備注");
+    let pre=m[1]||"";let desc="",remark="";
+    // 金額後面、下一個分隔符號前的字，算上一筆的備註（例如「活大素食 62 晚餐，捷運 30」）
+    if(out.length){const sp=pre.search(/[,，、;；。\n]/);if(sp>=0){addRem(out[out.length-1],pre.slice(0,sp));pre=pre.slice(sp+1)}}
+    lastEnd=re.lastIndex;
+    const k=pre.indexOf("備注");
     const raw=x=>x.replace(/^[\s,，、;；。.]+|[\s,，、;；。.]+$/g,"");
     if(k>=0){
       const after=pre.slice(k+2).replace(/^\s+/,""),sp=after.search(/\s/);
@@ -235,7 +241,10 @@ function localParse(t0){
     let cat=guess(desc+" "+remark),nd=desc;
     if(/券|劵|禮物卡/.test(desc+remark)){const st=desc.replace(/用|使用|付了|付|買了|買/g,"");cat="coupon:"+st;nd=toT(st).replace(CPW,"").trim()||desc}
     out.push({category:cat,amount:+m[2],date:f.date,note:nd,remark});
+    if(re.lastIndex===m.index)re.lastIndex++;
   }
+  // 最後一個金額後面剩下的字，也算最後一筆的備註
+  if(out.length){const tail=rest.slice(lastEnd);if(tail&&!/\d/.test(tail))addRem(out[out.length-1],tail.replace(/^\s*備注\s*/,""))}
   return out;
 }
 function renderPreview(){
