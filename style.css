@@ -444,3 +444,11 @@ body.signedout #tabbar{display:none!important}
 .rhd h2{margin:0}
 .seg.rseg{margin:0}
 .seg.rseg button{padding:4px 10px;font-size:12.5px}
+
+.ncal{position:relative}
+.npop{position:absolute;left:8px;right:8px;z-index:6;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:10px 12px 12px;max-height:62vh;overflow:auto}
+.npop-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.npop-h h2{margin:0;font-size:16px}
+.npx2{font-size:22px;line-height:1;padding:2px 10px}
+.npop .nit .nmain{padding:7px 2px}
+.npop .bt{margin-top:6px}

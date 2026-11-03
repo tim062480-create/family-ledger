@@ -79,6 +79,11 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const lbl = await pg.$$eval("#ncGrid .pli", ls => ls.map(l => l.lastChild.textContent));
   ok(lbl.some(x => x.startsWith("普化")) && !lbl.some(x => x.includes("還書")), "only ★ items label the calendar: " + JSON.stringify(lbl));
   ok((await pg.$$eval("#ncGrid .pli b", ts => ts.map(x => x.textContent))).includes("期中"), "calendar shows which page (course) an item is from");
+  ok(await pg.isHidden("#ncDay"), "day details hidden until a date is tapped");
+  await pg.click(`#ncGrid .cday[data-key="${tmr}"]`); await wait(200);
+  ok(await pg.isVisible("#ncDay") && (await pg.innerText("#ncDay")).includes("普化期中考"), "tapping a date pops up its items over the calendar");
+  await pg.click("#ncDay .npx2"); await wait(150);
+  ok(await pg.isHidden("#ncDay"), "pop-up closes");
   const [nics] = await Promise.all([pg.waitForEvent("download"), pg.click("#nIcs")]);
   const nt = fs.readFileSync(await nics.path(), "utf8");
   ok(/SUMMARY:普化期中考/.test(nt) && /TRIGGER:-PT15H/.test(nt) && /TRIGGER:-P1DT15H/.test(nt) && !/還書/.test(nt), "calendar file holds ★ items with 3-day alarms");

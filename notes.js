@@ -2,7 +2,7 @@
 // 資料放在 users/{uid}/notes/{頁面}，圖片放在 users/{uid}/notes/{頁面}/imgs/{圖}；只有本人能讀寫。
 // 一個頁面：{title, text, items:[{id,date,time,title,note,star,remind}], ts, order}
 //   star：要不要顯示在總日曆；remind：null 不通知，0/1/3/7 = 當天／前幾天提醒。
-let memoRef=null,memoText="",memoTimer=null,notes=[],notesRef=null,notesLoaded=false,noteSel=null,noteImgs=[],noteImgOff=null,noteTxtTimer=null,ncY=0,ncM=0,ncSel="";
+let ncOpen=false,memoRef=null,memoText="",memoTimer=null,notes=[],notesRef=null,notesLoaded=false,noteSel=null,noteImgs=[],noteImgOff=null,noteTxtTimer=null,ncY=0,ncM=0,ncSel="";
 const RM_OPTS=[["","不通知"],["0","當天"],["1","前 1 天"],["2","前 2 天"],["3","前 3 天"],["7","前 1 週"]];
 const RM_TXT={0:"當天",1:"前 1 天",2:"前 2 天",3:"前 3 天",7:"前 1 週"};
 const soonOn=()=>!(curPrefs&&curPrefs.noteSoon===false);
@@ -163,19 +163,30 @@ function renderNoteCal(){
     }else{const inf=dayInfo(y,m,d);if(inf.fest.length){l.textContent=inf.fest[0].replace(/節$/,"").slice(0,4);l.classList.add("fest")}b.appendChild(l)}
     if(all[key]&&!pl.length){const dot=mkEl("i","dot");b.appendChild(dot)}
     b.setAttribute("aria-label",`${m}月${d}日`+(pl.length?"，"+pl.map(x=>(x.ptag?x.ptag+" ":"")+x.title).join("、"):"")+(all[key]?`，共 ${all[key]} 個行程`:""));
-    b.onclick=()=>{ncSel=key;if(m!==ncM){ncY=y;ncM=m}renderNoteCal()};
+    b.dataset.key=key;
+    b.onclick=e=>{e.stopPropagation();if(key===ncSel&&ncOpen&&m===ncM){closeDayPop();return}ncSel=key;ncOpen=true;if(m!==ncM){ncY=y;ncM=m}renderNoteCal()};
     g.appendChild(b);
   }
   renderNoteDay();
 }
+function closeDayPop(){ncOpen=false;const b=$("ncDay");if(b){b.hidden=true;b.innerHTML=""}}
 function renderNoteDay(){
-  const box=$("ncDay");box.innerHTML="";if(!ncSel)return;
+  const box=$("ncDay");box.innerHTML="";if(!ncSel||!ncOpen){box.hidden=true;return}
   const [y,m,d]=ncSel.split("-").map(Number);
-  box.appendChild(mkEl("h2",null,`${m} 月 ${d} 日　星期${nDow(ncSel)}`));
+  const hd=mkEl("div","npop-h");hd.appendChild(mkEl("h2",null,`${m} 月 ${d} 日　星期${nDow(ncSel)}`));
+  const x=mkEl("button","ghost npx2","×");x.type="button";x.setAttribute("aria-label","關閉");x.onclick=closeDayPop;hd.appendChild(x);box.appendChild(hd);
   const its=noteItems().filter(x=>x.date===ncSel).sort((a,b)=>(b.star?1:0)-(a.star?1:0)||nSort(a,b));
   if(!its.length)box.appendChild(mkEl("p","sub","這天沒有行程。"));
   its.forEach(it=>box.appendChild(itemRow(it,true)));
   const bt=mkEl("div","bt"),add=mkEl("button","ghost sm","＋ 新增行程在這天");add.type="button";add.onclick=()=>newItemOn(ncSel);bt.appendChild(add);box.appendChild(bt);
+  box.hidden=false;placeDayPop();
+}
+// 小格子放在點的那一列下面；太靠下面就放到那一列上面
+function placeDayPop(){
+  const box=$("ncDay"),cell=document.querySelector(`#ncGrid .cday[data-key="${ncSel}"]`),card=box.parentElement;if(!cell||!card)return;
+  const cr=card.getBoundingClientRect(),r=cell.getBoundingClientRect(),h=box.offsetHeight;
+  let top=r.bottom-cr.top+4;if(top+h>card.clientHeight+40&&r.top-cr.top-h-4>0)top=r.top-cr.top-h-4;
+  box.style.top=top+"px";
 }
 function renderPage(p){
   const box=$("npItems");box.innerHTML="";
@@ -244,7 +255,7 @@ function renderPageImgs(){
 
 // ---- 動作 ----
 function setRange(k){curPrefs={...(curPrefs||{}),noteRange:k};if(prefsRef)prefsRef.set({noteRange:k},{merge:true}).catch(()=>{});render()}
-function goNotes(){view="note";noteSel=null;render();window.scrollTo(0,0)}
+function goNotes(){closeDayPop();view="note";noteSel=null;render();window.scrollTo(0,0)}
 function watchImgs(pid){
   if(noteImgOff){try{noteImgOff()}catch(e){}noteImgOff=null}noteImgs=[];if(!notesRef)return;
   const off=notesRef.doc(pid).collection("imgs").onSnapshot(sn=>{if(noteSel!==pid)return;noteImgs=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));if(view==="note")renderPageImgs()},()=>{});
@@ -400,9 +411,11 @@ function initNotes(){
     for(const f of fs.slice(0,room)){try{const t=await shrink(f);await notesRef.doc(pid).collection("imgs").add({t,ts:Date.now()});ok++}catch(err){bad++}}
     msg.textContent=(bad?`有 ${bad} 張沒辦法讀取。`:"")+(fs.length>room?`每頁最多 ${NOTE_IMG_MAX} 張。`:"");
   };
-  $("ncPrev").onclick=()=>{ncM--;if(ncM<1){ncM=12;ncY--}renderNoteCal()};
-  $("ncNext").onclick=()=>{ncM++;if(ncM>12){ncM=1;ncY++}renderNoteCal()};
-  $("ncToday").onclick=()=>{const t=today();ncY=+t.slice(0,4);ncM=+t.slice(5,7);ncSel=t;renderNoteCal()};
+  $("ncPrev").onclick=()=>{closeDayPop();ncM--;if(ncM<1){ncM=12;ncY--}renderNoteCal()};
+  $("ncNext").onclick=()=>{closeDayPop();ncM++;if(ncM>12){ncM=1;ncY++}renderNoteCal()};
+  $("ncToday").onclick=()=>{closeDayPop();const t=today();ncY=+t.slice(0,4);ncM=+t.slice(5,7);ncSel=t;renderNoteCal()};
+  document.addEventListener("click",e=>{if(!ncOpen)return;const b=$("ncDay");if(b.contains(e.target)||e.target.closest("#fsheet,#sheetBg,#toast"))return;closeDayPop()});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ncOpen)closeDayPop()});
   $("nIcs").onclick=()=>{const r=notesICS(),m=$("nIcsMsg");
     if(!r.count){m.textContent="目前沒有要提醒、還沒到的行程。打開上面的「提醒我今天、明天、後天的事」，或在行程裡設定「通知」。";return}
     saveFile("schedule-reminders.ics",r.text,"text/calendar;charset=utf-8");
