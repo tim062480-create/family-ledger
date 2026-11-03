@@ -430,3 +430,4 @@ body.signedout #tabbar{display:none!important}
 .msr .mt small{display:block;color:var(--muted);font-size:12px}
 .msr .ma{flex:none;padding:4px 10px;font-size:12.5px}
 .msr.past{opacity:.5}
+#appTitle,.vhd h2{font-size:26px}
