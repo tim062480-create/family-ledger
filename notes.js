@@ -280,10 +280,15 @@ function parseMemo(text){
   });
   return secs.filter(s=>s.items.length);
 }
-const memoNorm=s=>String(s||"").toLowerCase().replace(/[\s（）()：:・,，、\-–_]/g,"");
-function memoFind(txt){
-  const a=memoNorm(txt.replace(/\d{1,2}\s*[\/月]\s*\d{1,2}[日號]?|\d{1,2}:\d{2}(-\d{1,2}:\d{2})?|（.）|\(.\)/g,""));if(a.length<2)return null;
-  return noteItems().find(it=>{const b=memoNorm(it.title);return b.length>=2&&(b.includes(a)||a.includes(b))})||null;
+const CN_NUM={"一":1,"二":2,"三":3,"四":4,"五":5,"六":6};
+const memoNorm=s=>String(s||"").toLowerCase()
+  .replace(/第([一二三四五六])次作業/g,(m,c)=>"作業"+CN_NUM[c]).replace(/(?:hw|as|assignment)\s*(\d)/g,"作業$1").replace(/\bhw\b/g,"作業")
+  .replace(/[\s（）()：:・,，、\-–_]/g,"");
+const memoStrip=s=>String(s||"").replace(/\d{1,2}\s*[\/月]\s*\d{1,2}[日號]?|\d{1,2}:\d{2}|（.）|\(.\)|\(w\d+\)/gi,"");
+function memoFind(txt,sec){
+  let a=memoNorm(memoStrip(txt));if(a.length<2&&sec&&sec.h)a=memoNorm(sec.h);if(a.length<2)return null;
+  const its=noteItems();
+  return its.find(it=>memoNorm(it.title)===a)||its.find(it=>{const b=memoNorm((it.ptag||"")+it.title),c=memoNorm(it.title);return (c.length>=2&&a.includes(c)&&c.length>=a.length*0.6)||b.includes(a)})||null;
 }
 function renderMemoSum(){
   const box=$("nMemoSum");if(!box)return;box.innerHTML="";
@@ -291,7 +296,7 @@ function renderMemoSum(){
   const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,"隨手記整理"));box.appendChild(hd);
   box.appendChild(mkEl("p","sub","照你在隨手記寫的標題和日期自動整理；按「＋」可以加到待辦或總日曆。"));
   const row=(txt,sec)=>{
-    const date=memoDate(txt),f=memoFind(txt),r=mkEl("div","msr"+(f&&f.done?" done":""));
+    const date=memoDate(txt),f=memoFind(txt,sec),r=mkEl("div","msr"+(f&&f.done?" done":""));
     const dt=mkEl("span","md");if(date){const d=nDays(date);dt.append(mkEl("b",null,nMD(date)),mkEl("small",null,d<0?"已過":d<=2?nRel(d):`${d} 天後`));if(d>=0&&d<=2)r.classList.add("soon");if(d<0)r.classList.add("past")}else dt.appendChild(mkEl("b",null,sec.c||"•"));
     const t=mkEl("span","mt",txt);if(sec&&sec.h&&date)t.appendChild(mkEl("small",null,(sec.c?sec.c+" ":"")+sec.h));
     const a=mkEl("button","ghost sm ma");a.type="button";
