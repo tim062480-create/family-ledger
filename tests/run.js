@@ -86,8 +86,11 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#nRemind")).includes("普化期中考"), "explicit 通知 still shows with the 3-day reminder off");
   await pg.check("#nSoon"); await wait(200);
   ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent))).includes("期中考"), "page has its own button");
-  await pg.click("#nTodoAdd"); await pg.fill("#fs_d", ""); await pg.fill("#fs_ti", "領貨"); await pg.selectOption("#fs_pr", "r"); await pg.click("#fsSave"); await wait(400);
-  ok((await pg.innerText("#nTodoList")).includes("領貨") && (await pg.innerText("#nTodoList")).includes("現在要做"), "to-do without a date goes to 待辦 with its category");
+  await pg.click("#nTodoAdd"); await pg.fill("#fs_ti", "領貨");
+  ok((await pg.inputValue("#fs_pr")) === "a", "non-school to-do defaults to 事務"); await pg.click("#fsSave"); await wait(400);
+  await pg.click("#nTodoAdd"); await pg.fill("#fs_ti", "AI 作業");
+  ok((await pg.inputValue("#fs_pr")) === "s", "homework to-do defaults to 學校"); await pg.click("#fsSave"); await wait(400);
+  ok((await pg.innerText("#nTodoList")).includes("📚 學校") && (await pg.innerText("#nTodoList")).includes("📌 事務"), "to-dos grouped into 學校 and 事務");
   await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");
   await pg.fill("#nMemo", "學校 不要忘東忘西！\n\n活動：\n12/30 17:40 牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題\n🟡學習\n ◦ 複習"); await wait(1200);

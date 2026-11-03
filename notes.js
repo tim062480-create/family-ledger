@@ -15,9 +15,12 @@ const nSort=(a,b)=>(!a.date)-(!b.date)||((a.date||"")+(a.time||"")).localeCompar
 const nMD=k=>`${+k.slice(5,7)}/${+k.slice(8,10)}`;
 const EN_SHORT=[[/Assignment\s*(\d+)/i,m=>"作業"+m[1]],[/Quiz Portal\s*(M\dQ\d)/i,m=>m[1]],[/Quiz\s*-\s*Module\s*(\d)/i,m=>"Quiz"+m[1]],[/Intragroup|Peer evaluation|Marking/i,()=>"互評"],[/Individual report/i,()=>"個人報告"],[/presentation/i,()=>"報告"],[/Proposal/i,()=>"計畫書"],[/Split into groups/i,()=>"分組"]];
 const nShort=t=>{let s=String(t||"");for(const [re,f] of EN_SHORT){const m=re.exec(s);if(m)return f(m)}const ps=s.split("・");if(ps.length>1)s=ps.find(x=>/作業|考|報告|截止|測驗/.test(x))||ps[0];s=s.replace(/^開/,"").replace(/[（(].*$/,"").trim()||s;return s.slice(0,4)};
-const PRI={r:"🔴",h:"🏠",g:"🟢",y:"🟡"},PRI_TXT={r:"現在要做",h:"家庭",g:"之後要做",y:"學習"},PRI_ORD={r:0,h:1,g:2,y:3};
-const PRI_OPTS=[["","不分類"],["r","🔴 現在要做"],["h","🏠 家庭"],["g","🟢 之後要做"],["y","🟡 學習"]];
-const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??4)-(PRI_ORD[b.pri]??4)||(a.ts||0)-(b.ts||0);
+// 待辦分類：📚 學校（考試、作業、報告、上課）、📌 事務（其他）。舊的 🔴🟢🟡🏠 只保留顯示用。
+const PRI={s:"📚",a:"📌",r:"🔴",h:"🏠",g:"🟢",y:"🟡"},PRI_TXT={s:"學校",a:"事務",r:"現在要做",h:"家庭",g:"之後要做",y:"學習"},PRI_ORD={s:0,a:1,r:2,h:3,g:4,y:5};
+const SCHOOL_KEY=/考|測驗|作業|功課|報告|課|作文|簡報|quiz|exam|homework|hw|assignment|report|presentation|proposal|專題|論文|讀書|複習/i;
+const autoCat=t=>SCHOOL_KEY.test(String(t||""))?"s":"a";
+const PRI_OPTS=[["","不分類"],["s","📚 學校"],["a","📌 事務"]];
+const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??9)-(PRI_ORD[b.pri]??9)||(a.ts||0)-(b.ts||0);
 const nRel=d=>d===0?"今天":d===1?"明天":d===2?"後天":`${d} 天後`;
 
 // 頁面簡稱：顯示在總日曆上，看得出是哪堂課；沒設定就用頁名前兩個字（英文最多 6 個字母）
@@ -233,14 +236,14 @@ function itemFields(it,pageSel){
     {key:"no",label:"備註（可不填）",value:it.note||"",full:true,placeholder:"例如：第 3 週、教室、範圍"},
     {key:"st",label:"顯示在總日曆",options:[["1","★ 顯示"],["0","不顯示"]],value:it.id?(it.star?"1":"0"):(autoStar(it.title)?"1":"0")},
     {key:"rm",label:"通知",options:RM_OPTS,value:nHasRm(it)?String(it.remind):""},
-    {key:"pr",label:"分類",options:PRI_OPTS,value:it.pri||"",full:true});
+    {key:"pr",label:"分類",options:PRI_OPTS.concat(it.pri&&!PRI_OPTS.some(o=>o[0]===it.pri)?[[it.pri,PRI[it.pri]+" "+PRI_TXT[it.pri]]]:[]),value:it.pri!==undefined&&it.pri!==null?it.pri:(it.date?"":autoCat(it.title)),full:true});
   return f;
 }
 function readItem(id){const rm=fv("rm"),pr=fv("pr");return{id,pri:pr||null,date:fv("d"),time:fv("tm"),title:fv("ti").slice(0,80),note:fv("no").slice(0,120),star:fv("st")!=="0",remind:rm===""?null:+rm}}
 function wireAutoStar(){
-  const ti=$("fs_ti"),st=$("fs_st");if(!ti||!st)return;let manual=false;
-  st.addEventListener("change",()=>{manual=true});
-  ti.addEventListener("input",()=>{if(!manual)st.value=autoStar(ti.value)?"1":"0"});
+  const ti=$("fs_ti"),st=$("fs_st"),pr=$("fs_pr"),d=$("fs_d");if(!ti||!st)return;let manual=false,manualP=false;
+  st.addEventListener("change",()=>{manual=true});if(pr)pr.addEventListener("change",()=>{manualP=true});
+  ti.addEventListener("input",()=>{if(!manual)st.value=autoStar(ti.value)?"1":"0";if(pr&&!manualP&&!(d&&d.value))pr.value=autoCat(ti.value)});
 }
 function editItem(p,it){
   if(!p)return;const isNew=!it;it=it||{};
@@ -274,8 +277,8 @@ function parseMemo(text){
     const line=raw.replace(/\s+$/,"");if(!line.trim())return;
     const b=MEMO_BUL.exec(line);
     if(b){if(!cur){cur={h:"",c:"",items:[]};secs.push(cur)}cur.items.push(b[1].trim());return}
-    const t=line.trim(),emo=/^(🔴|🟢|🟡|🏠|🟠|🔵|⚪|⭐)/.exec(t);
-    if(emo||/[：:]$/.test(t)){cur={h:t.replace(/^(🔴|🟢|🟡|🏠|🟠|🔵|⚪|⭐)\s*/,"").replace(/[：:]$/,""),c:emo?emo[1]:"",items:[]};secs.push(cur);return}
+    const t=line.trim(),emo=/^(🔴|🟢|🟡|🏠|📚|📌|🟠|🔵|⚪|⭐)/.exec(t);
+    if(emo||/[：:]$/.test(t)){cur={h:t.replace(/^(🔴|🟢|🟡|🏠|📚|📌|🟠|🔵|⚪|⭐)\s*/,"").replace(/[：:]$/,""),c:emo?emo[1]:"",items:[]};secs.push(cur);return}
     if(cur&&memoDate(t)){cur.items.push(t);return}
   });
   return secs.filter(s=>s.items.length);
@@ -303,7 +306,7 @@ function renderMemoSum(){
     if(f){a.textContent=f.date?"✓ 日曆":"✓ 待辦";a.title=`已在「${f.page}」`;a.onclick=()=>openPage(f.pid)}
     else{a.textContent="＋";a.setAttribute("aria-label",`把「${txt}」加到${date?"總日曆":"待辦"}`);
       const title=txt.replace(/\d{1,2}\s*[\/月]\s*\d{1,2}[日號]?\s*(（.）|\(.\))?/,"").replace(/\d{1,2}:\d{2}(\s*[-–~]\s*\d{1,2}:\d{2})?/,"").replace(/^\s*[前後]/,"").trim()||txt;
-      a.onclick=()=>newItemOn(date,{title,time:memoTime(txt),pri:sec&&sec.c==="🔴"?"r":null,note:date&&/前/.test(txt)?`${nMD(date)} 前`:""})}
+      a.onclick=()=>newItemOn(date,{title,time:memoTime(txt),pri:date?null:autoCat(title+" "+((sec&&sec.h)||"")),note:date&&/前/.test(txt)?`${nMD(date)} 前`:""})}
     r.append(dt,t,a);return r;
   };
   const dated=[];secs.forEach(s=>s.items.forEach(x=>{const d=memoDate(x);if(d&&nDays(d)>=0)dated.push({x,d,s})}));
