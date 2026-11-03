@@ -92,10 +92,13 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.check("#nSoon"); await wait(200);
   ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent))).includes("期中考"), "page has its own button");
   await pg.click("#nTodoAdd"); await pg.fill("#fs_ti", "領貨");
-  ok((await pg.inputValue("#fs_pr")) === "a", "non-school to-do defaults to 事務"); await pg.click("#fsSave"); await wait(400);
+  ok((await pg.inputValue("#fs_pr")) === "a", "non-school to-do defaults to 雜事"); await pg.click("#fsSave"); await wait(400);
   await pg.click("#nTodoAdd"); await pg.fill("#fs_ti", "AI 作業");
-  ok((await pg.inputValue("#fs_pr")) === "s", "homework to-do defaults to 學校"); await pg.click("#fsSave"); await wait(400);
-  ok((await pg.innerText("#nTodoList")).includes("📚 學校") && (await pg.innerText("#nTodoList")).includes("📌 事務"), "to-dos grouped into 學校 and 事務");
+  ok((await pg.inputValue("#fs_pr")) === "s", "homework to-do defaults to 功課"); await pg.click("#fsSave"); await wait(400);
+  ok((await pg.innerText("#nTodoList")).includes("📚 功課") && (await pg.innerText("#nTodoList")).includes("📌 雜事"), "to-dos grouped into 雜事 and 功課");
+  await pg.click("#nTodoTabs button:has-text('功課')"); await wait(300);
+  ok((await pg.innerText("#nTodoList")).includes("AI 作業") && !(await pg.innerText("#nTodoList")).includes("領貨"), "功課 tab shows only homework");
+  await pg.click("#nTodoTabs button:has-text('全部')"); await wait(300);
   await pg.locator("#nRemind .nit", { hasText: "普化期中考" }).locator(".ntodo").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("普化期中考"), "dated item can be put into 待辦 from the calendar lists: " + (await pg.innerText("#nRemind")).replace(/\n/g," ") + " || " + (await pg.innerText("#nTodoList")).replace(/\n/g," "));
   await pg.click("#nRemind .rseg button:has-text('這個月')"); await wait(300);

@@ -457,3 +457,5 @@ body.signedout #tabbar{display:none!important}
 .msr.done .mt{text-decoration:line-through;color:var(--muted)}
 .tdck{flex:none;display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--muted);cursor:pointer;padding:4px 2px}
 .tdck input{width:20px;height:20px;margin:0;accent-color:var(--good)}
+.seg.tseg{margin:2px 0 6px}
+.seg.tseg button{padding:5px 14px;font-size:13px}

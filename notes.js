@@ -16,10 +16,14 @@ const nMD=k=>`${+k.slice(5,7)}/${+k.slice(8,10)}`;
 const EN_SHORT=[[/Assignment\s*(\d+)/i,m=>"作業"+m[1]],[/Quiz Portal\s*(M\dQ\d)/i,m=>m[1]],[/Quiz\s*-\s*Module\s*(\d)/i,m=>"Quiz"+m[1]],[/Intragroup|Peer evaluation|Marking/i,()=>"互評"],[/Individual report/i,()=>"個人報告"],[/presentation/i,()=>"報告"],[/Proposal/i,()=>"計畫書"],[/Split into groups/i,()=>"分組"]];
 const nShort=t=>{let s=String(t||"");for(const [re,f] of EN_SHORT){const m=re.exec(s);if(m)return f(m)}const ps=s.split("・");if(ps.length>1)s=ps.find(x=>/作業|考|報告|截止|測驗/.test(x))||ps[0];s=s.replace(/^開/,"").replace(/[（(].*$/,"").trim()||s;return s.slice(0,4)};
 // 待辦分類：📚 學校（考試、作業、報告、上課）、📌 事務（其他）。舊的 🔴🟢🟡🏠 只保留顯示用。
-const PRI={s:"📚",a:"📌",r:"🔴",h:"🏠",g:"🟢",y:"🟡"},PRI_TXT={s:"學校",a:"事務",r:"現在要做",h:"家庭",g:"之後要做",y:"學習"},PRI_ORD={s:0,a:1,r:2,h:3,g:4,y:5};
+const PRI={s:"📚",a:"📌",h:"🏠",r:"🔴",g:"🟢",y:"🟡"},PRI_TXT={s:"功課",a:"雜事",h:"家",r:"現在要做",g:"之後要做",y:"學習"},PRI_ORD={a:0,s:1,h:2,r:3,g:4,y:5};
 const SCHOOL_KEY=/考|測驗|作業|功課|報告|課|作文|簡報|quiz|exam|homework|hw|assignment|report|presentation|proposal|專題|主題|project|論文|讀書|複習/i;
-const autoCat=t=>SCHOOL_KEY.test(String(t||""))?"s":"a";
-const PRI_OPTS=[["","不分類"],["s","📚 學校"],["a","📌 事務"]];
+const HOME_KEY=/家|爸|媽|姐|姊|哥|弟|妹|阿公|阿嬤|爺|奶|牙|看醫生|看診|家人|回家/;
+const autoCat=t=>{t=String(t||"");return SCHOOL_KEY.test(t)?"s":HOME_KEY.test(t)?"h":"a"};
+const TODO_TABS=[["all","全部"],["a","雜事"],["s","功課"],["h","家"]];
+const todoTab=()=>{const v=curPrefs&&curPrefs.noteTodoTab;return TODO_TABS.some(x=>x[0]===v)?v:"all"};
+function setTodoTab(k){curPrefs={...(curPrefs||{}),noteTodoTab:k};if(prefsRef)prefsRef.set({noteTodoTab:k},{merge:true}).catch(()=>{});renderTodos()}
+const PRI_OPTS=[["","不分類"],["a","📌 雜事"],["s","📚 功課"],["h","🏠 家"]];
 const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??9)-(PRI_ORD[b.pri]??9)||(a.date||"9999").localeCompare(b.date||"9999")||(a.ts||0)-(b.ts||0);
 const nRel=d=>d===0?"今天":d===1?"明天":d===2?"後天":`${d} 天後`;
 
@@ -133,10 +137,15 @@ async function toggleMany(pid,ids,v,btn){
 function renderTodos(){
   const box=$("nTodoList");box.innerHTML="";
   const grp=x=>x.pri&&PRI[x.pri]?x.pri:autoCat(x.title);
-  const all=noteItems().filter(isTodo).map(x=>({...x,pri:grp(x)})).sort(todoSort),open=all.filter(x=>!x.done);
-  $("nTodoCount").textContent=all.length?`還有 ${open.length} 件沒做`:"";
-  if(!all.length){box.appendChild(mkEl("p","sub","要做的事放這裡，例如「領貨」「準備面試」；有日期的行程按「＋待辦」也會出現在這裡。做完就打勾。"));return}
-  let last=null;all.forEach(it=>{const g=it.done?"done":(it.pri||"");if(g!==last){last=g;box.appendChild(mkEl("div","nmh",g==="done"?"✓ 做完了":(PRI[g]?PRI[g]+" "+PRI_TXT[g]:"其他")))}box.appendChild(itemRow(it,true,true))});
+  const every=noteItems().filter(isTodo).map(x=>({...x,pri:grp(x)}));
+  // 分頁：全部／雜事／功課／家
+  const tab=todoTab(),seg=$("nTodoTabs");seg.innerHTML="";
+  TODO_TABS.forEach(([k,t])=>{const c=k==="all"?every.filter(x=>!x.done).length:every.filter(x=>x.pri===k&&!x.done).length;
+    const b=mkEl("button",k===tab?"on":"",t+(c?` ${c}`:""));b.type="button";b.setAttribute("aria-pressed",k===tab?"true":"false");b.onclick=()=>setTodoTab(k);seg.appendChild(b)});
+  const all=(tab==="all"?every:every.filter(x=>x.pri===tab)).sort(todoSort),open=all.filter(x=>!x.done);
+  $("nTodoCount").textContent=every.length?`還有 ${every.filter(x=>!x.done).length} 件沒做`:"";
+  if(!all.length){box.appendChild(mkEl("p","sub",tab==="all"?"要做的事放這裡，例如「領貨」「準備面試」；有日期的行程按「＋待辦」也會出現在這裡。做完就打勾。":`「${PRI_TXT[tab]}」沒有要做的事 🎉`));return}
+  let last=null;all.forEach(it=>{const g=it.done?"done":(it.pri||"");if(g!==last){last=g;if(tab!=="all"&&g!=="done")return box.appendChild(itemRow(it,true,true));box.appendChild(mkEl("div","nmh",g==="done"?"✓ 做完了":(PRI[g]?PRI[g]+" "+PRI_TXT[g]:"其他")))}box.appendChild(itemRow(it,true,true))});
 }
 function renderTabs(p){
   const box=$("nTabs");box.innerHTML="";
@@ -431,7 +440,7 @@ function initNotes(){
   $("tabNote").onclick=()=>{flushText();goNotes()};
   $("npEdit").onclick=editPage;
   $("npModeT").onclick=()=>setPageMode("table");$("npModeL").onclick=()=>setPageMode("list");
-  $("nTodoAdd").onclick=()=>newItemOn("",{todo:true});
+  $("nTodoAdd").onclick=()=>newItemOn("",{todo:true,...(todoTab()!=="all"?{pri:todoTab()}:{})});
   $("nMemo").oninput=()=>{$("nMemoMsg").textContent="";clearTimeout(renderMemoSum._t);renderMemoSum._t=setTimeout(renderMemoSum,300);clearTimeout(memoTimer);memoTimer=setTimeout(flushMemo,800)};
   $("nMemo").onblur=()=>{if(memoTimer){clearTimeout(memoTimer);flushMemo()}};
   $("nSoon").onchange=e=>{const v=e.target.checked;curPrefs={...(curPrefs||{}),noteSoon:v};if(prefsRef)prefsRef.set({noteSoon:v},{merge:true}).catch(()=>{});render()};
