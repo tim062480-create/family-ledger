@@ -17,7 +17,7 @@ const EN_SHORT=[[/Assignment\s*(\d+)/i,m=>"作業"+m[1]],[/Quiz Portal\s*(M\dQ\d
 const nShort=t=>{let s=String(t||"");for(const [re,f] of EN_SHORT){const m=re.exec(s);if(m)return f(m)}const ps=s.split("・");if(ps.length>1)s=ps.find(x=>/作業|考|報告|截止|測驗/.test(x))||ps[0];s=s.replace(/^開/,"").replace(/[（(].*$/,"").trim()||s;return s.slice(0,4)};
 // 待辦分類：📚 學校（考試、作業、報告、上課）、📌 事務（其他）。舊的 🔴🟢🟡🏠 只保留顯示用。
 const PRI={s:"📚",a:"📌",r:"🔴",h:"🏠",g:"🟢",y:"🟡"},PRI_TXT={s:"學校",a:"事務",r:"現在要做",h:"家庭",g:"之後要做",y:"學習"},PRI_ORD={s:0,a:1,r:2,h:3,g:4,y:5};
-const SCHOOL_KEY=/考|測驗|作業|功課|報告|課|作文|簡報|quiz|exam|homework|hw|assignment|report|presentation|proposal|專題|論文|讀書|複習/i;
+const SCHOOL_KEY=/考|測驗|作業|功課|報告|課|作文|簡報|quiz|exam|homework|hw|assignment|report|presentation|proposal|專題|主題|project|論文|讀書|複習/i;
 const autoCat=t=>SCHOOL_KEY.test(String(t||""))?"s":"a";
 const PRI_OPTS=[["","不分類"],["s","📚 學校"],["a","📌 事務"]];
 const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??9)-(PRI_ORD[b.pri]??9)||(a.ts||0)-(b.ts||0);
@@ -70,7 +70,7 @@ function itemRow(it,showPage){
   const t=mkEl("span","nt"),tt=mkEl("span","ttl");
   if(showPage&&it.ptag)tt.appendChild(mkEl("span","ptag",it.ptag));
   tt.appendChild(document.createTextNode((!und&&PRI[it.pri]?PRI[it.pri]+" ":"")+(it.title||"（沒有標題）")));t.appendChild(tt);
-  const sub=[showPage&&!it.ptag?it.page:"",it.note||""].filter(Boolean).join("・");if(sub)t.appendChild(mkEl("small",null,sub));
+  const sub=(it.note||"");if(sub)t.appendChild(mkEl("small",null,sub));
   const ic=mkEl("span","nic");
   if(showPage&&!und&&d>=0){ic.appendChild(mkEl("span","when",nRel(d)))}
   if(nHasRm(it)){const s=mkEl("span","bl","🔔");s.title="提醒："+RM_TXT[+it.remind];ic.appendChild(s)}
