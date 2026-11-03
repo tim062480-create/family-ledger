@@ -81,6 +81,12 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#nRemind")).includes("普化期中考"), "explicit 通知 still shows with the 3-day reminder off");
   await pg.check("#nSoon"); await wait(200);
   ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent))).includes("期中考"), "page has its own button");
+  await pg.click("#nTodoAdd"); await pg.fill("#fs_d", ""); await pg.fill("#fs_ti", "領貨"); await pg.selectOption("#fs_pr", "r"); await pg.click("#fsSave"); await wait(400);
+  ok((await pg.innerText("#nTodoList")).includes("領貨") && (await pg.innerText("#nTodoList")).includes("現在要做"), "to-do without a date goes to 待辦 with its category");
+  await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
+  ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");
+  await pg.fill("#nMemo", "學校 不要忘東忘西！"); await wait(1200);
+  ok((await pg.evaluate(() => __store["users/u1/prefs/memo"] && __store["users/u1/prefs/memo"].text)) === "學校 不要忘東忘西！", "隨手記 autosaves");
   await pg.click("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) >= 1, "main 日曆 shows ★ items too");
   await pg.click("#tabRec"); await wait(300);

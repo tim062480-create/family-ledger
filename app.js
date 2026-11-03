@@ -1624,7 +1624,7 @@ async function deleteAccount(){
   await wipeLedger(DB.doc(`users/${myId}/ledgers/main`)).catch(()=>{});
   {const nc=DB.collection(`users/${myId}/notes`),sn=await nc.get().catch(()=>({docs:[]}));
    for(const d of sn.docs||[]){const ic=nc.doc(d.id).collection("imgs"),si=await ic.get().catch(()=>({docs:[]}));for(const x of si.docs||[])await ic.doc(x.id).delete().catch(()=>{});await nc.doc(d.id).delete().catch(()=>{})}}
-  for(const p of["prefs/bdays","prefs/ui"])await DB.doc(`users/${myId}/${p}`).delete().catch(()=>{});
+  for(const p of["prefs/bdays","prefs/ui","prefs/memo"])await DB.doc(`users/${myId}/${p}`).delete().catch(()=>{});
   await DB.doc(`users/${myId}`).delete().catch(()=>{});
   try{await me.delete()}catch(e){if(e&&e.code==="auth/requires-recent-login"){await me.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());await me.delete()}else throw e}
 }

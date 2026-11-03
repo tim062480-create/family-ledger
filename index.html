@@ -23,7 +23,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261103f">
+<link rel="stylesheet" href="style.css?v=20261103g">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -225,6 +225,8 @@
     <div class="callegend"><span><i class="lg-plan"></i>★ 行程</span><span><i class="lg-dot"></i>其他行程</span><button type="button" class="ghost sm" id="ncToday">回到今天</button></div>
   </section>
   <section class="card" id="ncDay"></section>
+  <section class="card" id="nTodo"><div class="lhead"><h2>待辦 <small class="nct" id="nTodoCount"></small></h2><button type="button" class="ghost sm" id="nTodoAdd">＋ 新增待辦</button></div><div id="nTodoList"></div></section>
+  <section class="card"><h2>隨手記</h2><textarea id="nMemo" rows="8" maxlength="20000" placeholder="想到什麼就寫下來，會自動儲存" aria-label="隨手記"></textarea><p class="sub" id="nMemoMsg" style="margin:4px 0 0"></p></section>
   <section class="card">
     <h2>提醒</h2>
     <label class="nsw"><input type="checkbox" id="nSoon"> <span>提醒我今天、明天、後天的事<small>★ 的行程到了這三天，會出現在記帳首頁和記事本最上面</small></span></label>
@@ -394,7 +396,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
-<script src="notes.js?v=20261103f"></script>
-<script src="app.js?v=20261103f"></script>
+<script src="notes.js?v=20261103g"></script>
+<script src="app.js?v=20261103g"></script>
 </body>
 </html>

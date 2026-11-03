@@ -383,3 +383,12 @@ body.signedout #tabbar{display:none!important}
 
 .hd{margin-left:auto}
 #appTitle[hidden]{display:none}
+
+.ncheck{flex:none;width:30px;height:30px;margin:0 7px;padding:0;border:2px solid var(--line);border-radius:9px;background:var(--card);color:var(--onaccent);font-size:17px;font-weight:700;line-height:1}
+.ncheck.on{background:var(--good);border-color:var(--good)}
+.nit.todo .nd{background:none;font-size:13px}
+.nit.todo .nd b{font-size:18px}
+.nit.done .ttl{text-decoration:line-through;color:var(--muted)}
+.nit.done{opacity:.6}
+.nct{font-size:12.5px;font-weight:400;color:var(--muted);margin-left:4px}
+#nMemo{min-height:180px;line-height:1.75}
