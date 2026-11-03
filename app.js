@@ -1839,6 +1839,11 @@ setupEvents();setupVoice();
 $("add").onsubmit=async ev=>{ev.preventDefault();const f=ev.target;if(!col)return;
   try{await col.add({...byFields(),date:f.date.value,month:f.date.value.slice(0,7),category:f.category.value,amount:+f.amount.value,note:f.note.value.trim(),remark:f.remark.value.trim()});f.amount.value="";f.note.value="";f.remark.value=""}catch(e){}
 };
+// 有新版本時跳出提醒：打開網站、回到網站時，看看伺服器上的 index.html 是不是比較新
+{const mine=((document.querySelector('script[src*="app.js"]')||{}).src||"").match(/v=([\w-]+)/);let shown=false;
+ const check=async()=>{if(shown||!mine)return;try{const r=await fetch("index.html?_="+Date.now(),{cache:"no-store"});const t=await r.text();const m=t.match(/app\.js\?v=([\w-]+)/);
+   if(m&&m[1]!==mine[1]){shown=true;const b=document.createElement("div");b.id="updBar";b.setAttribute("role","status");const s=document.createElement("span");s.textContent="✨ 家庭記帳本有新版本";const btn=document.createElement("button");btn.type="button";btn.textContent="更新";btn.onclick=()=>{location.replace(SITE_URL+"?u="+Date.now())};b.append(s,btn);document.body.appendChild(b)}}catch(e){}};
+ setTimeout(check,4000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")check()});setInterval(check,30*60e3)}
 // 下面那排分頁：捲到最上面才出現，往下看內容時藏起來，不擋視線
 {let tk=0;const tb=$("tabbar"),upd=()=>{tk=0;tb.classList.toggle("away",window.scrollY>60)};
  window.addEventListener("scroll",()=>{if(!tk)tk=requestAnimationFrame(upd)},{passive:true});upd()}
