@@ -52,6 +52,7 @@ function renderWho(mode){
   const pend=(household&&household.pending)||[];
   if(!whoEdit&&pend.length){const b=mkEl("button","whoAll","📨 一鍵邀請");b.type="button";b.onclick=inviteAll;c.appendChild(b)}
   if(!locked&&!whoEdit){const h=mkEl("button","ghost sm whoLock","不用再新增了");h.type="button";h.onclick=lockWho;c.appendChild(h)}
+  if(!whoEdit){const sw=mkEl("button","ghost sm whoSw","🔄 換別的 Google 帳號");sw.type="button";sw.id="whoSwitch";sw.onclick=()=>{try{sessionStorage.removeItem("fl_picked")}catch(e){}login()};c.appendChild(sw)}
 }
 // 一個連結邀請全家：傳到 LINE 群組，每個人點開後選「我是哪一位」
 const lineShareUrl=text=>"https://line.me/R/share?text="+encodeURIComponent(text);

@@ -570,3 +570,5 @@ body.signedout #tabbar{display:none!important}
 .guide summary::after{content:"▾";float:right;color:var(--muted)}
 .guide details[open] summary::after{content:"▴"}
 .guide p{margin:8px 0 0;color:var(--muted);line-height:1.7;font-size:15px}
+
+#who .whoSw{display:block;margin:12px auto 0;font-size:14px}
