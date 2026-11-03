@@ -1706,7 +1706,7 @@ async function prepareJoin(){
   try{
     const sn=await DB.doc(`households/${h}/invites/${t}`).get();
     if(!sn.exists)joinInfo.state="bad";
-    else{const d=sn.data(),exp=d.expiresAt&&d.expiresAt.toMillis?d.expiresAt.toMillis():0;joinInfo={h,t,state:exp<Date.now()?"expired":"ready",hname:d.hname||"家人的家",byName:d.byName||"家人",pid:d.pid||"",pname:d.pname||""}}
+    else{const d=sn.data(),exp=d.expiresAt&&d.expiresAt.toMillis?d.expiresAt.toMillis():0;joinInfo={h,t,state:exp<Date.now()?"expired":"ready",hname:d.hname||"家人的家",byName:d.byName||"家人",pid:d.pid||"",pname:d.pname||"",pend:Array.isArray(d.pend)?d.pend:[]}}
   }catch(e){joinInfo.state="bad"}
   render();
 }
@@ -1718,14 +1718,22 @@ function renderJoinCard(){
     const b=mkEl("button","","先進入我的帳");b.type="button";b.onclick=()=>{joinDone=true;joinInfo=null;history.replaceState(null,"",SITE_URL);startLedgers()};c.appendChild(b);return;
   }
   c.append(mkEl("h2","",`${j.byName}邀請你加入「${j.hname}」`),mkEl("p","sub","加入以後可以一起記「全家的帳」，也能選擇要不要分享自己的帳給家人看。你自己的帳只有你看得到。"));
-  const l=mkEl("label","jl","在這個家你叫什麼？");const inp=document.createElement("input");inp.value=j.pname||(profile&&profile.name)||"";inp.placeholder="例如 媽媽、姐姐、弟弟";inp.maxLength=20;l.appendChild(inp);c.appendChild(l);
+  const l=mkEl("label","jl","在這個家你叫什麼？");const inp=document.createElement("input");inp.value=j.pname||(profile&&profile.name)||"";inp.placeholder="例如 媽媽、姐姐、弟弟";inp.maxLength=20;l.appendChild(inp);
+  // 全家一起邀請的連結：先選「我是哪一位」
+  if(!j.pid&&j.pend&&j.pend.length){
+    c.appendChild(mkEl("div","jwho","你是哪一位？"));const g=mkEl("div","jtiles");
+    const mk=(p,label)=>{const b=mkEl("button","tile jt"+(j.pick===(p?p.id:"")?" on":""));b.type="button";b.appendChild(p?faceEl(p,p.id):addFace());b.appendChild(mkEl("span","nm",label));
+      b.onclick=()=>{j.pick=p?p.id:"";j.pid=p?p.id:"";inp.value=p?p.name:((profile&&profile.name)||"");g.querySelectorAll(".jt").forEach(x=>x.classList.toggle("on",x===b));j.pid="";j.chosen=p?p.id:""};g.appendChild(b)};
+    j.pend.forEach(p=>mk(p,p.name));mk(null,"都不是");c.appendChild(g);
+  }
+  c.appendChild(l);
   const r=mkEl("div","bt"),ok=mkEl("button","","加入"),no=mkEl("button","ghost","先不要");ok.type=no.type="button";const msg=mkEl("small","m");
   ok.onclick=async()=>{const n=inp.value.trim();if(!n){msg.textContent="請填一個稱呼";return}ok.disabled=true;try{await doJoin(n)}catch(e){msg.textContent="加入失敗，連結可能過期了，請家人再傳一次";ok.disabled=false}};
   no.onclick=()=>{joinDone=true;joinInfo=null;history.replaceState(null,"",SITE_URL);startLedgers()};
   r.append(ok,no,msg);c.appendChild(r);
 }
 async function doJoin(name){
-  const {h,t,hname,pid}=joinInfo;
+  const {h,t,hname}=joinInfo,pid=joinInfo.pid||joinInfo.chosen||"";
   await DB.doc(`households/${h}/members/${myId}`).set({name,photo:(me&&me.photoURL)||"",avatar:(profile&&profile.avatar)||"",avc:Number.isInteger(profile&&profile.avc)?profile.avc:avcOf(null,myId),invite:t,joinedAt:Date.now()});
   await claimPending(h,pid);
   await saveProfile({hids:[...new Set([...(profile.hids||[]),h])],cur:h});

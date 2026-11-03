@@ -248,6 +248,24 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300);
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
   await loginAs("u1", "測試弟弟");
+  // 7c. 一鍵邀請全家：一個連結，加入時選「我是哪一位」
+  await pg.click("#acctBtn"); await wait(300);
+  await pg.click("#whoBtns .tile:has-text('新增')"); await pg.fill("#fs_n", "爸爸"); await pg.click("#fsSave"); await wait(600);
+  ok(await pg.isVisible("#who .whoAll"), "one-tap family invite button shows when someone is 待邀請");
+  await pg.click("#who .whoAll"); await wait(600);
+  const grpInv = await pg.evaluate(() => { const k = Object.keys(__store).find(k => /\/invites\//.test(k) && __store[k].group); return k ? k.split("/")[1] + "." + k.split("/")[3] : ""; });
+  ok(!!grpInv && (await pg.innerText("#fsheet")).includes("傳到 LINE"), "group invite link is ready to send to LINE");
+  await pg.click("#fsCancel"); await pg.click("#whoBtns .tile >> nth=0"); await wait(200);
+  await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
+  await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u4", name: "測試爸爸" })));
+  await pg.goto(BASE + "?join=" + grpInv); await wait(400); await pg.click(".loginBtn >> nth=0"); await wait(700);
+  ok((await pg.innerText("#joinCard")).includes("你是哪一位"), "group invite asks who you are");
+  await pg.click("#joinCard .jt:has-text('爸爸')"); await pg.click("#joinCard button:has-text('加入')"); await wait(800);
+  ok(await pg.evaluate(() => { const k = Object.keys(__store).find(k => /^households\/[^/]+$/.test(k)); return !(__store[k].pending || []).some(p => p.name === "爸爸") && __store[k + "/members/u4"].name === "爸爸"; }), "picking your tile takes it over");
+  for (let i = 0; i < 3; i++) { await pg.click("#wizard button:has-text('下一題')"); await wait(80); }
+  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300);
+  await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
+  await loginAs("u1", "測試弟弟");
   await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
   ok((await pg.innerText("#famCard")).includes("媽媽"), "owner sees the new member");
 

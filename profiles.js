@@ -48,6 +48,22 @@ function renderWho(mode){
   ((household&&household.pending)||[]).forEach(p=>tile(faceEl(p,p.id),p.name||"家人",whoEdit?"修改":"待邀請",()=>{if(whoEdit)editPending(p);else invitePending(p)},`${p.name||"家人"}，待邀請`));
   if(!whoEdit)tile(addFace(),"新增","",addPending,"新增家人");
   tile(editFace(),whoEdit?"完成":"編輯","",()=>{whoEdit=!whoEdit;render()});
+  const pend=(household&&household.pending)||[];
+  if(!whoEdit&&pend.length){const b=mkEl("button","whoAll",`📨 一鍵邀請全家（${pend.map(p=>p.name).join("、")}）`);b.type="button";b.onclick=inviteAll;c.appendChild(b)}
+}
+// 一個連結邀請全家：傳到 LINE 群組，每個人點開後選「我是哪一位」
+const lineShareUrl=text=>"https://line.me/R/share?text="+encodeURIComponent(text);
+async function inviteAll(){
+  const pend=((household&&household.pending)||[]).map(p=>({id:p.id,name:p.name,avatar:p.avatar||"",avc:p.avc}));
+  let inv;try{inv=await createInvite({group:true,pend})}catch(e){toast("產生邀請失敗，請稍後再試");return}
+  const text=`${myName()}邀請大家加入「${hhName()}」的家庭記帳本 🏠\n點開連結、用自己的 Google 帳號登入，選「我是誰」就好：\n${inv.url}`;
+  openForm({title:"邀請全家",sub:`連結 7 天內有效，${pend.map(p=>p.name).join("、")}都可以用同一個連結加入。`,okLabel:"傳到 LINE",
+    fields:[{key:"lnk",label:"邀請連結",full:true,custom:box=>{
+      const u=mkEl("input","invurl");u.readOnly=true;u.value=inv.url;u.onclick=()=>u.select();
+      const r=mkEl("div","bt"),cp=mkEl("button","ghost sm","複製邀請訊息");cp.type="button";cp.onclick=async()=>{toast(await copyText(text)?"已複製，貼到家人群組":"請長按連結自己複製")};r.appendChild(cp);
+      if(navigator.share){const sh=mkEl("button","ghost sm","其他方式分享…");sh.type="button";sh.onclick=()=>navigator.share({title:"家庭記帳本",text}).catch(()=>{});r.appendChild(sh)}
+      box.append(u,r)}}],
+    onSave:()=>{window.location.href=lineShareUrl(text)}});
 }
 function addFace(){const a=mkEl("span","av add");a.textContent="＋";return a}
 function editFace(){const a=mkEl("span","av add");a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:40%;height:40%"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';return a}
