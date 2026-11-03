@@ -358,7 +358,9 @@ function renderMemoSum(){
   const seen=new Set(),rows=[];
   noteItems().forEach(it=>{if(inR(it.date)&&(it.star||it.todo||nHasRm(it))){seen.add(it.pid+"/"+it.id);rows.push({it,date:it.date,time:it.time||""})}});
   parseMemo($("nMemo").value||memoText).forEach(sec=>sec.items.forEach(txt=>{
-    const date=memoDate(txt);if(!inR(date))return;const f=memoFind(txt,sec);
+    const date=memoDate(txt);if(!inR(date))return;const tm=memoTime(txt);
+    // 同一天同一個時間的，就當作同一件事（例如你把「活動」改名成別的）
+    const f=memoFind(txt,sec)||(tm?noteItems().find(x=>x.date===date&&x.time===tm):null);
     if(f){if(f.date&&inR(f.date)&&!seen.has(f.pid+"/"+f.id)){seen.add(f.pid+"/"+f.id);rows.push({it:f,date:f.date,time:f.time||""})}return}
     rows.push({memo:true,txt,date,time:memoTime(txt),sec});
   }));
@@ -375,7 +377,7 @@ function renderMemoSum(){
     const it=o.it,d=nDays(o.date),r=mkEl("div","msr"+(d<=2?" soon":"")+(it&&it.done?" done":""));
     const dt=mkEl("span","md");dt.append(mkEl("b",null,nMD(o.date)),mkEl("small",null,d<=2?nRel(d):`週${nDow(o.date)}`));
     const tx=mkEl("button","mt");tx.type="button";
-    if(it){if(it.ptag)tx.appendChild(mkEl("span","ptag",it.ptag));tx.appendChild(document.createTextNode((it.star?"★ ":"")+it.title));const sub=[it.time,it.note].filter(Boolean).join("・");if(sub)tx.appendChild(mkEl("small",null,sub));
+    if(it){if(it.ptag)tx.appendChild(mkEl("span","ptag",it.ptag));tx.appendChild(document.createTextNode((it.star?"★ ":"")+it.title));const sub=[it.time&&!(it.note||"").includes(it.time)?it.time:"",it.note].filter(Boolean).join("・");if(sub)tx.appendChild(mkEl("small",null,sub));
       tx.onclick=()=>{const p=notes.find(x=>x.id===it.pid);if(p)editItem(p,p.items.find(x=>x.id===it.id))}}
     else{tx.appendChild(document.createTextNode(memoTitle(o.txt)));tx.appendChild(mkEl("small",null,"隨手記"+(o.sec&&o.sec.h?"・"+(o.sec.c?o.sec.c+" ":"")+o.sec.h:"")+(o.time?"・"+o.time:"")));tx.onclick=()=>{const ta=$("nMemo");ta.focus();ta.scrollIntoView({block:"center"})}}
     const lb=mkEl("label","tdck"),cb=document.createElement("input");cb.type="checkbox";cb.checked=!!(it&&it.todo);
