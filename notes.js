@@ -13,7 +13,7 @@ const nDays=k=>Math.round((new Date(k+"T00:00:00Z")-new Date(today()+"T00:00:00Z
 const nHasRm=it=>it.remind!==null&&it.remind!==undefined&&it.remind!=="";
 const nSort=(a,b)=>((a.date||"")+(a.time||"")).localeCompare((b.date||"")+(b.time||""));
 const nMD=k=>`${+k.slice(5,7)}/${+k.slice(8,10)}`;
-const nShort=t=>(String(t||"").replace(/[（(].*$/,"").trim()||String(t||"")).slice(0,4);
+const nShort=t=>{let s=String(t||"");const ps=s.split("・");if(ps.length>1)s=ps.find(x=>/作業|考|報告|截止|測驗/.test(x))||ps[0];s=s.replace(/^開/,"").replace(/[（(].*$/,"").trim()||s;return s.slice(0,4)};
 const nRel=d=>d===0?"今天":d===1?"明天":d===2?"後天":`${d} 天後`;
 
 function noteItems(){const out=[];notes.forEach(p=>(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名"})));return out.sort(nSort)}
