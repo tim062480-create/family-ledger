@@ -131,8 +131,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.fill("#nMemo", `學校 不要忘東忘西！\n\n活動：\n${md5} 17:40 看牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題`); await wait(1200);
   const ms = await pg.innerText("#nMemoSum");
   ok(ms.includes("未來一個月") && ms.includes("看牙齒") && ms.includes("普化期中考") && !ms.includes("領貨"), "未來一個月 lists dated memo lines and calendar items (incl. 待辦), not undated ones");
-  await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".tdck input").check(); await wait(600);
-  ok((await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".tdck input").isChecked()), "to-do items stay in 未來一個月, ticked");
+  await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".ntodo").click(); await wait(600);
+  ok((await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".ntodo").innerText()) === "已在待辦", "to-do items stay in 未來一個月, ticked");
   await toTodo();
   ok((await pg.innerText("#nTodoList")).includes("看牙齒"), "checking a memo line puts it into 待辦");
   await pg.click("#npAdd"); await pg.fill("#fs_t", "行事曆"); await pg.click("#fsSave"); await wait(500);
