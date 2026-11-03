@@ -40,12 +40,14 @@ function aiPrompt(){
 
 接下來我要給你的資料：`;
 }
-function aiCopyOpen(url){
+// 先按「複製說明」，複製好了才出現三個 AI 讓你選
+function aiCopy(){
   const p=aiPrompt();
-  try{navigator.clipboard&&navigator.clipboard.writeText(p).catch(()=>{})}catch(e){}
-  if(url)window.open(url,"_blank","noopener");
-  $("aiMsg1").textContent="已複製說明 ✅ 到 AI 的對話框「貼上」，再接著輸入或上傳你想加的資料。";
+  try{navigator.clipboard&&navigator.clipboard.writeText(p).catch(()=>{$("aiPromptBox").hidden=false;$("aiPromptBox").value=p})}catch(e){}
   if(!navigator.clipboard){$("aiPromptBox").hidden=false;$("aiPromptBox").value=p}
+  $("aiCopy").textContent="✅ 已複製，再按一次可以重新複製";
+  $("aiMsg1").textContent="選一個 AI 打開，在對話框「貼上」，再接著輸入或上傳你想加的資料。";
+  $("aiApps").hidden=false;
 }
 function aiParse(raw){
   let s=String(raw||"").trim();if(!s)throw new Error("請先貼上 AI 的回覆");
@@ -103,11 +105,11 @@ function renderAiPlan(){
   no.onclick=()=>{aiPlan=null;renderAiPlan()};bt.append(go,no);box.appendChild(bt);
 }
 function renderAi(){
-  const g=$("aiApps");if(!g.firstChild){AI_APPS.forEach(([n,u])=>{const b=mkEl("button","aia",n);b.type="button";b.onclick=()=>aiCopyOpen(u);g.appendChild(b)});
-    const c=mkEl("button","ghost aia","只複製說明");c.type="button";c.onclick=()=>aiCopyOpen("");g.appendChild(c)}
+  const g=$("aiApps");if(!g.firstChild){AI_APPS.forEach(([n,u])=>{const b=mkEl("button","aia",n);b.type="button";b.onclick=()=>window.open(u,"_blank","noopener");g.appendChild(b)})}
   renderAiPlan();
 }
 function initAi(){
+  $("aiCopy").onclick=aiCopy;
   $("tabAi").onclick=()=>{view="ai";render();window.scrollTo(0,0)};
   $("aiRead").onclick=()=>{$("aiMsg2").textContent="";try{aiPlan=aiPlanOf(aiParse($("aiIn").value));renderAiPlan();$("aiPlan").scrollIntoView({behavior:"smooth",block:"start"})}catch(e){aiPlan=null;renderAiPlan();$("aiMsg2").textContent=e.message}};
   $("aiPaste").onclick=async()=>{try{const t=await navigator.clipboard.readText();if(t){$("aiIn").value=t;$("aiRead").click()}}catch(e){$("aiMsg2").textContent="沒辦法自動貼上，請長按輸入框手動貼上"}};
