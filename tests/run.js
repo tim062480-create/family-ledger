@@ -76,9 +76,9 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.evaluate(() => Object.entries(__store).find(([k]) => /^users\/u1\/notes\/[^/]+$/.test(k))[1].text)) === "考試範圍：第 1-5 章", "notes text autosaves");
   await pg.click("#nTabCal"); await wait(300);
   ok((await pg.innerText("#nRemind")).includes("普化期中考") && !(await pg.innerText("#nRemind")).includes("還書"), "reminder card shows ★ / 通知 items in the next 3 days only");
-  const lbl = await pg.$$eval("#ncGrid .l.plan", ls => ls.map(l => l.textContent));
+  const lbl = await pg.$$eval("#ncGrid .pli", ls => ls.map(l => l.lastChild.textContent));
   ok(lbl.some(x => x.startsWith("普化")) && !lbl.some(x => x.includes("還書")), "only ★ items label the calendar: " + JSON.stringify(lbl));
-  ok((await pg.$$eval("#ncGrid .ptg", ts => ts.map(x => x.textContent))).includes("期中"), "calendar shows which page (course) an item is from");
+  ok((await pg.$$eval("#ncGrid .pli b", ts => ts.map(x => x.textContent))).includes("期中"), "calendar shows which page (course) an item is from");
   const [nics] = await Promise.all([pg.waitForEvent("download"), pg.click("#nIcs")]);
   const nt = fs.readFileSync(await nics.path(), "utf8");
   ok(/SUMMARY:普化期中考/.test(nt) && /TRIGGER:-PT15H/.test(nt) && /TRIGGER:-P1DT15H/.test(nt) && !/還書/.test(nt), "calendar file holds ★ items with 3-day alarms");
@@ -93,6 +93,9 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#nTodoList")).includes("📚 學校") && (await pg.innerText("#nTodoList")).includes("📌 事務"), "to-dos grouped into 學校 and 事務");
   await pg.locator("#nRemind .nit", { hasText: "普化期中考" }).locator(".ntodo").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("普化期中考"), "dated item can be put into 待辦 from the calendar lists: " + (await pg.innerText("#nRemind")).replace(/\n/g," ") + " || " + (await pg.innerText("#nTodoList")).replace(/\n/g," "));
+  await pg.click("#nRemind .rseg button:has-text('這個月')"); await wait(300);
+  ok((await pg.innerText("#nRemind")).includes("這個月"), "reminder range can switch to 這個月");
+  await pg.click("#nRemind .rseg button:has-text('今明後天')"); await wait(300);
   await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");
   await pg.fill("#nMemo", "學校 不要忘東忘西！\n\n活動：\n12/30 17:40 牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題\n🟡學習\n ◦ 複習"); await wait(1200);

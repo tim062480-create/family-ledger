@@ -28,7 +28,23 @@ const autoShort=t=>{t=String(t||"");return /^[A-Za-z]/.test(t)?t.split(/\s/)[0].
 const pageTag=p=>p.short!==undefined&&p.short!==null?String(p.short):autoShort(p.title);
 function noteItems(){const out=[];notes.forEach(p=>{const tag=pageTag(p);(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名",ptag:tag}))});return out.sort(nSort)}
 function planMap(){const m={};noteItems().forEach(it=>{if(it.star&&it.date)(m[it.date]=m[it.date]||[]).push(it)});return m}
-function dueReminders(){const soon=soonOn();return noteItems().filter(it=>{if(!it.date)return false;const d=nDays(it.date);if(d<0)return false;return (nHasRm(it)&&d<=+it.remind)||(soon&&it.star&&d<=2)})}
+// 最上面的提醒：可以選今明後天、這週、下週、這個月
+const RANGES=[["3d","今明後天"],["week","這週"],["next","下週"],["month","這個月"]];
+const RANGE_TTL={"3d":"今天、明天、後天","week":"這週","next":"下週","month":"這個月"};
+const curRange=()=>{const r=curPrefs&&curPrefs.noteRange;return RANGES.some(x=>x[0]===r)?r:"3d"};
+const addDays=(k,n)=>{const t=new Date(k+"T00:00:00Z");t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)};
+function rangeSpan(r){
+  const t=today(),mon=nMon(t);
+  if(r==="week")return [t,addDays(mon,6)];
+  if(r==="next")return [addDays(mon,7),addDays(mon,13)];
+  if(r==="month"){const [y,m]=t.split("-").map(Number);return [t,`${y}-${pad2(m)}-${pad2(new Date(Date.UTC(y,m,0)).getUTCDate())}`]}
+  return [t,addDays(t,2)];
+}
+function dueReminders(r){
+  r=r||curRange();const soon=soonOn();
+  if(r==="3d")return noteItems().filter(it=>{if(!it.date)return false;const d=nDays(it.date);if(d<0)return false;return (nHasRm(it)&&d<=+it.remind)||(soon&&(it.star||it.todo)&&!it.done&&d<=2)});
+  const [s,e]=rangeSpan(r);return noteItems().filter(it=>it.date&&it.date>=s&&it.date<=e&&(it.star||it.todo||nHasRm(it))&&!it.done);
+}
 
 function notesSub(){
   notesLoaded=false;notes=[];notesRef=DB.collection(`users/${myId}/notes`);
@@ -52,10 +68,16 @@ function renderNotes(){
   $("nSoon").checked=soonOn();renderNoteCal();renderTodos();{const ta=$("nMemo");if(document.activeElement!==ta&&!memoTimer)ta.value=memoText}renderMemoSum();
 }
 function renderRemindCard(box,compact){
-  if(!box)return;const due=dueReminders();box.innerHTML="";box.hidden=!due.length;if(!due.length)return;
-  const h=mkEl("h2",null,"🔔 今天、明天、後天");box.appendChild(h);
-  due.slice(0,compact?3:8).forEach(it=>box.appendChild(itemRow(it,true)));
-  if(compact&&due.length>3){const m=mkEl("button","ghost sm",`還有 ${due.length-3} 個，看記事本`);m.type="button";m.onclick=()=>{if(view==="note"&&noteSel){closePage();render()}else goNotes()};const bt=mkEl("div","bt");bt.appendChild(m);box.appendChild(bt)}
+  if(!box)return;const r=curRange(),due=dueReminders(r),onHome=box.id==="homeRemind";box.innerHTML="";
+  box.hidden=onHome&&!due.length;if(box.hidden)return;
+  const hd=mkEl("div","rhd");hd.appendChild(mkEl("h2",null,"🔔 "+RANGE_TTL[r]));
+  const seg=mkEl("div","seg rseg");seg.setAttribute("role","group");seg.setAttribute("aria-label","提醒的範圍");
+  RANGES.forEach(([k,t])=>{const b=mkEl("button",k===r?"on":"",t);b.type="button";b.setAttribute("aria-pressed",k===r?"true":"false");b.onclick=()=>setRange(k);seg.appendChild(b)});
+  hd.appendChild(seg);box.appendChild(hd);
+  if(!due.length){const [s,e]=rangeSpan(r);box.appendChild(mkEl("p","sub",`${nMD(s)}–${nMD(e)} 沒有 ★ 或待辦的事 🎉`));return}
+  const lim=compact?(r==="3d"?3:5):40;
+  due.slice(0,lim).forEach(it=>box.appendChild(itemRow(it,true)));
+  if(due.length>lim){const m=mkEl("button","ghost sm",`還有 ${due.length-lim} 個，看記事本`);m.type="button";m.onclick=()=>{if(view==="note"&&noteSel){closePage();render()}else goNotes()};const bt=mkEl("div","bt");bt.appendChild(m);box.appendChild(bt)}
 }
 // 標題裡有考試、作業、報告這類字，就自動標 ★；一般上課不標
 const NOTE_KEY=/考|測驗|作業|報告|截止|計畫書|quiz|exam|test|homework|assignment|report|presentation|proposal|deadline|due/i;
@@ -134,10 +156,11 @@ function renderNoteCal(){
     const dt=new Date(Date.UTC(ncY,ncM-1,1-startDow+k)),y=dt.getUTCFullYear(),m=dt.getUTCMonth()+1,d=dt.getUTCDate(),key=`${y}-${pad2(m)}-${pad2(d)}`,dow=dt.getUTCDay();
     const b=mkEl("button","cday"+(m!==ncM?" out":"")+(dow===0||dow===6?" we":"")+(key===tdy?" today":"")+(key===ncSel?" sel":""));b.type="button";
     const l=mkEl("span","l"),pl=pm[key]||[];
-    let tg=null;
-    if(pl.length){l.textContent=nShort(pl[0].title)+(pl.length>1?"…":"");l.classList.add("plan");if(pl[0].ptag)tg=mkEl("span","ptg",pl[0].ptag.slice(0,6))}
-    else{const inf=dayInfo(y,m,d);if(inf.fest.length){l.textContent=inf.fest[0].replace(/節$/,"").slice(0,4);l.classList.add("fest")}}
-    b.append(mkEl("span","n",String(d)));if(tg)b.appendChild(tg);b.appendChild(l);
+    b.appendChild(mkEl("span","n",String(d)));
+    if(pl.length){
+      pl.slice(0,2).forEach(x=>{const s=mkEl("span","pli");if(x.ptag){const tg=/^[A-Za-z]/.test(x.ptag)&&x.ptag.length>3?x.ptag.slice(0,2):x.ptag.slice(0,2);s.appendChild(mkEl("b",null,tg))}s.appendChild(document.createTextNode(nShort(x.title)));b.appendChild(s)});
+      if(pl.length>2)b.appendChild(mkEl("span","pmore","…+"+(pl.length-2)));
+    }else{const inf=dayInfo(y,m,d);if(inf.fest.length){l.textContent=inf.fest[0].replace(/節$/,"").slice(0,4);l.classList.add("fest")}b.appendChild(l)}
     if(all[key]&&!pl.length){const dot=mkEl("i","dot");b.appendChild(dot)}
     b.setAttribute("aria-label",`${m}月${d}日`+(pl.length?"，"+pl.map(x=>(x.ptag?x.ptag+" ":"")+x.title).join("、"):"")+(all[key]?`，共 ${all[key]} 個行程`:""));
     b.onclick=()=>{ncSel=key;if(m!==ncM){ncY=y;ncM=m}renderNoteCal()};
@@ -220,6 +243,7 @@ function renderPageImgs(){
 }
 
 // ---- 動作 ----
+function setRange(k){curPrefs={...(curPrefs||{}),noteRange:k};if(prefsRef)prefsRef.set({noteRange:k},{merge:true}).catch(()=>{});render()}
 function goNotes(){view="note";noteSel=null;render();window.scrollTo(0,0)}
 function watchImgs(pid){
   if(noteImgOff){try{noteImgOff()}catch(e){}noteImgOff=null}noteImgs=[];if(!notesRef)return;

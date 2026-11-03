@@ -434,3 +434,13 @@ body.signedout #tabbar{display:none!important}
 
 .ntodo{flex:none;padding:4px 8px;font-size:12px;border-radius:999px;background:none;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .ntodo.on{border-color:var(--good);color:var(--good);font-weight:600}
+
+.cday .pli{display:block;max-width:100%;padding:0 2px;font-size:10px;line-height:1.25;font-weight:700;color:var(--s1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cday .pli b{font-weight:500;opacity:.7;margin-right:1px}
+.cday .pmore{font-size:9.5px;line-height:1.2;color:var(--muted);font-weight:600}
+.cday.sel .pli,.cday.sel .pmore{color:var(--onaccent)}
+#ncGrid .cday{min-height:66px}
+.rhd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.rhd h2{margin:0}
+.seg.rseg{margin:0}
+.seg.rseg button{padding:4px 10px;font-size:12.5px}
