@@ -43,6 +43,12 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u1", name: "測試弟弟" })));
   await pg.click(".loginBtn >> nth=0"); await wait(500);
   ok(await pg.isVisible("#wizard"), "wizard after first sign-in");
+  await pg.click("#acctBtn"); await wait(300);
+  ok(await pg.isVisible("#who") && await pg.isHidden("#wizard"), "account button works even before setup is finished");
+  await pg.click("#whoBtns .tile >> nth=0"); await wait(300);
+  ok(await pg.isVisible("#wizard"), "picking yourself goes back to setup");
+  ok((await pg.isVisible("#fsheet")) && (await pg.innerText("#fsheet")).includes("要幫你的帳設密碼嗎"), "new account is asked once whether to set a password");
+  await pg.click("#fsCancel"); await wait(200);
   await pg.fill("#wzBody input", "14000"); await pg.click("#wizard button:has-text('下一題')");
   await wait(100); await pg.click("#wizard button:has-text('下一題')"); await wait(100);
   await pg.click("#wizard button:has-text('下一題')"); await wait(100);
@@ -52,8 +58,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#wizard button:has-text('完成')"); await wait(400);
   ok(await pg.isVisible("#voice"), "home with 記一筆 after wizard");
   await wait(400);
-  ok((await pg.isVisible("#fsheet")) && (await pg.innerText("#fsheet")).includes("要幫你的帳設密碼嗎"), "new account is asked once whether to set a password");
-  await pg.click("#fsCancel"); await wait(200);
+  ok(!(await pg.isVisible("#fsheet")), "password offer is not repeated");
 
   // 3. rule-based parsing
   await pg.fill("#vtext", "午餐一百二十元 備註好吃，捷運 30"); await pg.click("#parse"); await wait(150);

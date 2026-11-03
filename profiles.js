@@ -19,8 +19,8 @@ function devProfiles(){try{const v=JSON.parse(localStorage.getItem(DEV_KEY)||"[]
 function saveDevProfiles(list){try{localStorage.setItem(DEV_KEY,JSON.stringify(list.slice(0,6)))}catch(e){}}
 function rememberMe(){if(!myId)return;const l=devProfiles().filter(x=>x.uid!==myId);l.unshift({uid:myId,name:myName(),avatar:(profile&&profile.avatar)||"",avc:profile&&profile.avc,email:(me&&me.email)||""});saveDevProfiles(l)}
 const picked=()=>{try{return sessionStorage.getItem("fl_picked")===myId}catch(e){return true}};
-function setPicked(v){try{if(v)sessionStorage.setItem("fl_picked",myId);else sessionStorage.removeItem("fl_picked")}catch(e){}}
-const needWho=()=>!!(me&&curKey&&loaded&&settings&&!picked()&&!joinInfo);
+function setPicked(v){if(v)whoAsk=false;try{if(v)sessionStorage.setItem("fl_picked",myId);else sessionStorage.removeItem("fl_picked")}catch(e){}}
+const needWho=()=>!!(me&&curKey&&loaded&&(settings||whoAsk)&&!picked()&&!joinInfo);let whoAsk=false;
 
 // 每次打開網站（這個分頁第一次）先選人；signedOut：這台裝置記得的人
 function renderWho(mode){

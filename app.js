@@ -54,10 +54,10 @@ function render(){
   $("quote").hidden=!quoteOn();$("subline").hidden=false;$("datebar").hidden=false;$("musicBtn").hidden=false;
   $("subline").textContent=curKey==="fam"?`${hhName()}・全家共同帳：家裡每個人都看得到、都可以記。`:"你的帳只有你自己看得到；要不要分享給家人、分享多少，都由你決定。";
   if(!loaded){$("status").hidden=false;$("status").textContent="載入中…";$("wizard").hidden=true;$("app").hidden=true;return}
+  if(needWho()){renderWho("in");["app","wizard","quote","subline","datebar","ledgerSw","tabbar","acctBtn","musicBtn"].forEach(i=>{$(i).hidden=true});$("backBtn").hidden=true;$("appTitle").hidden=false;return}
+  $("who").hidden=true;
   if(!settings){showWizard();$("app").hidden=true;$("backBtn").hidden=true;return}
   $("wizard").hidden=true;
-  if(needWho()){renderWho("in");["app","quote","subline","datebar","ledgerSw","tabbar","acctBtn","musicBtn"].forEach(i=>{$(i).hidden=true});$("backBtn").hidden=true;$("appTitle").hidden=false;return}
-  $("who").hidden=true;
   {const inSet=view==="set"||view==="cal"||view==="bd"||view==="note"||view==="ai";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
   if(view==="set")renderSet();
   {const v=$("voice");if(view==="month"){if(v.parentElement!==$("vMonth"))$("vMonth").insertBefore(v,$("monthTitle").nextSibling)}else if(v.parentElement!==$("vHome"))$("vHome").insertBefore(v,$("vHome").firstChild)}
@@ -1931,7 +1931,7 @@ $("backBtn").onclick=()=>{view="home";cur=today().slice(0,7);$("vdate").value=to
 document.querySelectorAll(".loginBtn").forEach(b=>{b.onclick=login});
 $("copyUrl").onclick=async()=>{toast(await copyText(location.href)?"已複製網址，貼到 Safari 或 Chrome 打開":"請長按網址列複製")};
 [...$("ledgerSw").children].forEach(b=>{b.onclick=()=>{if(b.dataset.k!==curKey)enterLedger(b.dataset.k)}});
-$("acctBtn").onclick=()=>{whoEdit=false;setPicked(false);render();window.scrollTo(0,0)};
+$("acctBtn").onclick=()=>{whoEdit=false;whoAsk=true;setPicked(false);render();window.scrollTo(0,0)};
 $("hAllowBox").onclick=editAllowance;$("hAllowBox").onkeydown=e=>{if(e.key==="Enter")editAllowance()};
 $("tabCal").onclick=()=>{view="cal";const t=today();calY=+t.slice(0,4);calM=+t.slice(5,7);calSel=t;render();window.scrollTo(0,0)};
 initNotes();initAi();
