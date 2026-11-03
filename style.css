@@ -363,3 +363,5 @@ body.signedout #tabbar{display:none!important}
 .pgrid .npx{aspect-ratio:auto;width:auto;height:auto;overflow:visible;position:absolute;top:4px;right:4px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:10px;font-size:12px;padding:2px 7px;line-height:1.4}
 #homeRemind h2,#nRemind h2{margin-bottom:4px}
 .tab{padding:4px 12px}
+.hasbg .vhd h2,.hasbg #setHead h2,.hasbg #bdHead h2{flex:0 1 auto;background:color-mix(in srgb,var(--card) 82%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:12px;padding:4px 12px}
+.hasbg .vhd #npEdit{margin-left:auto}
