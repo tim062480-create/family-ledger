@@ -237,6 +237,13 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(200);
   await pg.click("#acctCard button:has-text('更改或取消密碼')"); await pg.click("#fsDel"); await pg.click("#fsDel"); await wait(400);
   ok(!(await pg.evaluate(() => __store["users/u1"].pinHash)), "password can be removed");
+  await pg.click("#acctBtn"); await wait(300);
+  await pg.click("#who .whoLock"); await pg.click("#fsSave"); await wait(400);
+  ok(!(await pg.isVisible("#whoBtns .tile:has-text('新增')")) && !(await pg.isVisible("#whoBtns .tile:has-text('編輯')")), "新增 and 編輯 can be hidden");
+  await pg.click("#whoBtns .tile >> nth=0"); await wait(300);
+  await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(200);
+  await pg.click("#acctCard button:has-text('重新顯示')"); await wait(400);
+  ok(!(await pg.evaluate(() => __store["users/u1"].whoLocked)), "settings can bring them back");
   await tab("#tabRec"); await wait(200);
   await pg.evaluate(() => { document.body.style.minHeight = "3000px"; window.scrollTo(0, 800); }); await wait(400);
   ok(await pg.evaluate(() => document.getElementById("tabbar").classList.contains("away")), "tab bar hides after scrolling down");

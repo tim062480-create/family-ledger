@@ -46,10 +46,12 @@ function renderWho(mode){
   });
   // 待邀請
   ((household&&household.pending)||[]).forEach(p=>tile(faceEl(p,p.id),p.name||"家人",whoEdit?"修改":"待邀請",()=>{if(whoEdit)editPending(p);else invitePending(p)},`${p.name||"家人"}，待邀請`));
-  if(!whoEdit)tile(addFace(),"新增","",addPending,"新增家人");
-  tile(editFace(),whoEdit?"完成":"編輯","",()=>{whoEdit=!whoEdit;render()});
+  const locked=!!(profile&&profile.whoLocked);
+  if(!locked){if(!whoEdit)tile(addFace(),"新增","",addPending,"新增家人");
+    tile(editFace(),whoEdit?"完成":"編輯","",()=>{whoEdit=!whoEdit;render()})}
   const pend=(household&&household.pending)||[];
-  if(!whoEdit&&pend.length){const b=mkEl("button","whoAll",`📨 一鍵邀請全家（${pend.map(p=>p.name).join("、")}）`);b.type="button";b.onclick=inviteAll;c.appendChild(b)}
+  if(!whoEdit&&pend.length){const b=mkEl("button","whoAll","📨 一鍵邀請");b.type="button";b.onclick=inviteAll;c.appendChild(b)}
+  if(!locked&&!whoEdit){const h=mkEl("button","ghost sm whoLock","不用再新增了");h.type="button";h.onclick=lockWho;c.appendChild(h)}
 }
 // 一個連結邀請全家：傳到 LINE 群組，每個人點開後選「我是哪一位」
 const lineShareUrl=text=>"https://line.me/R/share?text="+encodeURIComponent(text);
@@ -141,3 +143,10 @@ function editPin(){
     onDelete:has?async()=>{await saveProfile({pinHash:""});toast("已取消密碼");renderAccount()}:null});
   if(has)$("fsDel").textContent="取消密碼";
 }
+
+// 家人都加好了：把「新增」「編輯」從選人畫面拿掉，之後到設定再打開
+function lockWho(){
+  openForm({title:"把「新增」和「編輯」收起來？",sub:"選人畫面會只留下家人的頭像。之後想新增或修改，請到「設定 → 帳號 → 選人畫面」重新打開。",fields:[],okLabel:"收起來",
+    onSave:async()=>{await saveProfile({whoLocked:true});whoEdit=false;render();toast("已收起來，之後想修改請到「設定 → 帳號」")}});
+}
+async function unlockWho(){await saveProfile({whoLocked:false});toast("選人畫面又會顯示「新增」和「編輯」了");renderAccount()}

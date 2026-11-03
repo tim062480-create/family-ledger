@@ -1756,6 +1756,9 @@ function renderAccount(){
   c.appendChild(mkEl("div","bdgrp","密碼鎖"));
   c.appendChild(mkEl("p","sub",profile&&profile.pinHash?"已設定 🔒：在「選擇使用者」點你的頭像要輸入密碼。":"可以設一組 4–6 位數字的密碼，別人拿到你的手機也不能點進你的帳。")).style.margin="0 0 8px";
   {const pb=mkEl("button","ghost",profile&&profile.pinHash?"更改或取消密碼":"設定密碼");pb.type="button";pb.onclick=editPin;const r3=mkEl("div","bt");r3.appendChild(pb);c.appendChild(r3)}
+  c.appendChild(mkEl("div","bdgrp","選人畫面"));
+  {const lk=!!(profile&&profile.whoLocked);c.appendChild(mkEl("p","sub",lk?"「新增」和「編輯」已經收起來了。":"「誰要記帳？」畫面上有「新增」和「編輯」，可以新增家人、換頭像。")).style.margin="0 0 8px";
+   const b=mkEl("button","ghost",lk?"重新顯示「新增」和「編輯」":"收起「新增」和「編輯」");b.type="button";b.onclick=lk?unlockWho:lockWho;const r4=mkEl("div","bt");r4.appendChild(b);c.appendChild(r4)}
   c.appendChild(mkEl("div","bdgrp","刪除帳號"));
   c.appendChild(mkEl("p","sub","會刪除你的帳、照片、生日名單和設定，並離開所有家庭。刪除後不能復原；想留著資料，先到「匯出與備份」下載備份檔。")).style.margin="0 0 8px";
   const del=mkEl("button","ghost","刪除我的帳號和資料");del.type="button";const msg=mkEl("small","m");
