@@ -66,6 +66,9 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "第三次作業");
   ok((await pg.inputValue("#fs_st")) === "1", "作業 is starred automatically"); await pg.click("#fsSave"); await wait(400);
   ok((await pg.$$eval("#npItems .ntbl tbody tr", r => r.length)) >= 1, "page shows a table by default");
+  await pg.check("#npPastLast"); await wait(300);
+  ok(await pg.evaluate(() => { const rs = [...document.querySelectorAll("#npItems .ntbl tbody tr")]; const i = rs.findIndex(r => r.classList.contains("sep")); return i < 0 || rs.slice(0, i).every(r => !r.classList.contains("past")); }), "過去的放最後 moves past weeks to the end");
+  await pg.uncheck("#npPastLast"); await wait(200);
   await pg.click("#npStarNone"); await pg.click("#npStarNone"); await wait(400);
   ok((await pg.$$eval("#npItems .nl.star", r => r.length)) === 0, "☆ 全部清除 removes every star on the page");
   await pg.click("#npStarAll"); await pg.click("#npStarAll"); await wait(400);
@@ -106,9 +109,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#nTodoTabs button:has-text('全部')"); await wait(300);
   await pg.locator("#nRemind .nit", { hasText: "普化期中考" }).locator(".ntodo").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("普化期中考"), "dated item can be put into 待辦 from the calendar lists: " + (await pg.innerText("#nRemind")).replace(/\n/g," ") + " || " + (await pg.innerText("#nTodoList")).replace(/\n/g," "));
-  await pg.click("#nRemind .rseg button:has-text('下週')"); await wait(300);
-  ok((await pg.innerText("#nRemind")).includes("下週") && !(await pg.innerText("#nRemind .rseg")).includes("這個月"), "reminder range can switch to 下週 (no 這個月)");
-  await pg.click("#nRemind .rseg button:has-text('今明後天')"); await wait(300);
+  ok(!(await pg.$("#nRemind .rseg")), "reminder shows only 今明後天 (no range buttons)");
   await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");
   const md5 = await pg.evaluate(() => { const d = new Date(Date.now() + 8 * 3600e3 + 5 * 864e5); return (d.getUTCMonth() + 1) + "/" + d.getUTCDate(); });

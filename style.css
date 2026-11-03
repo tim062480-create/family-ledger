@@ -467,3 +467,8 @@ body.signedout #tabbar{display:none!important}
 #fsFields textarea{width:100%;color:var(--ink)}
 .nbulk{margin:0 0 8px}
 .nbulk .ghost{font-size:12.5px;padding:4px 10px}
+
+.npl{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);margin-left:auto;cursor:pointer}
+.npl input{width:17px;height:17px;margin:0;accent-color:var(--accent)}
+.ntbl tr.sep td{background:var(--track);color:var(--muted);font-size:12.5px;font-weight:700;text-align:center;padding:4px}
+.npast{margin:16px 0 2px;padding:4px 0;text-align:center;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--track);border-radius:8px}

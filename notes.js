@@ -33,7 +33,7 @@ const pageTag=p=>p.short!==undefined&&p.short!==null?String(p.short):autoShort(p
 function noteItems(){const out=[];notes.forEach(p=>{const tag=pageTag(p);(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名",ptag:it.tag!=null?it.tag:tag}))});return out.sort(nSort)}
 function planMap(){const m={};noteItems().forEach(it=>{if(it.star&&it.date)(m[it.date]=m[it.date]||[]).push(it)});return m}
 // 最上面的提醒：可以選今明後天、這週、下週、這個月
-const RANGES=[["3d","今明後天"],["week","這週"],["next","下週"]];
+const RANGES=[["3d","今明後天"]];
 const RANGE_TTL={"3d":"今天、明天、後天","week":"這週","next":"下週","month":"這個月"};
 const curRange=()=>{const r=curPrefs&&curPrefs.noteRange;return RANGES.some(x=>x[0]===r)?r:"3d"};
 const addDays=(k,n)=>{const t=new Date(k+"T00:00:00Z");t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)};
@@ -83,7 +83,7 @@ function renderRemindCard(box,compact){
   const hd=mkEl("div","rhd");hd.appendChild(mkEl("h2",null,"🔔 "+RANGE_TTL[r]));
   const seg=mkEl("div","seg rseg");seg.setAttribute("role","group");seg.setAttribute("aria-label","提醒的範圍");
   RANGES.forEach(([k,t])=>{const b=mkEl("button",k===r?"on":"",t);b.type="button";b.setAttribute("aria-pressed",k===r?"true":"false");b.onclick=()=>setRange(k);seg.appendChild(b)});
-  hd.appendChild(seg);box.appendChild(hd);
+  if(RANGES.length>1)hd.appendChild(seg);box.appendChild(hd);
   if(!due.length){const [s,e]=rangeSpan(r);box.appendChild(mkEl("p","sub",`${nMD(s)}–${nMD(e)} 沒有 ★ 或待辦的事 🎉`));return}
   const lim=compact?(r==="3d"?3:5):40;
   due.slice(0,lim).forEach(it=>box.appendChild(itemRow(it,true)));
@@ -208,14 +208,19 @@ function renderPage(p){
   const its=(p.items||[]).map(it=>({...it,pid:p.id,page:p.title})).sort(nSort);
   if(!its.length)box.appendChild(mkEl("p","sub","還沒有行程。按「＋ 新增行程」加上日期和要做的事。"));
   const und=its.filter(x=>!x.date).sort(todoSort);if(und.length){box.appendChild(mkEl("div","nmh","待辦（沒有日期）"));und.forEach(it=>box.appendChild(itemRow(it,false)))}
+  $("npPastLast").checked=pastLast();
   const tbl=pageMode()==="table";$("npModeT").classList.toggle("on",tbl);$("npModeL").classList.toggle("on",!tbl);
   $("npModeT").setAttribute("aria-pressed",tbl?"true":"false");$("npModeL").setAttribute("aria-pressed",tbl?"false":"true");
   if(tbl){const dated=its.filter(x=>x.date);if(dated.length)box.appendChild(weekTable(dated))}
+  else if(pastLast()){const dd=its.filter(x=>x.date),fu=dd.filter(x=>nDays(x.date)>=0),pa=dd.filter(x=>nDays(x.date)<0);
+    const grp=list=>{let lastM="";list.forEach(it=>{const mk=it.date.slice(0,7);if(mk!==lastM){lastM=mk;box.appendChild(mkEl("div","nmh",`${+mk.slice(0,4)} 年 ${+mk.slice(5,7)} 月`))}box.appendChild(itemRow(it,false))})};
+    grp(fu);if(pa.length){box.appendChild(mkEl("div","npast","已經過去"));grp(pa)}}
   else{let lastM="";its.filter(x=>x.date).forEach(it=>{const mk=it.date.slice(0,7);if(mk!==lastM){lastM=mk;box.appendChild(mkEl("div","nmh",`${+mk.slice(0,4)} 年 ${+mk.slice(5,7)} 月`))}box.appendChild(itemRow(it,false))})}
   const ta=$("npText");if(document.activeElement!==ta&&!noteTxtTimer)ta.value=p.text||"";
   renderPageImgs();
 }
 // ---- 表格：像學校課表一樣，一週一列，一眼看完 ----
+const pastLast=()=>!!(curPrefs&&curPrefs.notePastLast);
 const pageMode=()=>(curPrefs&&curPrefs.noteView)==="list"?"list":"table";
 const nMon=k=>{const t=new Date(k+"T00:00:00Z");t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7));return t.toISOString().slice(0,10)};
 function weekTable(items){
@@ -226,8 +231,12 @@ function weekTable(items){
   const t=mkEl("table","ntbl"),hd=document.createElement("tr");
   (m0?["週次","日期","內容"]:["日期","內容"]).forEach(h=>hd.appendChild(mkEl("th",null,h)));
   const thead=document.createElement("thead");thead.appendChild(hd);t.appendChild(thead);const tb=document.createElement("tbody");t.appendChild(tb);
-  const thisMon=nMon(today());
-  [...rows.keys()].sort().forEach(mk=>{
+  const thisMon=nMon(today()),cols=m0?3:2;
+  let keys=[...rows.keys()].sort();
+  const isPast=mk=>{const ds=rows.get(mk).map(x=>x.date).sort();return nDays(ds[ds.length-1])<0};
+  if(pastLast()){const fu=keys.filter(k=>!isPast(k)),pa=keys.filter(isPast);keys=fu.concat(pa.length?["__sep"]:[],pa)}
+  keys.forEach(mk=>{
+    if(mk==="__sep"){const tr=mkEl("tr","sep"),td=mkEl("td",null,"已經過去");td.colSpan=cols;tr.appendChild(td);tb.appendChild(tr);return}
     const list=rows.get(mk).sort(nSort),dates=[...new Set(list.map(x=>x.date))],multi=dates.length>1;
     const last=dates[dates.length-1],tr=document.createElement("tr");
     if(nDays(last)<0)tr.className="past";if(mk===thisMon)tr.className="now";
@@ -455,6 +464,7 @@ function initNotes(){
     try{await notesRef.doc(p.id).update({items:(p.items||[]).map(x=>x.date?{...x,star:v}:x)});toast(v?`已標上 ${chg} 個 ★`:`已清除 ${chg} 個 ★`);$("npBulkMsg").textContent=""}catch(e){$("npBulkMsg").textContent="沒有存到，請再試一次"}
     btn.disabled=false}};
   bulk($("npStarAll"),true,"★ 全部標上");bulk($("npStarNone"),false,"☆ 全部清除");
+  $("npPastLast").onchange=e=>{const v=e.target.checked;curPrefs={...(curPrefs||{}),notePastLast:v};if(prefsRef)prefsRef.set({notePastLast:v},{merge:true}).catch(()=>{});const p=notes.find(x=>x.id===noteSel);if(p)renderPage(p)};
   $("npModeT").onclick=()=>setPageMode("table");$("npModeL").onclick=()=>setPageMode("list");
   $("nTodoAdd").onclick=()=>newItemOn("",{todo:true,...(todoTab()!=="all"?{pri:todoTab()}:{})});
   $("nMemo").oninput=()=>{$("nMemoMsg").textContent="";clearTimeout(renderMemoSum._t);renderMemoSum._t=setTimeout(renderMemoSum,300);clearTimeout(memoTimer);memoTimer=setTimeout(flushMemo,800)};
