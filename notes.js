@@ -68,6 +68,10 @@ function renderNotes(){
   if(noteSel&&!p&&notesLoaded){closePage();p=null}
   $("nlView").hidden=!!p;$("npView").hidden=!p;$("npEdit").hidden=!p;$("nHead").textContent=p?(p.title||"未命名"):"記事本";
   renderTabs(p);renderRemindCard($("nRemind"),!!p);
+  // 「待辦清單」頁（例如代辦）：不顯示行程表，改顯示跟總日曆一樣的待辦清單
+  {const tc=$("nTodo"),tp=!!(p&&p.kind==="todo");$("npSched").hidden=tp;
+   if(tp){if(tc.parentElement!==$("npView"))$("npView").insertBefore(tc,$("npSched"));renderTodos()}
+   else if(tc.parentElement!==$("nlView"))$("nlView").insertBefore(tc,$("nMemoSum"))}
   if(p){renderPage(p);return}
   $("nSoon").checked=soonOn();renderNoteCal();renderTodos();{const ta=$("nMemo");if(document.activeElement!==ta&&!memoTimer)ta.value=memoText}renderMemoSum();
 }
@@ -287,9 +291,10 @@ function editPage(){
   const others=notes.filter(x=>x.id!==p.id),idx=notes.findIndex(x=>x.id===p.id);
   const posOpts=[["0","最前面（總日曆後面）"]].concat(others.map((x,i)=>[String(i+1),`「${x.title||"未命名"}」後面`]));
   openForm({title:"編輯頁面",fields:[{key:"t",label:"頁面名稱",value:p.title||"",full:true},{key:"s",label:"總日曆上的簡稱（例如：生資；空白就不顯示）",value:pageTag(p),full:true},
-      {key:"pos",label:"按鈕位置",options:posOpts,value:String(idx),full:true}],
+      {key:"pos",label:"按鈕位置",options:posOpts,value:String(idx),full:true},
+      {key:"kind",label:"這頁顯示成",options:[["sched","行程表（課表、行事曆）"],["todo","待辦清單（跟總日曆的待辦一樣）"]],value:p.kind==="todo"?"todo":"sched",full:true}],
     validate:()=>fv("t")?"":"請輸入頁面名稱",
-    onSave:async()=>{await notesRef.doc(p.id).update({title:fv("t").slice(0,40),short:fv("s").slice(0,6)});const to=+fv("pos");if(to!==idx)await movePage(p.id,to)},
+    onSave:async()=>{await notesRef.doc(p.id).update({title:fv("t").slice(0,40),short:fv("s").slice(0,6),kind:fv("kind")});const to=+fv("pos");if(to!==idx)await movePage(p.id,to)},
     onDelete:async()=>{const pid=p.id;closePage();const sn=await notesRef.doc(pid).collection("imgs").get();for(const d of sn.docs||[])await notesRef.doc(pid).collection("imgs").doc(d.id).delete();await notesRef.doc(pid).delete();render()}});
 }
 function itemFields(it,pageSel){

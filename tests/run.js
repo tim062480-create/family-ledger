@@ -121,6 +121,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#npAdd"); await pg.fill("#fs_t", "行事曆"); await pg.click("#fsSave"); await wait(500);
   await pg.click("#npEdit"); await pg.selectOption("#fs_pos", "0"); await pg.click("#fsSave"); await wait(600);
   ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent)))[1] === "行事曆", "page can be moved to the front");
+  await pg.click("#npEdit"); await pg.selectOption("#fs_kind", "todo"); await pg.click("#fsSave"); await wait(500);
+  ok(await pg.isHidden("#npSched") && await pg.isVisible("#npView #nTodo") && (await pg.innerText("#nTodoList")).includes("領貨"), "a page can show the to-do list instead of a schedule");
   await pg.click("#nTabCal"); await wait(200);
   ok((await pg.evaluate(() => __store["users/u1/prefs/memo"] && __store["users/u1/prefs/memo"].text)) .startsWith("學校 不要忘東忘西！"), "隨手記 autosaves");
   await pg.click("#tabCal"); await wait(300);
