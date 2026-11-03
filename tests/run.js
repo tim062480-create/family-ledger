@@ -96,6 +96,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "生日", "設定"]), "tab order 記帳・記事本・生日・設定");
   await pg.click("#tabRec"); await wait(300);
   ok((await pg.innerText("#homeRemind")).includes("普化期中考"), "home shows the reminder");
+  ok(await pg.evaluate(() => { const r = document.getElementById("homeRemind"), v = document.getElementById("voice"); return !!(r.compareDocumentPosition(v) & Node.DOCUMENT_POSITION_FOLLOWING); }), "reminder sits above 記一筆");
   ok(await pg.isVisible("#appTitle"), "app title shows on the home page");
   ok((await pg.innerText("#tabCal")).trim() === "生日", "second tab is named 生日");
   await shot("03b-notes");

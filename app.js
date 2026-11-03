@@ -59,6 +59,7 @@ function render(){
   {const inSet=view==="set"||view==="cal"||view==="bd"||view==="note";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
   if(view==="set")renderSet();
   {const v=$("voice");if(view==="month"){if(v.parentElement!==$("vMonth"))$("vMonth").insertBefore(v,$("monthTitle").nextSibling)}else if(v.parentElement!==$("vHome"))$("vHome").insertBefore(v,$("vHome").firstChild)}
+  {const hr=$("homeRemind"),vh=$("vHome");if(vh.firstChild!==hr)vh.insertBefore(hr,vh.firstChild)}
   $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note");$("tabNote").classList.toggle("on",view==="note");if(view==="note")renderNotes();renderRemindCard($("homeRemind"),true);$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
   $("app").hidden=false;
   const ex=expenses.filter(e=>e.month===cur).sort((a,b)=>b.date.localeCompare(a.date));
