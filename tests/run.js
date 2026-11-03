@@ -114,10 +114,10 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const md5 = await pg.evaluate(() => { const d = new Date(Date.now() + 8 * 3600e3 + 5 * 864e5); return (d.getUTCMonth() + 1) + "/" + d.getUTCDate(); });
   await pg.fill("#nMemo", `學校 不要忘東忘西！\n\n活動：\n${md5} 17:40 看牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題`); await wait(1200);
   const ms = await pg.innerText("#nMemoSum");
-  ok(ms.includes("未來一個月") && ms.includes("看牙齒") && !ms.includes("普化期中考") && !ms.includes("領貨"), "未來一個月 lists dated memo lines, not undated ones or items already in 待辦");
+  ok(ms.includes("未來一個月") && ms.includes("看牙齒") && ms.includes("普化期中考") && !ms.includes("領貨"), "未來一個月 lists dated memo lines and calendar items (incl. 待辦), not undated ones");
   await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".tdck input").check(); await wait(600);
   ok((await pg.innerText("#nTodoList")).includes("看牙齒"), "checking a memo line puts it into 待辦");
-  ok(!(await pg.innerText("#nMemoSum")).includes("看牙齒"), "to-do items move out of 未來一個月");
+  ok((await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".tdck input").isChecked()), "to-do items stay in 未來一個月, ticked");
   await pg.click("#npAdd"); await pg.fill("#fs_t", "行事曆"); await pg.click("#fsSave"); await wait(500);
   await pg.click("#npEdit"); await pg.selectOption("#fs_pos", "0"); await pg.click("#fsSave"); await wait(600);
   ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent)))[1] === "行事曆", "page can be moved to the front");

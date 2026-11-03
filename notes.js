@@ -380,18 +380,18 @@ function renderMemoSum(){
   const box=$("nMemoSum");if(!box)return;box.innerHTML="";
   const t=today(),end=addDays(t,30),inR=k=>k&&k>=t&&k<=end;
   const seen=new Set(),rows=[];
-  noteItems().forEach(it=>{if(!inR(it.date))return;if(it.todo){seen.add(it.pid+"/"+it.id);return}if(it.star||nHasRm(it)){seen.add(it.pid+"/"+it.id);rows.push({it,date:it.date,time:it.time||""})}});
+  noteItems().forEach(it=>{if(!inR(it.date))return;if(it.star||it.todo||nHasRm(it)){seen.add(it.pid+"/"+it.id);rows.push({it,date:it.date,time:it.time||""})}});
   parseMemo($("nMemo").value||memoText).forEach(sec=>sec.items.forEach(txt=>{
     const date=memoDate(txt);if(!inR(date))return;const tm=memoTime(txt);
     // 同一天同一個時間的，就當作同一件事（例如你把「活動」改名成別的）
     const f=memoFind(txt,sec)||(tm?noteItems().find(x=>x.date===date&&x.time===tm):null);
-    if(f){if(f.date&&inR(f.date)&&!f.todo&&!seen.has(f.pid+"/"+f.id)){seen.add(f.pid+"/"+f.id);rows.push({it:f,date:f.date,time:f.time||""})}return}
+    if(f){if(f.date&&inR(f.date)&&!seen.has(f.pid+"/"+f.id)){seen.add(f.pid+"/"+f.id);rows.push({it:f,date:f.date,time:f.time||""})}return}
     rows.push({memo:true,txt,date,time:memoTime(txt),sec});
   }));
   rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,`未來一個月 <small class="nct"></small>`.replace(/<.*/,"")));
   hd.firstChild.appendChild(mkEl("small","nct",`${nMD(t)}–${nMD(end)}・${rows.length} 件`));box.appendChild(hd);
-  {const tp=notes.find(x=>x.kind==="todo");box.appendChild(mkEl("p","sub",`總日曆上的事和隨手記裡寫了日期的事都在這裡；勾「待辦」就移到${tp?`「${tp.title}」頁`:"上面的待辦"}。`))}
+  {const tp=notes.find(x=>x.kind==="todo");box.appendChild(mkEl("p","sub",`總日曆上的事和隨手記裡寫了日期的事都在這裡；勾「待辦」就會同時放進${tp?`「${tp.title}」頁`:"上面的待辦"}。`))}
   box.hidden=false;
   if(!rows.length){box.appendChild(mkEl("p","sub","未來一個月沒有排事情 🎉"));return}
   const mon0=nMon(t);let lastW=null;
