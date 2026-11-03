@@ -30,7 +30,7 @@ const nRel=d=>d===0?"今天":d===1?"明天":d===2?"後天":`${d} 天後`;
 // 頁面簡稱：顯示在總日曆上，看得出是哪堂課；沒設定就用頁名前兩個字（英文最多 6 個字母）
 const autoShort=t=>{t=String(t||"");return /^[A-Za-z]/.test(t)?t.split(/\s/)[0].slice(0,6):t.slice(0,2)};
 const pageTag=p=>p.short!==undefined&&p.short!==null?String(p.short):autoShort(p.title);
-function noteItems(){const out=[];notes.forEach(p=>{const tag=pageTag(p);(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名",ptag:tag}))});return out.sort(nSort)}
+function noteItems(){const out=[];notes.forEach(p=>{const tag=pageTag(p);(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名",ptag:it.tag!=null?it.tag:tag}))});return out.sort(nSort)}
 function planMap(){const m={};noteItems().forEach(it=>{if(it.star&&it.date)(m[it.date]=m[it.date]||[]).push(it)});return m}
 // 最上面的提醒：可以選今明後天、這週、下週、這個月
 const RANGES=[["3d","今明後天"],["week","這週"],["next","下週"],["month","這個月"]];
@@ -319,7 +319,7 @@ function editItem(p,it){
   if(isNew)wireAutoStar();
 }
 function newItemOn(date,pre){
-  const def=(noteSel&&notes.find(x=>x.id===noteSel))||notes.find(x=>x.title==="學校")||notes[0];
+  const def=(noteSel&&notes.find(x=>x.id===noteSel))||notes.find(x=>/^(代辦|待辦)$/.test(x.title))||notes.find(x=>x.title==="學校")||notes[0];
   openForm({title:date?"新增行程":"新增待辦",fields:itemFields({date,...(pre||{})},def?def.id:"__new"),
     validate:()=>fv("d")&&!/^\d{4}-\d{2}-\d{2}$/.test(fv("d"))?"日期格式不對":(!fv("ti")?"請輸入要做的事":""),
     onSave:async()=>{let pid=fv("pg");const ni={...readItem("i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),ts:Date.now()};
@@ -362,7 +362,7 @@ function memoFind(txt,sec){
 const memoTitle=txt=>txt.replace(/\d{1,2}\s*[\/月]\s*\d{1,2}[日號]?\s*(（.）|\(.\))?/,"").replace(/\d{1,2}:\d{2}(\s*[-–~]\s*\d{1,2}:\d{2})?/,"").replace(/^\s*[前後]/,"").replace(/\s+/g," ").trim()||txt;
 function memoPage(txt){
   const s=String(txt||"").toLowerCase();
-  return notes.find(p=>{const t=pageTag(p);return (t&&s.includes(t.toLowerCase()))||(p.title&&s.includes(p.title.toLowerCase()))})||notes.find(p=>p.title==="學校")||notes[0]||null;
+  return notes.find(p=>{const t=pageTag(p);return (t&&s.includes(t.toLowerCase()))||(p.title&&s.includes(p.title.toLowerCase()))})||notes.find(p=>/^(代辦|待辦)$/.test(p.title))||notes.find(p=>p.title==="學校")||notes[0]||null;
 }
 async function memoToTodo(o,box){
   if(!notesRef)return;const p=memoPage(o.txt);
