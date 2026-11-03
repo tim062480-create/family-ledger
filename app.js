@@ -330,7 +330,7 @@ function enterLedger(kind){
   unsubs.push(cpCol.onSnapshot(sn=>{coupons=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)renderCoupons()},()=>{}));
   unsubs.push(incCol.onSnapshot(sn=>{incomes=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)render();schedulePublish()},()=>{}));
   notesSub();
-  unsubs.push(prefsRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;curPrefs=d;applyBg(d&&d.bg);setQuote();if(view==="set"&&setSub==="look")renderLook();if(loaded)render()},()=>{}));
+  unsubs.push(prefsRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;curPrefs=d;prefsSeen=true;applyBg(d&&d.bg);setQuote();if(view==="set"&&setSub==="look")renderLook();if(loaded)render()},()=>{}));
   render();window.scrollTo(0,0);
 }
 function renderLedgerSw(){
@@ -1005,7 +1005,7 @@ function renderReminder(){
 
 // ---- look: background + daily quote ----
 function renderLook(){
-  $("quoteOn").checked=quoteOn();$("quoteSrc").value=quoteSrc();
+  $("quoteOn").checked=quoteOn();$("quoteSrc").value=quoteSrc();$("quoteSet").value=quoteSetKey()||"";
   const box=$("myQuoteList");box.innerHTML="";const list=myQuotes();
   if(!list.length){box.appendChild(mkEl("p","sub","還沒有自己的句子。按「＋ 新增句子」寫下喜歡的話、座右銘或提醒自己的事。"));return}
   list.forEach((q,i)=>{const b=mkEl("button","mqr");b.type="button";b.appendChild(mkEl("span","t",q.t));if(q.src)b.appendChild(mkEl("small",null,"— "+q.src));b.onclick=()=>editMyQuote(i);box.appendChild(b)});
@@ -1020,6 +1020,7 @@ function editMyQuote(i){
     onDelete:isNew?null:async()=>{const nl=list.filter((x,j)=>j!==i);curPrefs={...(curPrefs||{}),myQuotes:nl};renderLook();setQuote();await prefsRef.set({myQuotes:nl},{merge:true})}});
 }
 $("myQuoteAdd").onclick=()=>editMyQuote(null);
+$("quoteSet").onchange=e=>{const v=e.target.value;if(v)pickQuoteSet(v)};
 $("quoteSrc").onchange=async e=>{const v=e.target.value;if(v==="mine"&&!myQuotes().length){$("quoteMsg").textContent="先新增至少一句自己的句子，才能只用自己的句子。";e.target.value=quoteSrc();return}$("quoteMsg").textContent="";curPrefs={...(curPrefs||{}),quoteSrc:v};setQuote();try{await prefsRef.set({quoteSrc:v},{merge:true})}catch(err){}};
 $("quoteOn").onchange=async e=>{try{await prefsRef.set({quote:e.target.checked},{merge:true})}catch(err){}};
 $("bgFile").onchange=async e=>{
@@ -1319,12 +1320,61 @@ const QUOTES=[
   {t:"余問曰：『然則數可逃乎？』曰：『命自我作，福自己求。《詩》《書》所稱，的為明訓。我教典中說，求功名得功名，求富貴得富貴，求男女得男女，求長壽得長壽。夫誑語乃釋迦大戒。諸佛菩薩，豈誑語欺人？』",src:QSRC}
 ];
 const QSTART=Date.UTC(2026,9,3);
+// 每日一句的主題：改命（《太上感應篇彙編》）放第一個；其他都是古典名句或自己寫的小品
+const QL=(t,src)=>({t,src});
+const QUOTE_SETS=[
+  {k:"gaiming",name:"改命",desc:"《太上感應篇彙編》・了凡四訓",list:QUOTES},
+  {k:"lizhi",name:"勵志",desc:"古人的勵志名句",list:[
+    QL("學而時習之，不亦說乎？","《論語・學而》"),QL("知之者不如好之者，好之者不如樂之者。","《論語・雍也》"),
+    QL("三人行，必有我師焉。擇其善者而從之，其不善者而改之。","《論語・述而》"),QL("知者不惑，仁者不憂，勇者不懼。","《論語・子罕》"),
+    QL("歲寒，然後知松柏之後彫也。","《論語・子罕》"),QL("不積跬步，無以至千里；不積小流，無以成江海。","《荀子・勸學》"),
+    QL("鍥而舍之，朽木不折；鍥而不舍，金石可鏤。","《荀子・勸學》"),QL("天行健，君子以自強不息。","《易經・乾卦》"),
+    QL("千里之行，始於足下。","《老子・第六十四章》"),QL("苟日新，日日新，又日新。","《禮記・大學》"),
+    QL("博學之，審問之，慎思之，明辨之，篤行之。","《禮記・中庸》"),QL("人一能之，己百之；人十能之，己千之。","《禮記・中庸》"),
+    QL("業精於勤，荒於嬉；行成於思，毀於隨。","韓愈《進學解》"),QL("路漫漫其修遠兮，吾將上下而求索。","屈原《離騷》"),
+    QL("長風破浪會有時，直掛雲帆濟滄海。","李白《行路難》"),QL("盛年不重來，一日難再晨。及時當勉勵，歲月不待人。","陶淵明《雜詩》"),
+    QL("少壯不努力，老大徒傷悲。","《漢樂府・長歌行》"),QL("會當凌絕頂，一覽眾山小。","杜甫《望嶽》")]},
+  {k:"shici",name:"詩詞",desc:"唐詩宋詞裡的好句子",list:[
+    QL("海內存知己，天涯若比鄰。","王勃《送杜少府之任蜀州》"),QL("行到水窮處，坐看雲起時。","王維《終南別業》"),
+    QL("山重水複疑無路，柳暗花明又一村。","陸游《遊山西村》"),QL("竹杖芒鞋輕勝馬，誰怕？一蓑煙雨任平生。","蘇軾《定風波》"),
+    QL("回首向來蕭瑟處，歸去，也無風雨也無晴。","蘇軾《定風波》"),QL("但願人長久，千里共嬋娟。","蘇軾《水調歌頭》"),
+    QL("欲窮千里目，更上一層樓。","王之渙《登鸛雀樓》"),QL("采菊東籬下，悠然見南山。","陶淵明《飲酒・其五》"),
+    QL("沉舟側畔千帆過，病樹前頭萬木春。","劉禹錫《酬樂天揚州初逢席上見贈》"),QL("天生我材必有用，千金散盡還復來。","李白《將進酒》"),
+    QL("不畏浮雲遮望眼，自緣身在最高層。","王安石《登飛來峰》"),QL("落紅不是無情物，化作春泥更護花。","龔自珍《己亥雜詩》"),
+    QL("千磨萬擊還堅勁，任爾東西南北風。","鄭燮《竹石》"),QL("春風得意馬蹄疾，一日看盡長安花。","孟郊《登科後》")]},
+  {k:"qingsong",name:"輕鬆小品",desc:"輕鬆、溫暖的日常小提醒",list:[
+    QL("今天不用很完美，有記下一筆帳就很棒了。","輕鬆小品"),QL("喝杯水，伸個懶腰，再繼續。","輕鬆小品"),
+    QL("把手機放下五分鐘，看看窗外的天空。","輕鬆小品"),QL("吃飯的時候，就好好吃飯。","輕鬆小品"),
+    QL("今天的小目標：準時睡覺。","輕鬆小品"),QL("錢花在讓自己真心開心的地方，就不算浪費。","輕鬆小品"),
+    QL("下雨天也有下雨天的好，聽聽雨聲吧。","輕鬆小品"),QL("記得跟家人說一聲謝謝。","輕鬆小品"),
+    QL("偶爾發呆，也是在幫自己充電。","輕鬆小品"),QL("把桌上收乾淨一角，心情也會跟著清爽。","輕鬆小品"),
+    QL("今天走路的時候，抬頭看看樹。","輕鬆小品"),QL("累了就休息，明天的你會感謝現在的你。","輕鬆小品"),
+    QL("存下的每一塊錢，都是給未來自己的禮物。","輕鬆小品"),QL("給自己一點掌聲，你已經很努力了。","輕鬆小品"),
+    QL("一杯熱茶、一首喜歡的歌，就是很好的晚上。","輕鬆小品"),QL("把今天最開心的一件事記下來吧。","輕鬆小品")]}
+];
+const quoteSetKey=()=>{const k=curPrefs&&curPrefs.quoteSet;return QUOTE_SETS.some(s=>s.k===k)?k:null};
+const quoteSetList=()=>{const s=QUOTE_SETS.find(x=>x.k===quoteSetKey());return s?s.list:QUOTES};
+let prefsSeen=false;
 // 自己的句子：存在 prefs/ui.myQuotes；quoteSrc = builtin（內建）／mine（只用我的）／both（兩種都用）
 const myQuotes=()=>(curPrefs&&Array.isArray(curPrefs.myQuotes))?curPrefs.myQuotes.filter(x=>x&&x.t):[];
 const quoteSrc=()=>{const s=curPrefs&&curPrefs.quoteSrc;if(s==="builtin"||s==="mine"||s==="both")return s;return myQuotes().length?"both":"builtin"};
-function quotePool(){const mine=myQuotes(),s=quoteSrc();if(s==="mine"&&mine.length)return mine;if(s==="both")return QUOTES.concat(mine);return QUOTES}
+function quotePool(){const mine=myQuotes(),s=quoteSrc(),base=quoteSetList();if(s==="mine"&&mine.length)return mine;if(s==="both"){const l=(quoteSetKey()?base:[]).concat(mine);return l.length?l:base}return base}
 let lastQuoteKey="";
+// 還沒選過主題（也沒有自己的句子）：先顯示選擇卡，不直接顯示太上感應篇
+function quotePicker(){
+  const q=$("quote");q.textContent="";q.classList.remove("clamp");q.dataset.open="1";q.onclick=null;q.classList.add("qpick");lastQuoteKey="picker";
+  q.appendChild(mkEl("div","qph","✨ 選一種每日一句"));q.appendChild(mkEl("div","qps","每天換一則，之後可以在「設定 → 背景與每日一句」更換，或加上自己的句子。"));
+  const g=mkEl("div","qpg");
+  QUOTE_SETS.forEach(s=>{const b=mkEl("button","qpb");b.type="button";b.append(mkEl("b",null,s.name),mkEl("small",null,s.desc),mkEl("span",null,"「"+s.list[(s.k==="gaiming"?7:0)].t.slice(0,26)+(s.list[(s.k==="gaiming"?7:0)].t.length>26?"…":"")+"」"));
+    b.onclick=e=>{e.stopPropagation();pickQuoteSet(s.k)};g.appendChild(b)});
+  q.appendChild(g);
+  const off=mkEl("button","ghost sm qpoff","先不用");off.type="button";off.onclick=async e=>{e.stopPropagation();curPrefs={...(curPrefs||{}),quote:false};render();try{await prefsRef.set({quote:false},{merge:true})}catch(err){}};q.appendChild(off);
+}
+async function pickQuoteSet(k){curPrefs={...(curPrefs||{}),quoteSet:k};lastQuoteKey="";setQuote();requestAnimationFrame(fitQuote);if(view==="set"&&setSub==="look")renderLook();try{await prefsRef.set({quoteSet:k},{merge:true})}catch(e){}}
 function setQuote(){
+  {const q=$("quote");if(!prefsSeen){q.textContent="";lastQuoteKey="";return}
+   if(!quoteSetKey()&&!myQuotes().length&&!(curPrefs&&curPrefs.quoteSrc)){quotePicker();return}
+   q.classList.remove("qpick")}
   const pool=quotePool(),d=new Date(today()+"T00:00:00Z"),n=Math.floor((d-QSTART)/864e5),k=((n%pool.length)+pool.length)%pool.length,item=pool[k];
   const key=today()+"|"+item.t+"|"+(item.src||"");if(key===lastQuoteKey&&$("quote").firstChild)return;lastQuoteKey=key;
   const q=$("quote");q.textContent="";q.classList.add("clamp");q.dataset.open="0";

@@ -139,6 +139,12 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#tabCal")).trim() === "生日", "second tab is named 生日");
   await shot("03b-notes");
 
+  // 3c0. 每日一句先顯示選擇卡
+  await pg.click("#tabRec"); await wait(300);
+  ok((await pg.innerText("#quote")).includes("選一種每日一句") && !(await pg.$("#quote .qt")), "first time shows a theme picker, not 太上感應篇");
+  ok((await pg.$$eval("#quote .qpb b", b => b.map(x => x.textContent)))[0] === "改命", "改命 is the first theme");
+  await pg.click("#quote .qpb:has-text('輕鬆小品')"); await wait(400);
+  ok((await pg.innerText("#quote")).includes("輕鬆小品"), "picking a theme shows its quote");
   // 3c. 自己的每日一句
   await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('背景與每日一句')"); await wait(200);
   await pg.click("#myQuoteAdd"); await pg.fill("#fs_qt", "今天也要好好照顧自己。"); await pg.fill("#fs_qs", "自己"); await pg.click("#fsSave"); await wait(400);

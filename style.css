@@ -472,3 +472,13 @@ body.signedout #tabbar{display:none!important}
 .npl input{width:17px;height:17px;margin:0;accent-color:var(--accent)}
 .ntbl tr.sep td{background:var(--track);color:var(--muted);font-size:12.5px;font-weight:700;text-align:center;padding:4px}
 .npast{margin:16px 0 2px;padding:4px 0;text-align:center;font-size:12.5px;font-weight:700;color:var(--muted);background:var(--track);border-radius:8px}
+
+.quote.qpick{cursor:default}
+.qph{font-weight:700;font-size:16px}
+.qps{color:var(--muted);font-size:12.5px;margin:2px 0 10px}
+.qpg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qpb{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--track);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.qpb b{font-size:15px}
+.qpb small{font-size:11.5px;color:var(--muted)}
+.qpb span{font-size:12.5px;line-height:1.5;color:var(--ink);font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;margin-top:4px}
+.qpoff{margin-top:8px}
