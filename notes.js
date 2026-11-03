@@ -268,11 +268,19 @@ function newPage(){
     validate:()=>fv("t")?"":"請輸入頁面名稱",
     onSave:async()=>{const r=await notesRef.add({title:fv("t").slice(0,40),text:"",items:[],ts:Date.now(),order:Date.now()});setTimeout(()=>openPage(r.id),0)}});
 }
+async function movePage(pid,to){
+  const list=notes.filter(x=>x.id!==pid),me=notes.find(x=>x.id===pid);if(!me)return;
+  list.splice(Math.max(0,Math.min(to,list.length)),0,me);
+  const base=Date.now();for(let i=0;i<list.length;i++){const o=base+i*1000;if(list[i].order!==o)await notesRef.doc(list[i].id).update({order:o})}
+}
 function editPage(){
   const p=notes.find(x=>x.id===noteSel);if(!p)return;
-  openForm({title:"編輯頁面",fields:[{key:"t",label:"頁面名稱",value:p.title||"",full:true},{key:"s",label:"總日曆上的簡稱（例如：生資；空白就不顯示）",value:pageTag(p),full:true}],
+  const others=notes.filter(x=>x.id!==p.id),idx=notes.findIndex(x=>x.id===p.id);
+  const posOpts=[["0","最前面（總日曆後面）"]].concat(others.map((x,i)=>[String(i+1),`「${x.title||"未命名"}」後面`]));
+  openForm({title:"編輯頁面",fields:[{key:"t",label:"頁面名稱",value:p.title||"",full:true},{key:"s",label:"總日曆上的簡稱（例如：生資；空白就不顯示）",value:pageTag(p),full:true},
+      {key:"pos",label:"按鈕位置",options:posOpts,value:String(idx),full:true}],
     validate:()=>fv("t")?"":"請輸入頁面名稱",
-    onSave:()=>notesRef.doc(p.id).update({title:fv("t").slice(0,40),short:fv("s").slice(0,6)}),
+    onSave:async()=>{await notesRef.doc(p.id).update({title:fv("t").slice(0,40),short:fv("s").slice(0,6)});const to=+fv("pos");if(to!==idx)await movePage(p.id,to)},
     onDelete:async()=>{const pid=p.id;closePage();const sn=await notesRef.doc(pid).collection("imgs").get();for(const d of sn.docs||[])await notesRef.doc(pid).collection("imgs").doc(d.id).delete();await notesRef.doc(pid).delete();render()}});
 }
 function itemFields(it,pageSel){
@@ -356,18 +364,18 @@ function renderMemoSum(){
   const box=$("nMemoSum");if(!box)return;box.innerHTML="";
   const t=today(),end=addDays(t,30),inR=k=>k&&k>=t&&k<=end;
   const seen=new Set(),rows=[];
-  noteItems().forEach(it=>{if(inR(it.date)&&(it.star||it.todo||nHasRm(it))){seen.add(it.pid+"/"+it.id);rows.push({it,date:it.date,time:it.time||""})}});
+  noteItems().forEach(it=>{if(!inR(it.date))return;if(it.todo){seen.add(it.pid+"/"+it.id);return}if(it.star||nHasRm(it)){seen.add(it.pid+"/"+it.id);rows.push({it,date:it.date,time:it.time||""})}});
   parseMemo($("nMemo").value||memoText).forEach(sec=>sec.items.forEach(txt=>{
     const date=memoDate(txt);if(!inR(date))return;const tm=memoTime(txt);
     // 同一天同一個時間的，就當作同一件事（例如你把「活動」改名成別的）
     const f=memoFind(txt,sec)||(tm?noteItems().find(x=>x.date===date&&x.time===tm):null);
-    if(f){if(f.date&&inR(f.date)&&!seen.has(f.pid+"/"+f.id)){seen.add(f.pid+"/"+f.id);rows.push({it:f,date:f.date,time:f.time||""})}return}
+    if(f){if(f.date&&inR(f.date)&&!f.todo&&!seen.has(f.pid+"/"+f.id)){seen.add(f.pid+"/"+f.id);rows.push({it:f,date:f.date,time:f.time||""})}return}
     rows.push({memo:true,txt,date,time:memoTime(txt),sec});
   }));
   rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,`未來一個月 <small class="nct"></small>`.replace(/<.*/,"")));
   hd.firstChild.appendChild(mkEl("small","nct",`${nMD(t)}–${nMD(end)}・${rows.length} 件`));box.appendChild(hd);
-  box.appendChild(mkEl("p","sub","總日曆上的事和隨手記裡寫了日期的事都在這裡；勾「待辦」就放進待辦。"));
+  box.appendChild(mkEl("p","sub","總日曆上的事和隨手記裡寫了日期的事都在這裡；勾「待辦」就移到上面的待辦。"));
   box.hidden=false;
   if(!rows.length){box.appendChild(mkEl("p","sub","未來一個月沒有排事情 🎉"));return}
   const mon0=nMon(t);let lastW=null;
