@@ -37,7 +37,7 @@ function renderWho(mode){
     return;
   }
   // 自己
-  tile(faceEl(myFace(),myId),myName(),whoEdit?"修改":"",()=>{if(whoEdit){editMe();return}setPicked(true);view="home";render();window.scrollTo(0,0)});
+  tile(faceEl(myFace(),myId),myName(),whoEdit?"修改":(profile&&profile.pinHash?"🔒":""),()=>{if(whoEdit){editMe();return}askPin(()=>{setPicked(true);view="home";render();window.scrollTo(0,0)})});
   // 已經加入的家人
   Object.values(members).filter(m=>m.id!==myId).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).forEach(m=>{
     const lv=others[m.id]&&others[m.id].level;
@@ -121,4 +121,23 @@ async function claimPending(h,pid){
     await DB.doc(`households/${h}/members/${myId}`).update({avatar:p.avatar||"",avc:Number.isInteger(p.avc)?p.avc:0});
     if(!(profile&&profile.avatar))await saveProfile({avatar:p.avatar||"",avc:p.avc});
     await DB.doc(`households/${h}`).update({pending:(hd.pending||[]).filter(x=>x.id!==pid)})}catch(e){}
+}
+
+// ---- 密碼鎖：點自己的頭像時要輸入 4–6 位數字（只存雜湊，不存密碼本身）----
+async function pinHash(pin){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(myId+":"+pin));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function askPin(ok){
+  if(!(profile&&profile.pinHash)){ok();return}
+  openForm({title:`${myName()}，請輸入密碼`,sub:"",fields:[{key:"pin",label:"密碼",type:"password",inputmode:"numeric",full:true,placeholder:"4–6 位數字"}],okLabel:"進入",
+    validate:()=>fv("pin")?"":"請輸入密碼",
+    onSave:async()=>{if(await pinHash(fv("pin"))!==profile.pinHash){const e=new Error("pin");e.userMsg="密碼不對，再試一次";$("fs_pin").value="";throw e}ok()}});
+  const f=$("fsMsg");if(f){const a=mkEl("button","ghost sm","忘記密碼");a.type="button";a.style.marginLeft="8px";a.onclick=()=>{closeForm();setPicked(false);fbAuth.signOut().then(()=>setTimeout(login,200))};$("fsSub").appendChild(document.createElement("br"));$("fsSub").appendChild(a)}
+}
+function editPin(){
+  const has=!!(profile&&profile.pinHash);
+  openForm({title:has?"更改密碼":"設定密碼",sub:"之後在「選擇使用者」點你的頭像，要輸入這組密碼才能進入。這是防止別人用你的手機偷看；忘記的話可以用 Google 重新登入。",
+    fields:[{key:"p1",label:"新密碼（4–6 位數字）",type:"password",inputmode:"numeric",full:true},{key:"p2",label:"再輸入一次",type:"password",inputmode:"numeric",full:true}],
+    validate:()=>!/^\d{4,6}$/.test(fv("p1"))?"請輸入 4–6 位數字":(fv("p1")!==fv("p2")?"兩次輸入的不一樣":""),
+    onSave:async()=>{await saveProfile({pinHash:await pinHash(fv("p1"))});toast("密碼設定好了 🔒");renderAccount()},
+    onDelete:has?async()=>{await saveProfile({pinHash:""});toast("已取消密碼");renderAccount()}:null});
+  if(has)$("fsDel").textContent="取消密碼";
 }

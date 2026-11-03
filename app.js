@@ -779,7 +779,7 @@ function openForm(cfg){
     let inp;
     if(f.options){inp=document.createElement("select");f.options.forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;inp.appendChild(o)})}
     else if(f.textarea){inp=document.createElement("textarea");inp.rows=4;inp.maxLength=400;if(f.placeholder)inp.placeholder=f.placeholder}
-    else{inp=document.createElement("input");inp.type=f.type||"text";if(f.type==="number"){inp.min="0";inp.inputMode="numeric"}if(f.placeholder)inp.placeholder=f.placeholder}
+    else{inp=document.createElement("input");inp.type=f.type||"text";if(f.type==="number"){inp.min="0";inp.inputMode="numeric"}if(f.inputmode)inp.inputMode=f.inputmode;if(f.placeholder)inp.placeholder=f.placeholder;if(f.type==="password")inp.autocomplete="off"}
     inp.id="fs_"+f.key;inp.value=f.value==null?"":f.value;
     if(f.list){const dl=document.createElement("datalist");dl.id="dl_"+f.key;f.list.forEach(v=>{const o=document.createElement("option");o.value=v;dl.appendChild(o)});inp.setAttribute("list",dl.id);l.appendChild(dl)}
     l.appendChild(inp);box.appendChild(l);
@@ -792,7 +792,7 @@ const fv=k=>{const e=$("fs_"+k);return e?e.value.trim():""};
 $("fsCancel").onclick=closeForm;
 $("fsSave").onclick=async()=>{
   if(!fsCfg)return;const r=fsCfg.validate?fsCfg.validate():"";if(r){$("fsMsg").textContent=r;return}
-  $("fsSave").disabled=true;try{await fsCfg.onSave();closeForm()}catch(e){$("fsMsg").textContent="儲存失敗，請稍後再試"}$("fsSave").disabled=false;
+  $("fsSave").disabled=true;try{await fsCfg.onSave();closeForm()}catch(e){$("fsMsg").textContent=(e&&e.userMsg)||"儲存失敗，請稍後再試"}$("fsSave").disabled=false;
 };
 $("fsDel").onclick=async()=>{
   if(!fsCfg||!fsCfg.onDelete)return;
@@ -1753,6 +1753,9 @@ function renderAccount(){
   const lo=mkEl("button","ghost","登出");lo.type="button";lo.onclick=()=>{setPicked(false);fbAuth.signOut()};
   const ea=mkEl("button","ghost","換頭像、改稱呼");ea.type="button";ea.onclick=editMe;
   const row=mkEl("div","bt");row.append(ea,lo);c.appendChild(row);
+  c.appendChild(mkEl("div","bdgrp","密碼鎖"));
+  c.appendChild(mkEl("p","sub",profile&&profile.pinHash?"已設定 🔒：在「選擇使用者」點你的頭像要輸入密碼。":"可以設一組 4–6 位數字的密碼，別人拿到你的手機也不能點進你的帳。")).style.margin="0 0 8px";
+  {const pb=mkEl("button","ghost",profile&&profile.pinHash?"更改或取消密碼":"設定密碼");pb.type="button";pb.onclick=editPin;const r3=mkEl("div","bt");r3.appendChild(pb);c.appendChild(r3)}
   c.appendChild(mkEl("div","bdgrp","刪除帳號"));
   c.appendChild(mkEl("p","sub","會刪除你的帳、照片、生日名單和設定，並離開所有家庭。刪除後不能復原；想留著資料，先到「匯出與備份」下載備份檔。")).style.margin="0 0 8px";
   const del=mkEl("button","ghost","刪除我的帳號和資料");del.type="button";const msg=mkEl("small","m");

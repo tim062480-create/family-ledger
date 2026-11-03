@@ -227,6 +227,17 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await shot("05-who");
   await pg.click("#whoBtns .tile >> nth=0"); await wait(300);
   ok(await pg.isVisible("#tabbar") && await pg.isHidden("#who"), "tapping my tile enters the app");
+  await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(200);
+  await pg.click("#acctCard button:has-text('設定密碼')"); await pg.fill("#fs_p1", "2468"); await pg.fill("#fs_p2", "2468"); await pg.click("#fsSave"); await wait(400);
+  await pg.click("#acctBtn"); await wait(300); await pg.click("#whoBtns .tile >> nth=0"); await wait(200);
+  await pg.fill("#fs_pin", "1111"); await pg.click("#fsSave"); await wait(300);
+  ok(await pg.isVisible("#who") && (await pg.innerText("#fsMsg")).includes("不對"), "wrong password keeps you out");
+  await pg.fill("#fs_pin", "2468"); await pg.click("#fsSave"); await wait(400);
+  ok(await pg.isHidden("#who") && await pg.isVisible("#tabbar"), "right password lets you in");
+  await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(200);
+  await pg.click("#acctCard button:has-text('更改或取消密碼')"); await pg.click("#fsDel"); await pg.click("#fsDel"); await wait(400);
+  ok(!(await pg.evaluate(() => __store["users/u1"].pinHash)), "password can be removed");
+  await tab("#tabRec"); await wait(200);
   await pg.evaluate(() => { document.body.style.minHeight = "3000px"; window.scrollTo(0, 800); }); await wait(400);
   ok(await pg.evaluate(() => document.getElementById("tabbar").classList.contains("away")), "tab bar hides after scrolling down");
   await pg.evaluate(() => window.scrollTo(0, 0)); await wait(400);
