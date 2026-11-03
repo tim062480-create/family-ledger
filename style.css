@@ -551,3 +551,14 @@ body.signedout #tabbar{display:none!important}
 .farr{font-size:12.5px;color:var(--accent);font-weight:600;white-space:nowrap;margin-left:auto}
 .nsec{margin:16px 0 6px;font-size:15px;font-weight:800;color:var(--accent);border-left:4px solid var(--accent);padding-left:8px}
 .nsec:first-child{margin-top:4px}
+.npl2{margin-left:10px}
+.nbulk{flex-wrap:wrap;row-gap:6px}
+
+.ntools{margin:-2px 0 8px}
+.ntd{flex:none;font-size:11px;padding:2px 7px;border-radius:999px;background:none;border:1px solid var(--line);color:var(--muted);margin-right:2px;white-space:nowrap}
+.ntd.on{border-color:var(--good);color:var(--good);background:color-mix(in srgb,var(--good) 12%,transparent);font-weight:700}
+
+.ntabs.nmore{margin-top:-4px;padding:8px 10px 10px;background:color-mix(in srgb,var(--card) 70%,transparent);border:1px dashed var(--line);border-radius:14px}
+.nmore .ntab{padding:6px 12px;font-size:13px}
+#nTabs{padding-bottom:8px}
+.aihint{font-size:13px;font-weight:400;color:var(--muted);margin-left:6px;vertical-align:middle}

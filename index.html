@@ -23,7 +23,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261105e">
+<link rel="stylesheet" href="style.css?v=20261105g">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -213,7 +213,7 @@
 
   <div id="vNote" hidden>
   <div class="vhd"><h2 id="nHead">記事本</h2><button type="button" id="npEdit" class="ghost sm" hidden>編輯這頁</button></div>
-  <div class="ntabs" id="nTabs" role="tablist" aria-label="記事本頁面"></div>
+  <div class="ntabs" id="nTabs" role="tablist" aria-label="記事本頁面"></div><div class="ntabs nmore" id="nTabsMore" role="tablist" aria-label="其他頁面" hidden></div>
   <div id="nlView">
   <section class="card cal ncal">
     <div class="calhead">
@@ -238,14 +238,14 @@
   </section>
   </div>
   <div id="npView" hidden>
-  <section class="card" id="npSched"><div class="lhead"><h2>行程</h2><div class="bt" style="margin:0 0 8px"><div class="seg nmode" role="group" aria-label="顯示方式"><button type="button" id="npModeT">表格</button><button type="button" id="npModeL">清單</button></div><button type="button" class="ghost sm" id="npItemAdd">＋ 新增</button></div></div><div class="bt nbulk"><button type="button" class="ghost sm" id="npStarAll">★ 全部標上</button><button type="button" class="ghost sm" id="npStarNone">☆ 全部清除</button><label class="npl"><input type="checkbox" id="npPastLast"> 過去的放最後</label><small class="m" id="npBulkMsg"></small></div><div id="npItems"></div></section>
+  <section class="card" id="npSched"><div class="lhead"><h2>行程</h2><div class="bt" style="margin:0 0 8px"><div class="seg nmode" role="group" aria-label="顯示方式"><button type="button" id="npModeT">表格</button><button type="button" id="npModeL">清單</button></div><button type="button" class="ghost sm" id="npItemAdd">＋ 新增</button></div></div><div class="bt nbulk"><button type="button" class="ghost sm" id="npTools" aria-expanded="false">整理 ▾</button><label class="npl"><input type="checkbox" id="npStarOnly"> 只看 ★</label><label class="npl npl2"><input type="checkbox" id="npPastLast"> 過去的放最後</label></div><div class="bt ntools" id="npToolsBox" hidden><button type="button" class="ghost sm" id="npStarAll">★ 全部標上</button><button type="button" class="ghost sm" id="npStarNone">☆ 全部清除</button><button type="button" class="ghost sm" id="npDelPlain">🗑 刪除沒 ★ 的</button></div><small class="m" id="npBulkMsg"></small><div id="npItems"></div></section>
   <section class="card"><h2>筆記</h2><textarea id="npText" rows="6" maxlength="20000" placeholder="隨手寫：上課時間、教室、考試範圍、要準備的東西…" aria-label="筆記"></textarea><p class="sub" id="npTextMsg" style="margin:4px 0 0"></p></section>
   <section class="card"><div class="lhead"><h2>圖片</h2><button type="button" class="ghost sm" id="npImgAdd">＋ 加圖片</button></div><div class="pgrid" id="npImgs" hidden></div><p class="sub" id="npImgMsg" style="margin:6px 0 0">可以放課表、行事曆、每個月的計畫表截圖。</p></section>
   </div>
   </div>
 
   <div id="vAi" hidden>
-  <div class="vhd"><h2>AI 幫你輸入</h2></div>
+  <div class="vhd"><h2>AI 幫你輸入 <small class="aihint">懶得輸入？交給 AI</small></h2></div>
   <section class="card">
     <h2>1. 複製說明，打開 AI</h2>
     <p class="sub" style="margin-bottom:10px">用免費的 ChatGPT、Claude 或 Gemini 就可以。先按下面複製說明，再選一個 AI 打開。</p>
@@ -442,9 +442,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
-<script src="profiles.js?v=20261105e"></script>
-<script src="ai.js?v=20261105e"></script>
-<script src="notes.js?v=20261105e"></script>
-<script src="app.js?v=20261105e"></script>
+<script src="profiles.js?v=20261105g"></script>
+<script src="ai.js?v=20261105g"></script>
+<script src="notes.js?v=20261105g"></script>
+<script src="app.js?v=20261105g"></script>
 </body>
 </html>

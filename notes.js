@@ -156,6 +156,12 @@ async function toggleTodo(pid,id,btn){
   if(btn){btn.classList.toggle("on",v);btn.textContent=v?"已在待辦":"＋待辦";btn.setAttribute("aria-pressed",v?"true":"false");btn.disabled=true}
   try{await notesRef.doc(pid).update({items:list});toast(v?"已放進待辦 ✓":"已從待辦拿掉")}catch(e){toast("沒有存到，請再試一次");if(btn)btn.disabled=false}
 }
+async function toggleManyTodo(pid,ids,v,btn){
+  const p=notes.find(x=>x.id===pid);if(!p||!notesRef)return;const set=new Set(ids);
+  const list=(p.items||[]).map(x=>set.has(x.id)?{...x,todo:v,pri:x.pri||(v?autoCat(x.title+" "+(p.title||"")):x.pri)||null}:x);
+  if(btn){btn.classList.toggle("on",v);btn.setAttribute("aria-pressed",v?"true":"false");btn.disabled=true}
+  try{await notesRef.doc(pid).update({items:list});toast(v?"已放進待辦":"已從待辦拿掉")}catch(e){toast("沒有存到，請再試一次");if(btn)btn.disabled=false}
+}
 async function toggleMany(pid,ids,v,btn){
   const p=notes.find(x=>x.id===pid);if(!p||!notesRef)return;const set=new Set(ids);
   const list=(p.items||[]).map(x=>set.has(x.id)?{...x,star:v}:x);
@@ -175,13 +181,21 @@ function renderTodos(){
   if(!all.length){box.appendChild(mkEl("p","sub",tab==="all"?"要做的事放這裡，例如「領貨」「準備面試」；有日期的行程按「＋待辦」也會出現在這裡。做完就打勾。":`「${PRI_TXT[tab]}」沒有要做的事 🎉`));return}
   let last=null;all.forEach(it=>{const g=it.done?"done":(it.pri||"");if(g!==last){last=g;if(tab!=="all"&&g!=="done")return box.appendChild(itemRow(it,true,true));box.appendChild(mkEl("div","nmh",g==="done"?"✓ 做完了":(PRI[g]?PRI[g]+" "+PRI_TXT[g]:"其他")))}box.appendChild(itemRow(it,true,true))});
 }
+let moreOpen=false;
 function renderTabs(p){
-  const box=$("nTabs");box.innerHTML="";
-  const mk=(label,on,fn,id)=>{const b=mkEl("button","ntab"+(on?" on":""),label);b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",on?"true":"false");if(id)b.id=id;b.onclick=fn;box.appendChild(b);return b};
-  mk("📅 總日曆",!p,()=>{if(noteSel){closePage();render();window.scrollTo(0,0)}},"nTabCal");
-  notes.forEach(x=>mk(x.title||"未命名",p&&p.id===x.id,()=>{if(noteSel!==x.id){flushText();openPage(x.id)}}));
-  const add=mk("＋",false,newPage,"npAdd");add.setAttribute("aria-label","新增頁面");add.classList.add("add");add.removeAttribute("role");
-  const on=box.querySelector(".ntab.on");if(on)requestAnimationFrame(()=>{const l=on.offsetLeft-16;if(l<box.scrollLeft||l+on.offsetWidth>box.scrollLeft+box.clientWidth)box.scrollLeft=Math.max(0,l)});
+  const box=$("nTabs"),more=$("nTabsMore");box.innerHTML="";more.innerHTML="";
+  const mk=(to,label,on,fn,id)=>{const b=mkEl("button","ntab"+(on?" on":""),label);b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",on?"true":"false");if(id)b.id=id;b.onclick=fn;to.appendChild(b);return b};
+  const go=x=>()=>{if(noteSel!==x.id){flushText();openPage(x.id)}};
+  mk(box,"📅 總日曆",!p,()=>{if(noteSel){closePage();render();window.scrollTo(0,0)}},"nTabCal");
+  const main=notes.filter(x=>x.kind==="todo"),rest=notes.filter(x=>x.kind!=="todo");
+  main.forEach(x=>mk(box,"✅ "+(x.title||"待辦"),p&&p.id===x.id,go(x)));
+  const inRest=!!(p&&p.kind!=="todo");if(inRest)moreOpen=true;
+  const ob=mk(box,`📂 其他${rest.length?` ${rest.length}`:""} ${moreOpen?"▴":"▾"}`,inRest,()=>{moreOpen=!moreOpen;renderTabs(p)},"nTabMore");
+  ob.removeAttribute("role");ob.setAttribute("aria-expanded",moreOpen?"true":"false");ob.setAttribute("aria-controls","nTabsMore");
+  more.hidden=!moreOpen;
+  rest.forEach(x=>mk(more,x.title||"未命名",p&&p.id===x.id,go(x)));
+  const add=mk(more,"＋ 新增頁面",false,newPage,"npAdd");add.setAttribute("aria-label","新增頁面");add.classList.add("add");add.removeAttribute("role");
+  const on=more.querySelector(".ntab.on");if(on)requestAnimationFrame(()=>{const l=on.offsetLeft-16;if(l<more.scrollLeft||l+on.offsetWidth>more.scrollLeft+more.clientWidth)more.scrollLeft=Math.max(0,l)});
 }
 function renderNoteCal(){
   if(!ncY){const t=today();ncY=+t.slice(0,4);ncM=+t.slice(5,7);ncSel=t}
@@ -234,7 +248,8 @@ function renderPage(p){
   const tbl=pageMode()==="table";$("npModeT").classList.toggle("on",tbl);$("npModeL").classList.toggle("on",!tbl);
   $("npModeT").setAttribute("aria-pressed",tbl?"true":"false");$("npModeL").setAttribute("aria-pressed",tbl?"false":"true");
   // 一頁可以分好幾段（例如「課程」和「小組討論」），每段各一張表，不會混在一起
-  const datedAll=its.filter(x=>x.date),secNames=[...new Set(datedAll.map(x=>x.sec||""))].sort((a,b)=>(a?1:0)-(b?1:0));
+  $("npStarOnly").checked=starOnly();
+  const datedAll=its.filter(x=>x.date&&(!starOnly()||x.star||x.todo)),secNames=[...new Set(datedAll.map(x=>x.sec||""))].sort((a,b)=>(a?1:0)-(b?1:0));
   const multi=secNames.length>1;
   secNames.forEach(sn=>{
     const dated=datedAll.filter(x=>(x.sec||"")===sn);if(!dated.length)return;
@@ -248,6 +263,7 @@ function renderPage(p){
   renderPageImgs();
 }
 // ---- 表格：像學校課表一樣，一週一列，一眼看完 ----
+const starOnly=()=>!!(curPrefs&&curPrefs.noteStarOnly);
 const pastLast=()=>!!(curPrefs&&curPrefs.notePastLast);
 const pageMode=()=>(curPrefs&&curPrefs.noteView)==="list"?"list":"table";
 const nMon=k=>{const t=new Date(k+"T00:00:00Z");t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7));return t.toISOString().slice(0,10)};
@@ -284,7 +300,10 @@ function weekTable(items,ref){
       const sb=mkEl("button","nstar sm"+(it.star?" on":""),it.star?"★":"☆");sb.type="button";
       sb.setAttribute("aria-pressed",it.star?"true":"false");sb.setAttribute("aria-label",`${it.title||""}：顯示在總日曆`);
       sb.onclick=()=>toggleMany(it.pid,g.its.map(x=>x.id),!it.star,sb);
-      l.append(b,sb);c.appendChild(l);
+      const allTodo=g.its.every(x=>x.todo),tb=mkEl("button","ntd"+(allTodo?" on":""),"待辦");tb.type="button";
+      tb.setAttribute("aria-pressed",allTodo?"true":"false");tb.setAttribute("aria-label",`${it.title||""}：放進待辦`);tb.title=allTodo?"已在待辦，點一下拿掉":"點一下放進待辦";
+      tb.onclick=()=>toggleManyTodo(it.pid,g.its.map(x=>x.id),!allTodo,tb);
+      l.append(b,tb,sb);c.appendChild(l);
     });
     tr.appendChild(c);tb.appendChild(tr);
   });
@@ -493,6 +512,13 @@ function initNotes(){
     try{await notesRef.doc(p.id).update({items:(p.items||[]).map(x=>x.date?{...x,star:v}:x)});toast(v?`已標上 ${chg} 個 ★`:`已清除 ${chg} 個 ★`);$("npBulkMsg").textContent=""}catch(e){$("npBulkMsg").textContent="沒有存到，請再試一次"}
     btn.disabled=false}};
   bulk($("npStarAll"),true,"★ 全部標上");bulk($("npStarNone"),false,"☆ 全部清除");
+  $("npTools").onclick=()=>{const b=$("npToolsBox"),o=b.hidden;b.hidden=!o;$("npTools").textContent=o?"整理 ▴":"整理 ▾";$("npTools").setAttribute("aria-expanded",o?"true":"false")};
+  $("npStarOnly").onchange=e=>{const v=e.target.checked;curPrefs={...(curPrefs||{}),noteStarOnly:v};if(prefsRef)prefsRef.set({noteStarOnly:v},{merge:true}).catch(()=>{});const p=notes.find(x=>x.id===noteSel);if(p)renderPage(p)};
+  {const b=$("npDelPlain");b.onclick=async()=>{const p=notes.find(x=>x.id===noteSel);if(!p)return;const del=(p.items||[]).filter(x=>x.date&&!x.star&&!x.todo);
+    if(!del.length){$("npBulkMsg").textContent="沒有沒標 ★ 的行程";return}
+    if(b.dataset.arm!=="1"){b.dataset.arm="1";b.textContent=`確定刪除 ${del.length} 個？不能復原`;setTimeout(()=>{b.dataset.arm="";b.textContent="🗑 刪除沒 ★ 的"},4000);return}
+    b.dataset.arm="";b.textContent="🗑 刪除沒 ★ 的";const ids=new Set(del.map(x=>x.id));
+    try{await notesRef.doc(p.id).update({items:(p.items||[]).filter(x=>!ids.has(x.id))});toast(`已刪除 ${del.length} 個沒標 ★ 的行程`)}catch(e){$("npBulkMsg").textContent="沒有刪到，請再試一次"}}}
   $("npPastLast").onchange=e=>{const v=e.target.checked;curPrefs={...(curPrefs||{}),notePastLast:v};if(prefsRef)prefsRef.set({notePastLast:v},{merge:true}).catch(()=>{});const p=notes.find(x=>x.id===noteSel);if(p)renderPage(p)};
   $("npModeT").onclick=()=>setPageMode("table");$("npModeL").onclick=()=>setPageMode("list");
   $("nTodoAdd").onclick=()=>newItemOn("",{todo:true,...(todoTab()!=="all"?{pri:todoTab()}:{})});
