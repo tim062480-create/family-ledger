@@ -106,8 +106,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#nTodoTabs button:has-text('全部')"); await wait(300);
   await pg.locator("#nRemind .nit", { hasText: "普化期中考" }).locator(".ntodo").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("普化期中考"), "dated item can be put into 待辦 from the calendar lists: " + (await pg.innerText("#nRemind")).replace(/\n/g," ") + " || " + (await pg.innerText("#nTodoList")).replace(/\n/g," "));
-  await pg.click("#nRemind .rseg button:has-text('這個月')"); await wait(300);
-  ok((await pg.innerText("#nRemind")).includes("這個月"), "reminder range can switch to 這個月");
+  await pg.click("#nRemind .rseg button:has-text('下週')"); await wait(300);
+  ok((await pg.innerText("#nRemind")).includes("下週") && !(await pg.innerText("#nRemind .rseg")).includes("這個月"), "reminder range can switch to 下週 (no 這個月)");
   await pg.click("#nRemind .rseg button:has-text('今明後天')"); await wait(300);
   await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");

@@ -33,7 +33,7 @@ const pageTag=p=>p.short!==undefined&&p.short!==null?String(p.short):autoShort(p
 function noteItems(){const out=[];notes.forEach(p=>{const tag=pageTag(p);(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名",ptag:it.tag!=null?it.tag:tag}))});return out.sort(nSort)}
 function planMap(){const m={};noteItems().forEach(it=>{if(it.star&&it.date)(m[it.date]=m[it.date]||[]).push(it)});return m}
 // 最上面的提醒：可以選今明後天、這週、下週、這個月
-const RANGES=[["3d","今明後天"],["week","這週"],["next","下週"],["month","這個月"]];
+const RANGES=[["3d","今明後天"],["week","這週"],["next","下週"]];
 const RANGE_TTL={"3d":"今天、明天、後天","week":"這週","next":"下週","month":"這個月"};
 const curRange=()=>{const r=curPrefs&&curPrefs.noteRange;return RANGES.some(x=>x[0]===r)?r:"3d"};
 const addDays=(k,n)=>{const t=new Date(k+"T00:00:00Z");t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)};
