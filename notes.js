@@ -79,7 +79,7 @@ function itemRow(it,showPage){
 async function toggleField(pid,id,k,btn){
   const p=notes.find(x=>x.id===pid);if(!p||!notesRef)return;
   const list=(p.items||[]).map(x=>x.id===id?{...x,[k]:!x[k]}:x),v=!!list.find(x=>x.id===id)[k];
-  if(btn){btn.classList.toggle("on",v);btn.textContent=k==="star"?(v?"★":"☆"):(v?"✓":"");btn.setAttribute("aria-pressed",v?"true":"false");btn.disabled=true;const row=btn.closest(".nit");if(row)row.classList.toggle(k==="star"?"star":"done",v)}
+  if(btn){btn.classList.toggle("on",v);btn.textContent=k==="star"?(v?"★":"☆"):(v?"✓":"");btn.setAttribute("aria-pressed",v?"true":"false");btn.disabled=true;const row=btn.closest(".nit,.nl");if(row)row.classList.toggle(k==="star"?"star":"done",v)}
   try{await notesRef.doc(pid).update({items:list});toast(k==="star"?(v?"已顯示在總日曆 ★":"已從總日曆拿掉"):(v?"完成 ✓":"改回還沒做"))}catch(e){toast("沒有存到，請再試一次");if(btn)btn.disabled=false}
 }
 function renderTodos(){
@@ -131,10 +131,49 @@ function renderPage(p){
   const its=(p.items||[]).map(it=>({...it,pid:p.id,page:p.title})).sort(nSort);
   if(!its.length)box.appendChild(mkEl("p","sub","還沒有行程。按「＋ 新增行程」加上日期和要做的事。"));
   const und=its.filter(x=>!x.date).sort(todoSort);if(und.length){box.appendChild(mkEl("div","nmh","待辦（沒有日期）"));und.forEach(it=>box.appendChild(itemRow(it,false)))}
-  let lastM="";its.filter(x=>x.date).forEach(it=>{const mk=it.date.slice(0,7);if(mk!==lastM){lastM=mk;box.appendChild(mkEl("div","nmh",`${+mk.slice(0,4)} 年 ${+mk.slice(5,7)} 月`))}box.appendChild(itemRow(it,false))});
+  const tbl=pageMode()==="table";$("npModeT").classList.toggle("on",tbl);$("npModeL").classList.toggle("on",!tbl);
+  $("npModeT").setAttribute("aria-pressed",tbl?"true":"false");$("npModeL").setAttribute("aria-pressed",tbl?"false":"true");
+  if(tbl){const dated=its.filter(x=>x.date);if(dated.length)box.appendChild(weekTable(dated))}
+  else{let lastM="";its.filter(x=>x.date).forEach(it=>{const mk=it.date.slice(0,7);if(mk!==lastM){lastM=mk;box.appendChild(mkEl("div","nmh",`${+mk.slice(0,4)} 年 ${+mk.slice(5,7)} 月`))}box.appendChild(itemRow(it,false))})}
   const ta=$("npText");if(document.activeElement!==ta&&!noteTxtTimer)ta.value=p.text||"";
   renderPageImgs();
 }
+// ---- 表格：像學校課表一樣，一週一列，一眼看完 ----
+const pageMode=()=>(curPrefs&&curPrefs.noteView)==="list"?"list":"table";
+const nMon=k=>{const t=new Date(k+"T00:00:00Z");t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7));return t.toISOString().slice(0,10)};
+function weekTable(items){
+  let m0=null,n0=0;
+  for(const it of items){const m=/第\s*(\d+)\s*週/.exec(it.note||"");if(m){m0=nMon(it.date);n0=+m[1];break}}
+  const rows=new Map();
+  items.forEach(it=>{const mk=nMon(it.date);if(!rows.has(mk))rows.set(mk,[]);rows.get(mk).push(it)});
+  const t=mkEl("table","ntbl"),hd=document.createElement("tr");
+  (m0?["週次","日期","內容"]:["日期","內容"]).forEach(h=>hd.appendChild(mkEl("th",null,h)));
+  const thead=document.createElement("thead");thead.appendChild(hd);t.appendChild(thead);const tb=document.createElement("tbody");t.appendChild(tb);
+  const thisMon=nMon(today());
+  [...rows.keys()].sort().forEach(mk=>{
+    const list=rows.get(mk).sort(nSort),dates=[...new Set(list.map(x=>x.date))],multi=dates.length>1;
+    const last=dates[dates.length-1],tr=document.createElement("tr");
+    if(nDays(last)<0)tr.className="past";if(mk===thisMon)tr.className="now";
+    if(m0){const wn=n0+Math.round((new Date(mk+"T00:00:00Z")-new Date(m0+"T00:00:00Z"))/(7*864e5));tr.appendChild(mkEl("td","wk",`第${wn}週`))}
+    tr.appendChild(mkEl("td","dt",dates.map(nMD).join(", ")));
+    const c=mkEl("td","ct");
+    list.forEach(it=>{
+      const l=mkEl("div","nl"+(it.star?" star":""));
+      const b=mkEl("button","t");b.type="button";
+      b.textContent=(multi?nMD(it.date)+" ":"")+(PRI[it.pri]?PRI[it.pri]+" ":"")+(it.title||"");
+      if(it.time&&/截止|due/i.test(it.title||"")){b.appendChild(mkEl("small",null," "+it.time))}
+      b.setAttribute("aria-label",`${nMD(it.date)}，${it.title||""}${it.time?"，"+it.time:""}${it.note?"，"+it.note:""}，點一下修改`);
+      b.onclick=()=>{const p=notes.find(x=>x.id===it.pid);if(p)editItem(p,p.items.find(x=>x.id===it.id))};
+      const sb=mkEl("button","nstar sm"+(it.star?" on":""),it.star?"★":"☆");sb.type="button";
+      sb.setAttribute("aria-pressed",it.star?"true":"false");sb.setAttribute("aria-label",`${it.title||""}：顯示在總日曆`);
+      sb.onclick=()=>toggleField(it.pid,it.id,"star",sb);
+      l.append(b,sb);c.appendChild(l);
+    });
+    tr.appendChild(c);tb.appendChild(tr);
+  });
+  const w=mkEl("div","ntw");w.appendChild(t);return w;
+}
+function setPageMode(m){curPrefs={...(curPrefs||{}),noteView:m};if(prefsRef)prefsRef.set({noteView:m},{merge:true}).catch(()=>{});const p=notes.find(x=>x.id===noteSel);if(p)renderPage(p)}
 function renderPageImgs(){
   const g=$("npImgs");g.innerHTML="";g.hidden=!noteImgs.length;
   const list=noteImgs.map(x=>({id:x.id,full:x.t,cap:""}));
@@ -239,6 +278,7 @@ function notesICS(){
 function initNotes(){
   $("tabNote").onclick=()=>{flushText();goNotes()};
   $("npEdit").onclick=editPage;
+  $("npModeT").onclick=()=>setPageMode("table");$("npModeL").onclick=()=>setPageMode("list");
   $("nTodoAdd").onclick=()=>newItemOn("");
   $("nMemo").oninput=()=>{$("nMemoMsg").textContent="";clearTimeout(memoTimer);memoTimer=setTimeout(flushMemo,800)};
   $("nMemo").onblur=()=>{if(memoTimer){clearTimeout(memoTimer);flushMemo()}};

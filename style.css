@@ -392,3 +392,21 @@ body.signedout #tabbar{display:none!important}
 .nit.done{opacity:.6}
 .nct{font-size:12.5px;font-weight:400;color:var(--muted);margin-left:4px}
 #nMemo{min-height:180px;line-height:1.75}
+
+.ntw{overflow-x:auto;margin:4px -4px 0}
+.ntbl{width:100%;border-collapse:collapse;font-size:14px;line-height:1.45}
+.ntbl th,.ntbl td{border:1px solid var(--line);padding:6px 6px;vertical-align:middle}
+.ntbl th{background:var(--track);font-weight:700;text-align:left;font-size:13px}
+.ntbl td.wk{white-space:nowrap;text-align:center;color:var(--muted);font-size:13px;width:1%}
+.ntbl td.dt{white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums;width:1%}
+.ntbl tbody tr:nth-child(even){background:color-mix(in srgb,var(--track) 45%,transparent)}
+.ntbl tr.past{opacity:.5}
+.ntbl tr.now{background:color-mix(in srgb,var(--accent) 14%,var(--card))!important;opacity:1}
+.ntbl tr.now td.wk{color:var(--accent);font-weight:700}
+.nl{display:flex;align-items:center;gap:2px}
+.nl .t{flex:1;min-width:0;background:none;border:none;border-radius:6px;padding:3px 2px;text-align:left;color:var(--ink);font-size:14px;line-height:1.45}
+.nl .t small{color:var(--muted);font-size:11.5px}
+.nl.star .t{font-weight:700;color:var(--s1)}
+.nstar.sm{width:30px;height:30px;font-size:17px;border-radius:8px}
+.nmode button{padding:5px 12px;font-size:13px}
+.seg.nmode{margin:0}
