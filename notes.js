@@ -82,6 +82,12 @@ async function toggleField(pid,id,k,btn){
   if(btn){btn.classList.toggle("on",v);btn.textContent=k==="star"?(v?"★":"☆"):(v?"✓":"");btn.setAttribute("aria-pressed",v?"true":"false");btn.disabled=true;const row=btn.closest(".nit,.nl");if(row)row.classList.toggle(k==="star"?"star":"done",v)}
   try{await notesRef.doc(pid).update({items:list});toast(k==="star"?(v?"已顯示在總日曆 ★":"已從總日曆拿掉"):(v?"完成 ✓":"改回還沒做"))}catch(e){toast("沒有存到，請再試一次");if(btn)btn.disabled=false}
 }
+async function toggleMany(pid,ids,v,btn){
+  const p=notes.find(x=>x.id===pid);if(!p||!notesRef)return;const set=new Set(ids);
+  const list=(p.items||[]).map(x=>set.has(x.id)?{...x,star:v}:x);
+  if(btn){btn.classList.toggle("on",v);btn.textContent=v?"★":"☆";btn.setAttribute("aria-pressed",v?"true":"false");btn.disabled=true;const row=btn.closest(".nl");if(row)row.classList.toggle("star",v)}
+  try{await notesRef.doc(pid).update({items:list});toast(v?"已顯示在總日曆 ★":"已從總日曆拿掉")}catch(e){toast("沒有存到，請再試一次");if(btn)btn.disabled=false}
+}
 function renderTodos(){
   const box=$("nTodoList");box.innerHTML="";
   const all=noteItems().filter(x=>!x.date).sort(todoSort),open=all.filter(x=>!x.done);
@@ -157,16 +163,19 @@ function weekTable(items){
     if(m0){const wn=n0+Math.round((new Date(mk+"T00:00:00Z")-new Date(m0+"T00:00:00Z"))/(7*864e5));tr.appendChild(mkEl("td","wk",`第${wn}週`))}
     tr.appendChild(mkEl("td","dt",dates.map(nMD).join(", ")));
     const c=mkEl("td","ct");
-    list.forEach(it=>{
+    // 同一週、同樣內容（例如週三週四都是「逆境生理」）合成一行，跟課表一樣
+    const groups=[];list.forEach(it=>{const key=(it.title||"")+"|"+(it.star?1:0)+"|"+(it.pri||"");let g=groups.find(x=>x.key===key);if(!g){g={key,its:[]};groups.push(g)}g.its.push(it)});
+    groups.forEach(g=>{
+      const it=g.its[0],ds=[...new Set(g.its.map(x=>x.date))];
       const l=mkEl("div","nl"+(it.star?" star":""));
       const b=mkEl("button","t");b.type="button";
-      b.textContent=(multi?nMD(it.date)+" ":"")+(PRI[it.pri]?PRI[it.pri]+" ":"")+(it.title||"");
+      b.textContent=(multi&&groups.length>1?ds.map(nMD).join("、")+" ":"")+(PRI[it.pri]?PRI[it.pri]+" ":"")+(it.title||"");
       if(it.time&&/截止|due/i.test(it.title||"")){b.appendChild(mkEl("small",null," "+it.time))}
-      b.setAttribute("aria-label",`${nMD(it.date)}，${it.title||""}${it.time?"，"+it.time:""}${it.note?"，"+it.note:""}，點一下修改`);
+      b.setAttribute("aria-label",`${ds.map(nMD).join("、")}，${it.title||""}${it.time?"，"+it.time:""}${it.note?"，"+it.note:""}，點一下修改`);
       b.onclick=()=>{const p=notes.find(x=>x.id===it.pid);if(p)editItem(p,p.items.find(x=>x.id===it.id))};
       const sb=mkEl("button","nstar sm"+(it.star?" on":""),it.star?"★":"☆");sb.type="button";
       sb.setAttribute("aria-pressed",it.star?"true":"false");sb.setAttribute("aria-label",`${it.title||""}：顯示在總日曆`);
-      sb.onclick=()=>toggleField(it.pid,it.id,"star",sb);
+      sb.onclick=()=>toggleMany(it.pid,g.its.map(x=>x.id),!it.star,sb);
       l.append(b,sb);c.appendChild(l);
     });
     tr.appendChild(c);tb.appendChild(tr);

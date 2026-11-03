@@ -410,3 +410,6 @@ body.signedout #tabbar{display:none!important}
 .nstar.sm{width:30px;height:30px;font-size:17px;border-radius:8px}
 .nmode button{padding:5px 12px;font-size:13px}
 .seg.nmode{margin:0}
+.nstar.sm{width:26px;height:26px;font-size:16px}
+.nl .t{padding:2px}
+.ntbl th,.ntbl td{padding:5px 6px}
