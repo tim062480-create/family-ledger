@@ -19,7 +19,10 @@ const PRI_OPTS=[["","不分類"],["r","🔴 現在要做"],["g","🟢 之後要�
 const todoSort=(a,b)=>(a.done?1:0)-(b.done?1:0)||(PRI_ORD[a.pri]??3)-(PRI_ORD[b.pri]??3)||(a.ts||0)-(b.ts||0);
 const nRel=d=>d===0?"今天":d===1?"明天":d===2?"後天":`${d} 天後`;
 
-function noteItems(){const out=[];notes.forEach(p=>(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名"})));return out.sort(nSort)}
+// 頁面簡稱：顯示在總日曆上，看得出是哪堂課；沒設定就用頁名前兩個字（英文最多 6 個字母）
+const autoShort=t=>{t=String(t||"");return /^[A-Za-z]/.test(t)?t.split(/\s/)[0].slice(0,6):t.slice(0,2)};
+const pageTag=p=>p.short!==undefined&&p.short!==null?String(p.short):autoShort(p.title);
+function noteItems(){const out=[];notes.forEach(p=>{const tag=pageTag(p);(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名",ptag:tag}))});return out.sort(nSort)}
 function planMap(){const m={};noteItems().forEach(it=>{if(it.star&&it.date)(m[it.date]=m[it.date]||[]).push(it)});return m}
 function dueReminders(){const soon=soonOn();return noteItems().filter(it=>{if(!it.date)return false;const d=nDays(it.date);if(d<0)return false;return (nHasRm(it)&&d<=+it.remind)||(soon&&it.star&&d<=2)})}
 
@@ -60,8 +63,10 @@ function itemRow(it,showPage){
   const dt=mkEl("span","nd");
   if(und)dt.append(mkEl("b",null,PRI[it.pri]||"📝"),mkEl("small",null,PRI_TXT[it.pri]?PRI_TXT[it.pri].slice(0,2):"待辦"));
   else dt.append(mkEl("b",null,nMD(it.date)),mkEl("small",null,"週"+nDow(it.date)+(it.time?" "+it.time:"")));
-  const t=mkEl("span","nt");t.appendChild(mkEl("span","ttl",(!und&&PRI[it.pri]?PRI[it.pri]+" ":"")+(it.title||"（沒有標題）")));
-  const sub=[showPage?it.page:"",it.note||""].filter(Boolean).join("・");if(sub)t.appendChild(mkEl("small",null,sub));
+  const t=mkEl("span","nt"),tt=mkEl("span","ttl");
+  if(showPage&&it.ptag)tt.appendChild(mkEl("span","ptag",it.ptag));
+  tt.appendChild(document.createTextNode((!und&&PRI[it.pri]?PRI[it.pri]+" ":"")+(it.title||"（沒有標題）")));t.appendChild(tt);
+  const sub=[showPage&&!it.ptag?it.page:"",it.note||""].filter(Boolean).join("・");if(sub)t.appendChild(mkEl("small",null,sub));
   const ic=mkEl("span","nic");
   if(showPage&&!und&&d>=0){ic.appendChild(mkEl("span","when",nRel(d)))}
   if(nHasRm(it)){const s=mkEl("span","bl","🔔");s.title="提醒："+RM_TXT[+it.remind];ic.appendChild(s)}
@@ -113,11 +118,12 @@ function renderNoteCal(){
     const dt=new Date(Date.UTC(ncY,ncM-1,1-startDow+k)),y=dt.getUTCFullYear(),m=dt.getUTCMonth()+1,d=dt.getUTCDate(),key=`${y}-${pad2(m)}-${pad2(d)}`,dow=dt.getUTCDay();
     const b=mkEl("button","cday"+(m!==ncM?" out":"")+(dow===0||dow===6?" we":"")+(key===tdy?" today":"")+(key===ncSel?" sel":""));b.type="button";
     const l=mkEl("span","l"),pl=pm[key]||[];
-    if(pl.length){l.textContent=nShort(pl[0].title)+(pl.length>1?"…":"");l.classList.add("plan")}
+    let tg=null;
+    if(pl.length){l.textContent=nShort(pl[0].title)+(pl.length>1?"…":"");l.classList.add("plan");if(pl[0].ptag)tg=mkEl("span","ptg",pl[0].ptag.slice(0,6))}
     else{const inf=dayInfo(y,m,d);if(inf.fest.length){l.textContent=inf.fest[0].replace(/節$/,"").slice(0,4);l.classList.add("fest")}}
-    b.append(mkEl("span","n",String(d)),l);
+    b.append(mkEl("span","n",String(d)));if(tg)b.appendChild(tg);b.appendChild(l);
     if(all[key]&&!pl.length){const dot=mkEl("i","dot");b.appendChild(dot)}
-    b.setAttribute("aria-label",`${m}月${d}日`+(pl.length?"，"+pl.map(x=>x.title).join("、"):"")+(all[key]?`，共 ${all[key]} 個行程`:""));
+    b.setAttribute("aria-label",`${m}月${d}日`+(pl.length?"，"+pl.map(x=>(x.ptag?x.ptag+" ":"")+x.title).join("、"):"")+(all[key]?`，共 ${all[key]} 個行程`:""));
     b.onclick=()=>{ncSel=key;if(m!==ncM){ncY=y;ncM=m}renderNoteCal()};
     g.appendChild(b);
   }
@@ -213,9 +219,9 @@ function newPage(){
 }
 function editPage(){
   const p=notes.find(x=>x.id===noteSel);if(!p)return;
-  openForm({title:"編輯頁面",fields:[{key:"t",label:"頁面名稱",value:p.title||"",full:true}],
+  openForm({title:"編輯頁面",fields:[{key:"t",label:"頁面名稱",value:p.title||"",full:true},{key:"s",label:"總日曆上的簡稱（例如：生資；空白就不顯示）",value:pageTag(p),full:true}],
     validate:()=>fv("t")?"":"請輸入頁面名稱",
-    onSave:()=>notesRef.doc(p.id).update({title:fv("t").slice(0,40)}),
+    onSave:()=>notesRef.doc(p.id).update({title:fv("t").slice(0,40),short:fv("s").slice(0,6)}),
     onDelete:async()=>{const pid=p.id;closePage();const sn=await notesRef.doc(pid).collection("imgs").get();for(const d of sn.docs||[])await notesRef.doc(pid).collection("imgs").doc(d.id).delete();await notesRef.doc(pid).delete();render()}});
 }
 function itemFields(it,pageSel){

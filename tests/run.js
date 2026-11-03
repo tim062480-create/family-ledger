@@ -78,6 +78,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#nRemind")).includes("普化期中考") && !(await pg.innerText("#nRemind")).includes("還書"), "reminder card shows ★ / 通知 items in the next 3 days only");
   const lbl = await pg.$$eval("#ncGrid .l.plan", ls => ls.map(l => l.textContent));
   ok(lbl.some(x => x.startsWith("普化")) && !lbl.some(x => x.includes("還書")), "only ★ items label the calendar: " + JSON.stringify(lbl));
+  ok((await pg.$$eval("#ncGrid .ptg", ts => ts.map(x => x.textContent))).includes("期中"), "calendar shows which page (course) an item is from");
   const [nics] = await Promise.all([pg.waitForEvent("download"), pg.click("#nIcs")]);
   const nt = fs.readFileSync(await nics.path(), "utf8");
   ok(/SUMMARY:普化期中考/.test(nt) && /TRIGGER:-PT15H/.test(nt) && /TRIGGER:-P1DT15H/.test(nt) && !/還書/.test(nt), "calendar file holds ★ items with 3-day alarms");
