@@ -341,25 +341,49 @@ function memoFind(txt,sec){
   const its=noteItems();
   return its.find(it=>memoNorm(it.title)===a)||its.find(it=>{const b=memoNorm((it.ptag||"")+it.title),c=memoNorm(it.title);return (c.length>=2&&a.includes(c)&&c.length>=a.length*0.6)||b.includes(a)})||null;
 }
+// ---- 未來一個月：總日曆和隨手記裡、今天起 30 天內的事，照日期往下列；勾「待辦」就放進待辦 ----
+const memoTitle=txt=>txt.replace(/\d{1,2}\s*[\/月]\s*\d{1,2}[日號]?\s*(（.）|\(.\))?/,"").replace(/\d{1,2}:\d{2}(\s*[-–~]\s*\d{1,2}:\d{2})?/,"").replace(/^\s*[前後]/,"").replace(/\s+/g," ").trim()||txt;
+function memoPage(txt){
+  const s=String(txt||"").toLowerCase();
+  return notes.find(p=>{const t=pageTag(p);return (t&&s.includes(t.toLowerCase()))||(p.title&&s.includes(p.title.toLowerCase()))})||notes.find(p=>p.title==="學校")||notes[0]||null;
+}
+async function memoToTodo(o,box){
+  if(!notesRef)return;const p=memoPage(o.txt);
+  const it={id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:o.date,time:memoTime(o.txt),title:memoTitle(o.txt),note:(/前/.test(o.txt)?`${nMD(o.date)} 前・`:"")+"來自隨手記",star:true,todo:true,pri:autoCat(o.txt+" "+((o.sec&&o.sec.h)||"")),remind:null,ts:Date.now()};
+  try{if(p)await notesRef.doc(p.id).update({items:(p.items||[]).concat([it])});else await notesRef.add({title:"學校",text:"",items:[it],ts:Date.now(),order:Date.now()});toast("已放進待辦，也加到總日曆 ✓")}catch(e){toast("沒有存到，請再試一次");if(box)box.checked=false}
+}
 function renderMemoSum(){
   const box=$("nMemoSum");if(!box)return;box.innerHTML="";
-  const secs=parseMemo($("nMemo").value||memoText);box.hidden=!secs.length;if(!secs.length)return;
-  const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,"隨手記整理"));box.appendChild(hd);
-  box.appendChild(mkEl("p","sub","照你在隨手記寫的標題和日期自動整理；按「＋」可以加到待辦或總日曆。"));
-  const row=(txt,sec)=>{
-    const date=memoDate(txt),f=memoFind(txt,sec),r=mkEl("div","msr"+(f&&f.done?" done":""));
-    const dt=mkEl("span","md");if(date){const d=nDays(date);dt.append(mkEl("b",null,nMD(date)),mkEl("small",null,d<0?"已過":d<=2?nRel(d):`${d} 天後`));if(d>=0&&d<=2)r.classList.add("soon");if(d<0)r.classList.add("past")}else dt.appendChild(mkEl("b",null,sec.c||"•"));
-    const t=mkEl("span","mt",txt);if(sec&&sec.h&&date)t.appendChild(mkEl("small",null,(sec.c?sec.c+" ":"")+sec.h));
-    const a=mkEl("button","ghost sm ma");a.type="button";
-    if(f){a.textContent=f.date?"✓ 日曆":"✓ 待辦";a.title=`已在「${f.page}」`;a.onclick=()=>openPage(f.pid)}
-    else{a.textContent="＋";a.setAttribute("aria-label",`把「${txt}」加到${date?"總日曆":"待辦"}`);
-      const title=txt.replace(/\d{1,2}\s*[\/月]\s*\d{1,2}[日號]?\s*(（.）|\(.\))?/,"").replace(/\d{1,2}:\d{2}(\s*[-–~]\s*\d{1,2}:\d{2})?/,"").replace(/^\s*[前後]/,"").trim()||txt;
-      a.onclick=()=>newItemOn(date,{title,time:memoTime(txt),pri:date?null:autoCat(title+" "+((sec&&sec.h)||"")),note:date&&/前/.test(txt)?`${nMD(date)} 前`:""})}
-    r.append(dt,t,a);return r;
-  };
-  const dated=[];secs.forEach(s=>s.items.forEach(x=>{const d=memoDate(x);if(d&&nDays(d)>=0)dated.push({x,d,s})}));
-  if(dated.length){box.appendChild(mkEl("div","nmh","📅 接下來（有日期的）"));dated.sort((a,b)=>a.d.localeCompare(b.d)).forEach(o=>box.appendChild(row(o.x,o.s)))}
-  secs.forEach(s=>{const und=s.items.filter(x=>!memoDate(x));if(!und.length)return;box.appendChild(mkEl("div","nmh",(s.c?s.c+" ":"")+(s.h||"其他")+`（${und.length}）`));und.forEach(x=>box.appendChild(row(x,s)))});
+  const t=today(),end=addDays(t,30),inR=k=>k&&k>=t&&k<=end;
+  const seen=new Set(),rows=[];
+  noteItems().forEach(it=>{if(inR(it.date)&&(it.star||it.todo||nHasRm(it))){seen.add(it.pid+"/"+it.id);rows.push({it,date:it.date,time:it.time||""})}});
+  parseMemo($("nMemo").value||memoText).forEach(sec=>sec.items.forEach(txt=>{
+    const date=memoDate(txt);if(!inR(date))return;const f=memoFind(txt,sec);
+    if(f){if(f.date&&inR(f.date)&&!seen.has(f.pid+"/"+f.id)){seen.add(f.pid+"/"+f.id);rows.push({it:f,date:f.date,time:f.time||""})}return}
+    rows.push({memo:true,txt,date,time:memoTime(txt),sec});
+  }));
+  rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,`未來一個月 <small class="nct"></small>`.replace(/<.*/,"")));
+  hd.firstChild.appendChild(mkEl("small","nct",`${nMD(t)}–${nMD(end)}・${rows.length} 件`));box.appendChild(hd);
+  box.appendChild(mkEl("p","sub","總日曆上的事和隨手記裡寫了日期的事都在這裡；勾「待辦」就放進待辦。"));
+  box.hidden=false;
+  if(!rows.length){box.appendChild(mkEl("p","sub","未來一個月沒有排事情 🎉"));return}
+  const mon0=nMon(t);let lastW=null;
+  rows.forEach(o=>{
+    const w=nMon(o.date);if(w!==lastW){lastW=w;const k=Math.round((new Date(w+"T00:00:00Z")-new Date(mon0+"T00:00:00Z"))/(7*864e5));
+      box.appendChild(mkEl("div","nmh",k===0?"這週":k===1?"下週":`${nMD(w)}–${nMD(addDays(w,6))}`))}
+    const it=o.it,d=nDays(o.date),r=mkEl("div","msr"+(d<=2?" soon":"")+(it&&it.done?" done":""));
+    const dt=mkEl("span","md");dt.append(mkEl("b",null,nMD(o.date)),mkEl("small",null,d<=2?nRel(d):`週${nDow(o.date)}`));
+    const tx=mkEl("button","mt");tx.type="button";
+    if(it){if(it.ptag)tx.appendChild(mkEl("span","ptag",it.ptag));tx.appendChild(document.createTextNode((it.star?"★ ":"")+it.title));const sub=[it.time,it.note].filter(Boolean).join("・");if(sub)tx.appendChild(mkEl("small",null,sub));
+      tx.onclick=()=>{const p=notes.find(x=>x.id===it.pid);if(p)editItem(p,p.items.find(x=>x.id===it.id))}}
+    else{tx.appendChild(document.createTextNode(memoTitle(o.txt)));tx.appendChild(mkEl("small",null,"隨手記"+(o.sec&&o.sec.h?"・"+(o.sec.c?o.sec.c+" ":"")+o.sec.h:"")+(o.time?"・"+o.time:"")));tx.onclick=()=>{const ta=$("nMemo");ta.focus();ta.scrollIntoView({block:"center"})}}
+    const lb=mkEl("label","tdck"),cb=document.createElement("input");cb.type="checkbox";cb.checked=!!(it&&it.todo);
+    cb.setAttribute("aria-label",`${it?it.title:memoTitle(o.txt)}：放進待辦`);
+    cb.onchange=()=>{cb.disabled=true;if(it)toggleTodo(it.pid,it.id,null);else memoToTodo(o,cb)};
+    lb.append(cb,document.createTextNode("待辦"));
+    r.append(dt,tx,lb);box.appendChild(r);
+  });
 }
 function flushMemo(){
   memoTimer=null;if(!memoRef)return;const v=$("nMemo").value.slice(0,20000);memoText=v;

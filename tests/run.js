@@ -103,10 +103,12 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#nRemind .rseg button:has-text('今明後天')"); await wait(300);
   await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");
-  await pg.fill("#nMemo", "學校 不要忘東忘西！\n\n活動：\n12/30 17:40 牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題\n🟡學習\n ◦ 複習"); await wait(1200);
+  const md5 = await pg.evaluate(() => { const d = new Date(Date.now() + 8 * 3600e3 + 5 * 864e5); return (d.getUTCMonth() + 1) + "/" + d.getUTCDate(); });
+  await pg.fill("#nMemo", `學校 不要忘東忘西！\n\n活動：\n${md5} 17:40 看牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題`); await wait(1200);
   const ms = await pg.innerText("#nMemoSum");
-  ok(ms.includes("接下來") && ms.includes("牙齒") && ms.includes("事情（2）") && ms.includes("學習（1）"), "隨手記整理 groups by heading and pulls out dates");
-  ok((await pg.locator("#nMemoSum .msr", { hasText: "領貨" }).locator(".ma").innerText()).includes("待辦"), "整理 knows 領貨 is already a to-do");
+  ok(ms.includes("未來一個月") && ms.includes("看牙齒") && ms.includes("普化期中考") && !ms.includes("領貨"), "未來一個月 lists dated memo lines and calendar items, not undated ones");
+  await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".tdck input").check(); await wait(600);
+  ok((await pg.innerText("#nTodoList")).includes("看牙齒"), "checking a memo line puts it into 待辦");
   ok((await pg.evaluate(() => __store["users/u1/prefs/memo"] && __store["users/u1/prefs/memo"].text)) .startsWith("學校 不要忘東忘西！"), "隨手記 autosaves");
   await pg.click("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) === 0, "birthday calendar does not show notebook items");
