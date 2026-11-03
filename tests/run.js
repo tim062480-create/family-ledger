@@ -151,12 +151,29 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await tab("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) === 0, "birthday calendar does not show notebook items");
   ok((await pg.innerText("#vCal .vhd h2")) === "朋友和家人生日", "birthday page has its heading");
-  ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "生日", "設定"]), "tab order 記帳・記事本・生日・設定");
+  ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "生日", "AI 輸入", "設定"]), "tab order 記帳・記事本・生日・AI 輸入・設定");
   await tab("#tabRec"); await wait(300);
   ok(await pg.isHidden("#homeRemind"), "home page no longer shows the 3-day reminder");
   ok(await pg.isVisible("#appTitle"), "app title shows on the home page");
   ok((await pg.innerText("#tabCal")).trim() === "生日", "second tab is named 生日");
   await shot("03b-notes");
+
+  // 3d. AI 幫你輸入：貼上 AI 回的 JSON，一鍵加入
+  await tab("#tabAi"); await wait(300);
+  ok(await pg.isVisible("#vAi") && (await pg.$$eval("#aiApps button", b => b.map(x => x.textContent))).includes("ChatGPT"), "AI tab shows the AI buttons");
+  ok((await pg.evaluate(() => aiPrompt())).includes("family-ledger-ai") && (await pg.evaluate(() => aiPrompt())).includes("期中考"), "prompt includes the format and my pages");
+  const aiJson = '好的，整理如下：\n```json\n' + JSON.stringify({ app: "family-ledger-ai", v: 1, actions: [
+    { do: "addExpense", date: "2026-11-02", category: "餐飲", amount: 88, note: "AI午餐", remark: "" },
+    { do: "addIncome", date: "2026-11-02", amount: 300, note: "AI打工" },
+    { do: "addPage", title: "AI課表", short: "AI", text: "週一上課", items: [{ date: "2026-11-16", time: "10:20", title: "期中考", note: "第 11 週", star: true }, { date: "2026-11-09", time: "", title: "上課", note: "", star: false }] },
+    { do: "addTodo", title: "AI買文具", date: "", cat: "雜事", note: "" },
+    { do: "addBirthday", name: "AI同學", group: "同學", solar: [12, 1], lunar: null, year: 0 },
+    { do: "deleteAll" }] }) + '\n```';
+  await pg.fill("#aiIn", aiJson); await pg.click("#aiRead"); await wait(300);
+  ok((await pg.innerText("#aiPlan")).includes("要加入 5 筆") && (await pg.innerText("#aiPlan")).includes("看不懂"), "AI reply is previewed; unknown actions are skipped");
+  await pg.click("#aiPlan button:has-text('全部加入')"); await wait(1200);
+  ok((await pg.innerText("#aiMsg2")).includes("加入完成") && await pg.evaluate(() => Object.values(__store).some(v => v && v.note === "AI午餐" && v.amount === 88) && Object.values(__store).some(v => v && v.title === "AI課表" && v.items && v.items.length === 2) && notes.some(p => p.kind === "todo" && p.items.some(i => i.title === "AI買文具")) && bdays.some(b => b.name === "AI同學")), "AI data is added to the ledger, notebook, to-dos and birthdays");
+  await shot("06-ai");
 
   // 3c0. 每日一句先顯示選擇卡
   await tab("#tabRec"); await wait(300);

@@ -45,7 +45,7 @@ function render(){
   $("tabbar").hidden=true;
   $("appTitle").hidden=!!(curKey&&loaded&&settings&&view!=="home");
   renderMonths();
-  $("vHome").hidden=view!=="home";$("vMonth").hidden=view!=="month";$("vSet").hidden=view!=="set";$("vCal").hidden=view!=="cal";$("vBd").hidden=view!=="bd";$("vNote").hidden=view!=="note";
+  $("vHome").hidden=view!=="home";$("vMonth").hidden=view!=="month";$("vSet").hidden=view!=="set";$("vCal").hidden=view!=="cal";$("vBd").hidden=view!=="bd";$("vNote").hidden=view!=="note";$("vAi").hidden=view!=="ai";
   $("backBtn").hidden=view!=="month"||!settings;
   {const [yy,mm]=cur.split("-").map(Number);$("monthTitle").textContent=`${yy} 年 ${mm} 月`}
   $("status").hidden=true;
@@ -58,11 +58,11 @@ function render(){
   $("wizard").hidden=true;
   if(needWho()){renderWho("in");["app","quote","subline","datebar","ledgerSw","tabbar","acctBtn","musicBtn"].forEach(i=>{$(i).hidden=true});$("backBtn").hidden=true;$("appTitle").hidden=false;return}
   $("who").hidden=true;
-  {const inSet=view==="set"||view==="cal"||view==="bd"||view==="note";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
+  {const inSet=view==="set"||view==="cal"||view==="bd"||view==="note"||view==="ai";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
   if(view==="set")renderSet();
   {const v=$("voice");if(view==="month"){if(v.parentElement!==$("vMonth"))$("vMonth").insertBefore(v,$("monthTitle").nextSibling)}else if(v.parentElement!==$("vHome"))$("vHome").insertBefore(v,$("vHome").firstChild)}
   {const hr=$("homeRemind"),vh=$("vHome");if(vh.firstChild!==hr)vh.insertBefore(hr,vh.firstChild)}
-  $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note");$("tabNote").classList.toggle("on",view==="note");if(view==="note")renderNotes();$("homeRemind").hidden=true;$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
+  $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note"&&view!=="ai");$("tabNote").classList.toggle("on",view==="note");$("tabAi").classList.toggle("on",view==="ai");if(view==="ai")renderAi();if(view==="note")renderNotes();$("homeRemind").hidden=true;$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
   $("app").hidden=false;
   const ex=expenses.filter(e=>e.month===cur).sort((a,b)=>b.date.localeCompare(a.date));
   const spent=ex.reduce((s,e)=>s+(+e.amount||0),0),incM=incomeSum(cur),allow=allowanceOf(cur)+incM;
@@ -1845,7 +1845,7 @@ $("copyUrl").onclick=async()=>{toast(await copyText(location.href)?"已複製網
 $("acctBtn").onclick=()=>{whoEdit=false;setPicked(false);render();window.scrollTo(0,0)};
 $("hAllowBox").onclick=editAllowance;$("hAllowBox").onkeydown=e=>{if(e.key==="Enter")editAllowance()};
 $("tabCal").onclick=()=>{view="cal";const t=today();calY=+t.slice(0,4);calM=+t.slice(5,7);calSel=t;render();window.scrollTo(0,0)};
-initNotes();
+initNotes();initAi();
 $("tabSet").onclick=()=>{view="set";setSub=null;sstate=null;setupOpen=false;render();window.scrollTo(0,0)};
 $("tabRec").onclick=()=>{view="home";cur=today().slice(0,7);$("vdate").value=today();sstate=null;setupOpen=false;render();window.scrollTo(0,0)};
 $("add").date.value=today();$("vdate").value=today();
