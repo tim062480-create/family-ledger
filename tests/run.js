@@ -94,6 +94,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.evaluate(() => __store["users/u1/prefs/memo"] && __store["users/u1/prefs/memo"].text)) === "學校 不要忘東忘西！", "隨手記 autosaves");
   await pg.click("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) === 0, "birthday calendar does not show notebook items");
+  ok((await pg.innerText("#vCal .vhd h2")) === "朋友和家人生日", "birthday page has its heading");
   ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "生日", "設定"]), "tab order 記帳・記事本・生日・設定");
   await pg.click("#tabRec"); await wait(300);
   ok((await pg.innerText("#homeRemind")).includes("普化期中考"), "home shows the reminder");
