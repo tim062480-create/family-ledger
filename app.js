@@ -1172,7 +1172,8 @@ $("mYes").onclick=()=>mPlay();
 $("mNo").onclick=()=>{$("musicPop").hidden=true};
 $("mClose").onclick=()=>{mStop();$("musicPop").hidden=true};
 $("mStopBtn").onclick=()=>mStop();
-$("mNext").onclick=()=>{if(mGenre==="classic"){cIdx=(cIdx+1)%CLASSICS.length;if(AC&&mPlaying)cStart(AC.currentTime+.4)}else{mIdx=(mIdx+1)%MOODS.length;stepN=0;if(AC)nextT=AC.currentTime+.15}mUI()};
+function mSkip(d){if(mGenre==="classic"){cIdx=(cIdx+d+CLASSICS.length)%CLASSICS.length;if(AC&&mPlaying)cStart(AC.currentTime+.4)}else{mIdx=(mIdx+d+MOODS.length)%MOODS.length;stepN=0;if(AC)nextT=AC.currentTime+.15}mUI()}
+$("mNext").onclick=()=>mSkip(1);$("mPrev").onclick=()=>mSkip(-1);
 document.querySelectorAll("#mGenre button").forEach(b=>b.onclick=()=>{if(mGenre===b.dataset.g)return;mGenre=b.dataset.g;try{localStorage.setItem("mGenre",mGenre)}catch(e){}
   if(mPlaying&&AC){nextT=AC.currentTime+.4;stepN=0;if(mGenre==="classic")cStart(AC.currentTime+.4)}mUI()});
 $("mVol").oninput=e=>{if(mOut)mOut.gain.value=+e.target.value};
