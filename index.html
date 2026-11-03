@@ -153,6 +153,7 @@
     <div class="bt" id="confirmRow" hidden><button type="button" id="confirm">確認記帳</button><button type="button" id="cancel" class="ghost">取消</button></div>
   </section>
 
+  <section class="card" id="homeRemind" hidden></section>
   <section class="card" id="monthCard"><h2>每月帳本</h2><div id="netSum"></div><p class="sub" style="margin-bottom:8px">點進去看那個月的花費</p><div id="monthList"></div></section>
   <section class="card" id="cpCard" hidden></section>
   <section class="card" id="goalCard" hidden></section>
@@ -198,7 +199,7 @@
     </div>
     <div class="calgrid calwk"><span class="we">日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="we">六</span></div>
     <div class="calgrid" id="calGrid"></div>
-    <div class="callegend"><span><i class="lg-bd"></i>生日</span><span><i class="lg-term"></i>節氣</span><span><i class="lg-fest"></i>節日</span><span><i class="lg-dot"></i>有記帳</span><button type="button" class="ghost sm" id="calToday">回到今天</button></div>
+    <div class="callegend"><span><i class="lg-bd"></i>生日</span><span><i class="lg-plan"></i>行程</span><span><i class="lg-term"></i>節氣</span><span><i class="lg-fest"></i>節日</span><span><i class="lg-dot"></i>有記帳</span><button type="button" class="ghost sm" id="calToday">回到今天</button></div>
   </section>
   <section class="card" id="calDay"></section>
   </div>
@@ -206,6 +207,36 @@
   <div id="vBd" hidden>
   <div id="bdHead"><button type="button" id="bdBack" class="ghost">‹ 日曆</button><h2 style="margin:0;font-size:20px">生日名單</h2></div>
   <section class="card" id="bdList"></section>
+  </div>
+
+  <div id="vNote" hidden>
+  <div id="nlView">
+  <div class="vhd"><h2>記事本</h2></div>
+  <section class="card" id="nRemind" hidden></section>
+  <section class="card cal">
+    <div class="calhead">
+      <button type="button" class="ghost cnav" id="ncPrev" aria-label="上個月">‹</button>
+      <div class="calttl"><b id="ncTitle"></b><small>總日曆・標 ★ 的行程會顯示在這裡</small></div>
+      <button type="button" class="ghost cnav" id="ncNext" aria-label="下個月">›</button>
+    </div>
+    <div class="calgrid calwk"><span class="we">日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="we">六</span></div>
+    <div class="calgrid" id="ncGrid"></div>
+    <div class="callegend"><span><i class="lg-plan"></i>★ 行程</span><span><i class="lg-dot"></i>沒標 ★ 的行程</span><button type="button" class="ghost sm" id="ncToday">回到今天</button></div>
+  </section>
+  <section class="card" id="ncDay"></section>
+  <section class="card">
+    <div class="lhead"><h2>我的頁面</h2><button type="button" class="ghost sm" id="npAdd">＋ 新增頁面</button></div>
+    <div id="npList"></div>
+    <div class="bt" style="margin-top:14px"><button type="button" class="ghost sm" id="nIcs">📅 把要通知的行程加到手機行事曆</button></div>
+    <p class="sub" id="nIcsMsg" style="margin:6px 0 0"></p>
+  </section>
+  </div>
+  <div id="npView" hidden>
+  <div class="vhd"><button type="button" id="npBack" class="ghost">‹ 記事本</button><h2 id="npTitle"></h2><button type="button" id="npEdit" class="ghost sm">編輯</button></div>
+  <section class="card"><div class="lhead"><h2>行程</h2><button type="button" class="ghost sm" id="npItemAdd">＋ 新增行程</button></div><div id="npItems"></div></section>
+  <section class="card"><h2>筆記</h2><textarea id="npText" rows="6" maxlength="20000" placeholder="隨手寫：上課時間、教室、考試範圍、要準備的東西…" aria-label="筆記"></textarea><p class="sub" id="npTextMsg" style="margin:4px 0 0"></p></section>
+  <section class="card"><div class="lhead"><h2>圖片</h2><button type="button" class="ghost sm" id="npImgAdd">＋ 加圖片</button></div><div class="pgrid" id="npImgs" hidden></div><p class="sub" id="npImgMsg" style="margin:6px 0 0">可以放課表、行事曆、每個月的計畫表截圖。</p></section>
+  </div>
   </div>
 
   <div id="vSet" hidden>
@@ -342,6 +373,7 @@
   <div id="csList"></div>
 </section>
 <input type="file" id="phFile" accept="image/*" multiple hidden>
+<input type="file" id="npFile" accept="image/*" multiple hidden>
 <div id="viewer" role="dialog" aria-label="照片" hidden>
   <span id="vwCount"></span>
   <button type="button" id="vwClose" aria-label="關閉">✕</button>
@@ -355,12 +387,14 @@
 <nav id="tabbar" hidden>
   <button type="button" id="tabRec" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg><span>記帳</span></button>
   <button type="button" id="tabCal" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>日曆</span></button>
+  <button type="button" id="tabNote" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h10.5a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6z"/><path d="M6 3.5v17M9.5 8h6M9.5 11.5h6M9.5 15h4"/></svg><span>記事本</span></button>
   <button type="button" id="tabSet" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>設定</span></button>
 </nav>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
+<script src="notes.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

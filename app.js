@@ -44,7 +44,7 @@ const allowanceOf=m=>{const a=settings&&settings.allowance&&settings.allowance[m
 function render(){
   $("tabbar").hidden=true;
   renderMonths();
-  $("vHome").hidden=view!=="home";$("vMonth").hidden=view!=="month";$("vSet").hidden=view!=="set";$("vCal").hidden=view!=="cal";$("vBd").hidden=view!=="bd";
+  $("vHome").hidden=view!=="home";$("vMonth").hidden=view!=="month";$("vSet").hidden=view!=="set";$("vCal").hidden=view!=="cal";$("vBd").hidden=view!=="bd";$("vNote").hidden=view!=="note";
   $("backBtn").hidden=view!=="month"||!settings;
   {const [yy,mm]=cur.split("-").map(Number);$("monthTitle").textContent=`${yy} 年 ${mm} 月`}
   $("status").hidden=true;
@@ -55,10 +55,10 @@ function render(){
   if(!loaded){$("status").hidden=false;$("status").textContent="載入中…";$("wizard").hidden=true;$("app").hidden=true;return}
   if(!settings){showWizard();$("app").hidden=true;$("backBtn").hidden=true;return}
   $("wizard").hidden=true;
-  {const inSet=view==="set"||view==="cal"||view==="bd";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
+  {const inSet=view==="set"||view==="cal"||view==="bd"||view==="note";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
   if(view==="set")renderSet();
   {const v=$("voice");if(view==="month"){if(v.parentElement!==$("vMonth"))$("vMonth").insertBefore(v,$("monthTitle").nextSibling)}else if(v.parentElement!==$("vHome"))$("vHome").insertBefore(v,$("vHome").firstChild)}
-  $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd");$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
+  $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note");$("tabNote").classList.toggle("on",view==="note");if(view==="note")renderNotes();renderRemindCard($("homeRemind"),true);$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
   $("app").hidden=false;
   const ex=expenses.filter(e=>e.month===cur).sort((a,b)=>b.date.localeCompare(a.date));
   const spent=ex.reduce((s,e)=>s+(+e.amount||0),0),incM=incomeSum(cur),allow=allowanceOf(cur)+incM;
@@ -316,7 +316,7 @@ function enterLedger(kind){
   if(kind==="fam"&&!hid)kind="me";
   stopSubs();clearTimeout(pubTimer);
   wz=null;$("wizard").hidden=true;curKey=kind;loaded=false;settings=null;expenses=[];incomes=[];coupons=[];lastPub="";view="home";cur=today().slice(0,7);setupOpen=false;sstate=null;items=[];famSel="";setSub=null;
-  $("preview").innerHTML="";$("confirmRow").hidden=true;$("vtext").value="";$("vmsg").textContent="";vPh=[];$("vPhs").hidden=true;
+  closePage();$("preview").innerHTML="";$("confirmRow").hidden=true;$("vtext").value="";$("vmsg").textContent="";vPh=[];$("vPhs").hidden=true;
   closeCat();closeSheet();closeForm();closeViewer();
   base=ledgerBase(kind);col=base.collection("expenses");phCol=base.collection("photos");incCol=base.collection("incomes");cpCol=base.collection("coupons");
   bdRef=DB.doc(`users/${myId}/prefs/bdays`);prefsRef=DB.doc(`users/${myId}/prefs/ui`);recurTried=new Set();
@@ -327,6 +327,7 @@ function enterLedger(kind){
   unsubs.push(bdRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;bdays=(d&&Array.isArray(d.list))?d.list:[];if(loaded&&(view==="cal"||view==="bd"))render()},()=>{}));
   unsubs.push(cpCol.onSnapshot(sn=>{coupons=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)renderCoupons()},()=>{}));
   unsubs.push(incCol.onSnapshot(sn=>{incomes=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)render();schedulePublish()},()=>{}));
+  notesSub();
   unsubs.push(prefsRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;curPrefs=d;applyBg(d&&d.bg);if(loaded)render()},()=>{}));
   render();window.scrollTo(0,0);
 }
@@ -1199,7 +1200,7 @@ function renderCal(){
   const spent={};expenses.forEach(e=>{spent[e.date]=(spent[e.date]||0)+(+e.amount||0)});
   const g=$("calGrid");g.innerHTML="";const tdy=today();
   const cells=Math.ceil((startDow+dim)/7)*7;
-  const bmap=bdayMap(new Date(Date.UTC(calY,calM-1,1-startDow)),new Date(Date.UTC(calY,calM-1,cells-startDow)));
+  const bmap=bdayMap(new Date(Date.UTC(calY,calM-1,1-startDow)),new Date(Date.UTC(calY,calM-1,cells-startDow))),pmap=planMap();
   for(let k=0;k<cells;k++){
     const dt=new Date(Date.UTC(calY,calM-1,1-startDow+k)),y=dt.getUTCFullYear(),m=dt.getUTCMonth()+1,d=dt.getUTCDate(),key=`${y}-${pad2(m)}-${pad2(d)}`;
     const inf=dayInfo(y,m,d),dow=dt.getUTCDay();
@@ -1207,13 +1208,15 @@ function renderCal(){
     const n=document.createElement("span");n.className="n";n.textContent=d;
     const l=document.createElement("span");l.className="l";
     const bd=bmap[key]||[];
+    const pl=pmap[key]||[];
     if(bd.length){l.textContent=bd[0].name.slice(0,3)+(bd.length>1?"等":"");l.classList.add("bday")}
+    else if(pl.length){l.textContent=nShort(pl[0].title)+(pl.length>1?"…":"");l.classList.add("plan")}
     else if(inf.fest.length){l.textContent=inf.fest[0].replace(/節$/,"").slice(0,4);l.classList.add("fest")}
     else if(inf.term){l.textContent=inf.term;l.classList.add("term")}
     else if(inf.l){if(inf.l.d===1){l.textContent=lMonName(inf.l);l.classList.add("m1")}else l.textContent=lDayName(inf.l.d)}
     b.append(n,l);
     if(spent[key]){const dot=document.createElement("i");dot.className="dot";b.appendChild(dot)}
-    b.setAttribute("aria-label",`${m}月${d}日`+(inf.l?`，農曆${lMonName(inf.l)}${lDayName(inf.l.d)}`:"")+(inf.term?`，${inf.term}`:"")+(inf.fest.length?`，${inf.fest.join("、")}`:"")+(bd.length?`，${bd.map(x=>x.name+x.kind+"生日").join("、")}`:"")+(spent[key]?`，花了${spent[key]}元`:""));
+    b.setAttribute("aria-label",`${m}月${d}日`+(inf.l?`，農曆${lMonName(inf.l)}${lDayName(inf.l.d)}`:"")+(inf.term?`，${inf.term}`:"")+(inf.fest.length?`，${inf.fest.join("、")}`:"")+(bd.length?`，${bd.map(x=>x.name+x.kind+"生日").join("、")}`:"")+(pl.length?`，${pl.map(x=>x.title).join("、")}`:"")+(spent[key]?`，花了${spent[key]}元`:""));
     b.onclick=()=>{calSel=key;if(m!==calM){calY=y;calM=m}renderCal()};
     g.appendChild(b);
   }
@@ -1226,7 +1229,9 @@ function renderCalDay(){
   const lu=document.createElement("div");lu.className="lun";
   lu.textContent=inf.l?`農曆 ${lMonName(inf.l)}${lDayName(inf.l.d)}・${ganzhi(inf.l.y)}・屬${shengxiao(inf.l.y)}`:"";box.appendChild(lu);
   const bdl=(bdayMap(new Date(Date.UTC(y,m-1,d)),new Date(Date.UTC(y,m-1,d)))[calSel]||[]);
-  if(inf.term||inf.fest.length||bdl.length){const tg=document.createElement("div");tg.className="tags";
+  const pll=planMap()[calSel]||[];
+  if(inf.term||inf.fest.length||bdl.length||pll.length){const tg=document.createElement("div");tg.className="tags";
+    pll.forEach(x=>{const t=document.createElement("button");t.type="button";t.className="tag plan";t.textContent=`📌 ${x.title}${x.time?" "+x.time:""}`;t.onclick=()=>openPage(x.pid);tg.appendChild(t)});
     bdl.forEach(x=>{const t=document.createElement("span");t.className="tag bday";t.textContent=`🎂 ${x.name}${x.kind==="農曆"?"農曆":""}生日`+(x.age?`（${x.age} 歲）`:"");tg.appendChild(t)});
     if(inf.term){const t=document.createElement("span");t.className="tag term";t.textContent="節氣・"+inf.term;tg.appendChild(t)}
     inf.fest.forEach(f=>{const t=document.createElement("span");t.className="tag fest";t.textContent=f;tg.appendChild(t)});box.appendChild(tg)}
@@ -1616,6 +1621,8 @@ async function deleteAccount(){
   stopSubs();hhStop();
   for(const h of(profile.hids||[]).slice()){try{await leaveHousehold(h,true)}catch(e){}}
   await wipeLedger(DB.doc(`users/${myId}/ledgers/main`)).catch(()=>{});
+  {const nc=DB.collection(`users/${myId}/notes`),sn=await nc.get().catch(()=>({docs:[]}));
+   for(const d of sn.docs||[]){const ic=nc.doc(d.id).collection("imgs"),si=await ic.get().catch(()=>({docs:[]}));for(const x of si.docs||[])await ic.doc(x.id).delete().catch(()=>{});await nc.doc(d.id).delete().catch(()=>{})}}
   for(const p of["prefs/bdays","prefs/ui"])await DB.doc(`users/${myId}/${p}`).delete().catch(()=>{});
   await DB.doc(`users/${myId}`).delete().catch(()=>{});
   try{await me.delete()}catch(e){if(e&&e.code==="auth/requires-recent-login"){await me.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());await me.delete()}else throw e}
@@ -1646,7 +1653,7 @@ function loginErr(e){
   const c=(e&&e.code)||"";if(!c||c==="auth/popup-closed-by-user"||c==="auth/cancelled-popup-request")return;
   $("loginMsg").textContent=c==="auth/unauthorized-domain"?"這個網址還沒加到 Firebase 的授權網域。":c==="auth/network-request-failed"?"網路連線有問題，請再試一次。":c==="auth/disallowed-useragent"?"這個 App 內建的瀏覽器不能用 Google 登入，請改用 Safari 或 Chrome 打開。":"登入失敗（"+c+"），請再試一次。";
 }
-function stopAll(){stopSubs();hhStop();clearTimeout(pubTimer);curKey=null;loaded=false;settings=null;expenses=[];incomes=[];coupons=[];bdays=[];curPrefs=null;hid=null;household=null;members={};others={};goal=null;contribs=[];view="home";setSub=null;applyBg("")}
+function stopAll(){stopSubs();notesReset();hhStop();clearTimeout(pubTimer);curKey=null;loaded=false;settings=null;expenses=[];incomes=[];coupons=[];bdays=[];curPrefs=null;hid=null;household=null;members={};others={};goal=null;contribs=[];view="home";setSub=null;applyBg("")}
 async function onUser(u){
   stopAll();me=u||null;joinInfo=null;
   if(!u){myId=null;profile=null;authState="out";render();return}
@@ -1685,6 +1692,7 @@ $("copyUrl").onclick=async()=>{toast(await copyText(location.href)?"已複製網
 $("acctBtn").onclick=()=>{view="set";setSub="account";sstate=null;render();window.scrollTo(0,0)};
 $("hAllowBox").onclick=editAllowance;$("hAllowBox").onkeydown=e=>{if(e.key==="Enter")editAllowance()};
 $("tabCal").onclick=()=>{view="cal";const t=today();calY=+t.slice(0,4);calM=+t.slice(5,7);calSel=t;render();window.scrollTo(0,0)};
+initNotes();
 $("tabSet").onclick=()=>{view="set";setSub=null;sstate=null;setupOpen=false;render();window.scrollTo(0,0)};
 $("tabRec").onclick=()=>{view="home";cur=today().slice(0,7);$("vdate").value=today();sstate=null;setupOpen=false;render();window.scrollTo(0,0)};
 $("add").date.value=today();$("vdate").value=today();

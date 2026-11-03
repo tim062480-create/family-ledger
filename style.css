@@ -328,3 +328,38 @@ body.signedout #tabbar{display:none!important}
 .faq p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.7}
 .lfoot{margin:26px 0 10px;text-align:center;color:var(--muted);font-size:13px}
 @media (min-width:640px){.ltitle{font-size:38px}}
+
+/* ---- 記事本 ---- */
+.vhd{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.vhd h2{margin:0;font-size:20px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cday .l.plan{color:var(--s1);font-weight:700}
+.lg-plan{background:var(--s1)}
+#calDay .tag.plan{color:var(--s1);font-weight:600;cursor:pointer}
+.nmh{font-size:13px;font-weight:700;color:var(--muted);margin:16px 0 2px;letter-spacing:.5px}
+.nmh:first-child{margin-top:2px}
+.nit{display:flex;align-items:center;gap:12px;width:100%;background:none;color:var(--ink);text-align:left;padding:10px 2px;border:none;border-bottom:1px solid var(--line);border-radius:0}
+.nit:last-child{border-bottom:none}
+.nit .nd{flex:none;width:60px;text-align:center;background:var(--track);border-radius:10px;padding:6px 0;line-height:1.25}
+.nit .nd b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+.nit .nd small{font-size:11px;color:var(--muted)}
+.nit.star .nd{background:color-mix(in srgb,var(--s1) 18%,var(--track))}
+.nit .nt{flex:1;min-width:0}
+.nit .nt .ttl{display:block;font-weight:600;font-size:15px;line-height:1.35}
+.nit .nt small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;line-height:1.4}
+.nit .nic{flex:none;display:flex;align-items:center;gap:6px;font-size:13px}
+.nit .nic .st{color:var(--s1)}
+.nit .nic .when{color:var(--accent);font-weight:600;font-size:12px}
+.nit.past{opacity:.5}
+.npr{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;background:none;color:var(--ink);text-align:left;padding:12px 2px;border:none;border-bottom:1px solid var(--line);border-radius:0}
+.npr:last-child{border-bottom:none}
+.npr .l{min-width:0}
+.npr b{display:block;font-size:15.5px}
+.npr small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.npr .r{color:var(--muted);font-size:20px}
+#npText{min-height:150px;line-height:1.7}
+.npi{position:relative}
+.npi>button:first-child{padding:0;border-radius:12px;overflow:hidden;aspect-ratio:1;background:var(--track);width:100%;display:block;border:none}
+.npi img{width:100%;height:100%;object-fit:cover;display:block}
+.pgrid .npx{aspect-ratio:auto;width:auto;height:auto;overflow:visible;position:absolute;top:4px;right:4px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:10px;font-size:12px;padding:2px 7px;line-height:1.4}
+#homeRemind h2,#nRemind h2{margin-bottom:4px}
+.tab{padding:4px 12px}
