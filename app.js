@@ -690,7 +690,7 @@ $("rcAdd").onclick=async()=>{
 };
 
 // ---- settings menu ----
-const SETS=[["cat","額度與類別"],["recur","固定支出"],["family","家庭成員與邀請"],["share","分享給家人"],["goal","家庭存錢目標"],["remind","每日記帳提醒"],["look","背景與每日一句"],["export","匯出與備份"],["feedback","意見回饋"],["account","帳號"]];
+const SETS=[["guide","使用說明與示範"],["cat","額度與類別"],["recur","固定支出"],["family","家庭成員與邀請"],["share","分享給家人"],["goal","家庭存錢目標"],["remind","每日記帳提醒"],["look","背景與每日一句"],["export","匯出與備份"],["feedback","意見回饋"],["account","帳號"]];
 const setsFor=()=>SETS.filter(([k])=>!(curKey==="fam"&&k==="share"));
 function setTitle(k){if(curKey==="fam"&&k==="cat")return"共同帳的預算與類別";return(SETS.find(x=>x[0]===k)||["",""])[1]}
 function setValue(k){
@@ -720,6 +720,7 @@ function renderSet(){
   if(setSub==="feedback")openFeedback();
   if(setSub==="family")renderFamilyPage();
   if(setSub==="account")renderAccount();
+  if(setSub!=="guide"){const gv=$("guideVid");if(gv&&!gv.paused)gv.pause()}
   if(setSub==="look")renderLook();
   if(setSub==="remind")renderReminder();
   if(setSub==="share"){$("privacy").hidden=false;$("shareNoHH").hidden=!!hid;$("shareLevel").disabled=!hid;$("shareLevel").value=(settings&&settings.share)||"none"}

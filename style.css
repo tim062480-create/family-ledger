@@ -562,3 +562,11 @@ body.signedout #tabbar{display:none!important}
 .nmore .ntab{padding:6px 12px;font-size:13px}
 #nTabs{padding-bottom:8px}
 .aihint{font-size:13px;font-weight:400;color:var(--muted);margin-left:6px;vertical-align:middle}
+
+.guide details{border-top:1px solid var(--line);padding:10px 0}
+.guide details:first-of-type{border-top:0}
+.guide summary{cursor:pointer;font-weight:700;font-size:16px;list-style:none}
+.guide summary::-webkit-details-marker{display:none}
+.guide summary::after{content:"▾";float:right;color:var(--muted)}
+.guide details[open] summary::after{content:"▴"}
+.guide p{margin:8px 0 0;color:var(--muted);line-height:1.7;font-size:15px}

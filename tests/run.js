@@ -327,6 +327,9 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const e1 = errs.length; await pg.click("#mGenre button[data-g='folk']"); await wait(600);
   ok(errs.length === e1 && (await pg.innerText("#mQ")).includes("綠袖子"), "民謠 plays too");
   await pg.click("#mClose"); await wait(100);
+  await tab("#tabSet"); await wait(300); await pg.click("#setMenu .mi:has-text('使用說明與示範')"); await wait(300);
+  ok(await pg.isVisible("#guideVid") && (await pg.$$("[data-sub='guide'] details")).length >= 10, "設定 has 使用說明與示範 with the video and a guide");
+  await pg.click("#setBack"); await wait(200); await tab("#tabRec"); await wait(200);
   // 7c. 一鍵邀請全家：一個連結，加入時選「我是哪一位」
   await pg.click("#acctBtn"); await wait(300);
   await pg.click("#whoBtns .tile:has-text('新增')"); await pg.fill("#fs_n", "爸爸"); await pg.click("#fsSave"); await wait(600);

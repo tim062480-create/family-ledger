@@ -23,7 +23,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261105l">
+<link rel="stylesheet" href="style.css?v=20261105m">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -278,6 +278,23 @@
   <div id="vSet" hidden>
   <div id="setHead"><button type="button" id="setBack" class="ghost" hidden>‹ 設定</button><h2 id="setTitle">設定</h2></div>
   <div class="card menu" id="setMenu"></div>
+  <div class="subpg" data-sub="guide" hidden>
+    <section class="card"><h2>示範影片</h2><p class="sub" style="margin:0 0 10px">兩分鐘看完所有功能（影片裡是示範用的假資料）。</p>
+      <video id="guideVid" controls playsinline preload="none" poster="media/demo-poster.jpg" style="width:100%;max-width:360px;display:block;margin:0 auto;border-radius:18px;background:#000;aspect-ratio:9/16"><source src="media/demo.mp4" type="video/mp4"></video></section>
+    <section class="card guide"><h2>使用說明</h2>
+      <details open><summary>✏️ 記一筆</summary><p>在「記帳」頁的框框打一句話，例如「活大素食 62 晚餐，捷運 30」，按「解析」會自動拆成兩筆、分好類別，確認後按「確認記帳」。金額後面的字會變成備註。也可以按「語音」用說的、「附照片」或「讀收據」。</p></details>
+      <details><summary>📊 看帳本</summary><p>「每月帳本」點進某個月，可以看各類別花了多少、預算還剩多少，以及每一筆明細。點一筆可以修改或刪除。額度和類別在「設定 → 額度與類別」調整。</p></details>
+      <details><summary>👨‍👩‍👧 全家一起用</summary><p>點右上角頭像會回到「誰要記帳？」。按「新增」把家人加進來，再按「📨 一鍵邀請」把連結傳到家裡的 LINE 群組，家人點連結、選「我是哪一位」就加入了。上方可以切換「我的帳／全家的帳」。</p></details>
+      <details><summary>🔒 隱私與密碼</summary><p>你的帳只有你看得到；要不要分享給家人、分享多少，在「設定 → 分享給家人」決定。怕別人點進你的帳，可以到「設定 → 帳號」設一組 4–6 位數密碼。</p></details>
+      <details><summary>📒 記事本與總日曆</summary><p>記事本可以放行程、筆記和圖片，每堂課或每件事可以各做一頁（放在「其他」裡）。行程旁邊按 ★ 就會出現在「總日曆」；點日曆上的某一天，可以看當天的事。日曆下面有「今天、明天、後天」和「未來一個月」，可以收起或展開。</p></details>
+      <details><summary>✅ 待辦</summary><p>「待辦」分成雜事、功課、家。表格每一行右邊的「待辦」按一下就放進來，做完打勾。</p></details>
+      <details><summary>✨ AI 幫你輸入</summary><p>到「AI 輸入」先按「📋 複製給 AI 的說明」，打開 ChatGPT、Claude 或 Gemini 貼上，再告訴它你要加什麼（也可以傳截圖）。把 AI 的回覆貼回來按「讀取」，勾選後「全部加入」。之後在同一個聊天室繼續請它做就好，不用再複製說明。</p></details>
+      <details><summary>🎂 生日</summary><p>「生日」頁可以記家人朋友的生日，國曆、農曆都會自動算出今年是哪一天，還剩幾天。</p></details>
+      <details><summary>🎨 外觀與音樂</summary><p>「設定 → 背景與每日一句」可以換背景照片、每日一句的主題（也能自己寫）、手機主畫面的圖示。右上角 ♪ 可以放輕音樂、古典樂或民謠。</p></details>
+      <details><summary>📱 加到手機主畫面</summary><p>iPhone：用 Safari 打開網站，按「分享 → 加入主畫面」。Android：用 Chrome 打開，選單裡按「安裝應用程式」或「加到主畫面」。之後就像 App 一樣，從桌面直接打開。</p></details>
+      <details><summary>💾 備份</summary><p>「設定 → 匯出與備份」可以下載備份檔或匯出成表格，換手機或怕資料不見時很好用。</p></details>
+    </section>
+  </div>
   <div class="subpg" data-sub="cat" hidden>
   <section class="card" id="setup">
     <h2>額度與類別</h2>
@@ -443,9 +460,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
-<script src="profiles.js?v=20261105l"></script>
-<script src="ai.js?v=20261105l"></script>
-<script src="notes.js?v=20261105l"></script>
-<script src="app.js?v=20261105l"></script>
+<script src="profiles.js?v=20261105m"></script>
+<script src="ai.js?v=20261105m"></script>
+<script src="notes.js?v=20261105m"></script>
+<script src="app.js?v=20261105m"></script>
 </body>
 </html>
