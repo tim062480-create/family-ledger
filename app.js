@@ -56,6 +56,8 @@ function render(){
   if(!loaded){$("status").hidden=false;$("status").textContent="載入中…";$("wizard").hidden=true;$("app").hidden=true;return}
   if(!settings){showWizard();$("app").hidden=true;$("backBtn").hidden=true;return}
   $("wizard").hidden=true;
+  if(needWho()){renderWho("in");["app","quote","subline","datebar","ledgerSw","tabbar","acctBtn","musicBtn"].forEach(i=>{$(i).hidden=true});$("backBtn").hidden=true;$("appTitle").hidden=false;return}
+  $("who").hidden=true;
   {const inSet=view==="set"||view==="cal"||view==="bd"||view==="note";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
   if(view==="set")renderSet();
   {const v=$("voice");if(view==="month"){if(v.parentElement!==$("vMonth"))$("vMonth").insertBefore(v,$("monthTitle").nextSibling)}else if(v.parentElement!==$("vHome"))$("vHome").insertBefore(v,$("vHome").firstChild)}
@@ -339,8 +341,7 @@ function renderLedgerSw(){
 }
 function renderAcct(){
   const b=$("acctBtn");b.hidden=!me||!curKey;if(b.hidden)return;
-  const im=$("acctImg"),ph=(me&&me.photoURL)||"";im.hidden=!ph;if(ph&&im.getAttribute("src")!==ph)im.src=ph;
-  $("acctIni").hidden=!!ph;$("acctIni").textContent=myName().slice(0,1);
+  $("acctImg").hidden=true;const s=$("acctIni");s.hidden=false;s.innerHTML="";s.appendChild(faceEl(myFace(),myId,"hav"));b.setAttribute("aria-label","換人（"+myName()+"）");
 }
 
 // ---- wizard ----
@@ -381,7 +382,7 @@ function showWizard(){
     nx.disabled=true;
     const chosen=wz.list.filter(c=>c.on),allow=Math.max(0,+wz.allow||0);
     const data={categories:chosen.map(c=>({name:c.name,budget:Math.max(0,+c.budget||0)})),allowance:{[cur]:allow},defaultAllowance:allow,...(fam?{createdBy:myId}:{share:"none"})};
-    try{await base.set(data);wz=null;view="home"}
+    try{await base.set(data);wz=null;view="home";setPicked(true)}
     catch(e){$("wzMsg").textContent="儲存失敗，請稍後再試";nx.disabled=false}
   };
   nav.appendChild(nx);
@@ -773,6 +774,7 @@ function openForm(cfg){
   $("fsSub").hidden=!cfg.sub;$("fsSub").textContent=cfg.sub||"";
   const box=$("fsFields");box.innerHTML="";
   cfg.fields.forEach(f=>{
+    if(f.custom){const l=document.createElement("div");l.className="full fcust";l.appendChild(mkEl("span","fl",f.label));f.custom(l);box.appendChild(l);return}
     const l=document.createElement("label");if(f.full)l.className="full";l.append(document.createTextNode(f.label));
     let inp;
     if(f.options){inp=document.createElement("select");f.options.forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;inp.appendChild(o)})}
@@ -1511,15 +1513,15 @@ const inviteUrl=(h,t)=>`${SITE_URL}?join=${h}.${t}&openExternalBrowser=1`;
 async function createHousehold(name){
   const ref=DB.collection("households").doc(),b=DB.batch();
   b.set(ref,{name,owner:myId,createdAt:Date.now()});
-  b.set(ref.collection("members").doc(myId),{name:myName(),photo:(me&&me.photoURL)||"",invite:"",joinedAt:Date.now()});
+  b.set(ref.collection("members").doc(myId),{name:myName(),photo:(me&&me.photoURL)||"",avatar:(profile&&profile.avatar)||"",avc:Number.isInteger(profile&&profile.avc)?profile.avc:avcOf(null,myId),invite:"",joinedAt:Date.now()});
   await b.commit();
   await saveProfile({hids:[...new Set([...(profile.hids||[]),ref.id])],cur:ref.id});
   pickHousehold(ref.id);
 }
 let lastInvite=null;
-async function createInvite(){
+async function createInvite(extra){
   const t=randToken();
-  await DB.doc(`households/${hid}/invites/${t}`).set({by:myId,byName:myName(),hname:hhName(),createdAt:Date.now(),expiresAt:firebase.firestore.Timestamp.fromMillis(Date.now()+7*864e5)});
+  await DB.doc(`households/${hid}/invites/${t}`).set({...(extra||{}),by:myId,byName:myName(),hname:hhName(),createdAt:Date.now(),expiresAt:firebase.firestore.Timestamp.fromMillis(Date.now()+7*864e5)});
   lastInvite={h:hid,t,url:inviteUrl(hid,t)};return lastInvite;
 }
 let invites=[],invSub=null,invFor=null;
@@ -1532,6 +1534,7 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);return tru
 function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{el.hidden=true},2600)}
 function mkEl(tag,cls,txt){const x=document.createElement(tag);if(cls)x.className=cls;if(txt!=null)x.textContent=txt;return x}
 function avatarEl(m){
+  if(m&&(m.avatar||!m.photo||m.id))return faceEl(m,(m&&m.id)||(m&&m.name),"mav");
   const a=mkEl("span","mav");
   if(m&&m.photo){const im=document.createElement("img");im.src=m.photo;im.alt="";im.referrerPolicy="no-referrer";im.onerror=()=>{im.remove();a.textContent=((m&&m.name)||"?").slice(0,1)};a.appendChild(im)}
   else a.textContent=((m&&m.name)||"?").slice(0,1);
@@ -1643,7 +1646,7 @@ async function prepareJoin(){
   try{
     const sn=await DB.doc(`households/${h}/invites/${t}`).get();
     if(!sn.exists)joinInfo.state="bad";
-    else{const d=sn.data(),exp=d.expiresAt&&d.expiresAt.toMillis?d.expiresAt.toMillis():0;joinInfo={h,t,state:exp<Date.now()?"expired":"ready",hname:d.hname||"家人的家",byName:d.byName||"家人"}}
+    else{const d=sn.data(),exp=d.expiresAt&&d.expiresAt.toMillis?d.expiresAt.toMillis():0;joinInfo={h,t,state:exp<Date.now()?"expired":"ready",hname:d.hname||"家人的家",byName:d.byName||"家人",pid:d.pid||"",pname:d.pname||""}}
   }catch(e){joinInfo.state="bad"}
   render();
 }
@@ -1655,15 +1658,16 @@ function renderJoinCard(){
     const b=mkEl("button","","先進入我的帳");b.type="button";b.onclick=()=>{joinDone=true;joinInfo=null;history.replaceState(null,"",SITE_URL);startLedgers()};c.appendChild(b);return;
   }
   c.append(mkEl("h2","",`${j.byName}邀請你加入「${j.hname}」`),mkEl("p","sub","加入以後可以一起記「全家的帳」，也能選擇要不要分享自己的帳給家人看。你自己的帳只有你看得到。"));
-  const l=mkEl("label","jl","在這個家你叫什麼？");const inp=document.createElement("input");inp.value=(profile&&profile.name)||"";inp.placeholder="例如 媽媽、姐姐、弟弟";inp.maxLength=20;l.appendChild(inp);c.appendChild(l);
+  const l=mkEl("label","jl","在這個家你叫什麼？");const inp=document.createElement("input");inp.value=j.pname||(profile&&profile.name)||"";inp.placeholder="例如 媽媽、姐姐、弟弟";inp.maxLength=20;l.appendChild(inp);c.appendChild(l);
   const r=mkEl("div","bt"),ok=mkEl("button","","加入"),no=mkEl("button","ghost","先不要");ok.type=no.type="button";const msg=mkEl("small","m");
   ok.onclick=async()=>{const n=inp.value.trim();if(!n){msg.textContent="請填一個稱呼";return}ok.disabled=true;try{await doJoin(n)}catch(e){msg.textContent="加入失敗，連結可能過期了，請家人再傳一次";ok.disabled=false}};
   no.onclick=()=>{joinDone=true;joinInfo=null;history.replaceState(null,"",SITE_URL);startLedgers()};
   r.append(ok,no,msg);c.appendChild(r);
 }
 async function doJoin(name){
-  const {h,t,hname}=joinInfo;
-  await DB.doc(`households/${h}/members/${myId}`).set({name,photo:(me&&me.photoURL)||"",invite:t,joinedAt:Date.now()});
+  const {h,t,hname,pid}=joinInfo;
+  await DB.doc(`households/${h}/members/${myId}`).set({name,photo:(me&&me.photoURL)||"",avatar:(profile&&profile.avatar)||"",avc:Number.isInteger(profile&&profile.avc)?profile.avc:avcOf(null,myId),invite:t,joinedAt:Date.now()});
+  await claimPending(h,pid);
   await saveProfile({hids:[...new Set([...(profile.hids||[]),h])],cur:h});
   finishJoin(h,hname);
 }
@@ -1676,10 +1680,11 @@ function finishJoin(h,hname){
 // ---- account ----
 function renderAccount(){
   const c=$("acctCard");c.innerHTML="";if(!me)return;
-  const r=mkEl("div","mem");r.appendChild(avatarEl({photo:me.photoURL,name:me.displayName||myName()}));
+  const r=mkEl("div","mem");r.appendChild(faceEl(myFace(),myId,"mav"));
   const w=mkEl("div","mwho");w.append(mkEl("b","",me.displayName||myName()),mkEl("small","",me.email||""));r.appendChild(w);c.appendChild(r);
-  const lo=mkEl("button","ghost","登出");lo.type="button";lo.onclick=()=>fbAuth.signOut();
-  const row=mkEl("div","bt");row.appendChild(lo);c.appendChild(row);
+  const lo=mkEl("button","ghost","登出");lo.type="button";lo.onclick=()=>{setPicked(false);fbAuth.signOut()};
+  const ea=mkEl("button","ghost","換頭像、改稱呼");ea.type="button";ea.onclick=editMe;
+  const row=mkEl("div","bt");row.append(ea,lo);c.appendChild(row);
   c.appendChild(mkEl("div","bdgrp","刪除帳號"));
   c.appendChild(mkEl("p","sub","會刪除你的帳、照片、生日名單和設定，並離開所有家庭。刪除後不能復原；想留著資料，先到「匯出與備份」下載備份檔。")).style.margin="0 0 8px";
   const del=mkEl("button","ghost","刪除我的帳號和資料");del.type="button";const msg=mkEl("small","m");
@@ -1696,13 +1701,16 @@ async function deleteAccount(){
    for(const d of sn.docs||[]){const ic=nc.doc(d.id).collection("imgs"),si=await ic.get().catch(()=>({docs:[]}));for(const x of si.docs||[])await ic.doc(x.id).delete().catch(()=>{});await nc.doc(d.id).delete().catch(()=>{})}}
   for(const p of["prefs/bdays","prefs/ui","prefs/memo"])await DB.doc(`users/${myId}/${p}`).delete().catch(()=>{});
   await DB.doc(`users/${myId}`).delete().catch(()=>{});
+  saveDevProfiles(devProfiles().filter(x=>x.uid!==myId));
   try{await me.delete()}catch(e){if(e&&e.code==="auth/requires-recent-login"){await me.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());await me.delete()}else throw e}
 }
 
 // ---- landing / sign-in gate ----
 function renderGate(){
   const out=authState==="out"||authState==="nocfg";
-  $("landing").hidden=!out;
+  const devWho=out&&authState==="out"&&!JOIN&&!whoForceLanding&&devProfiles().length>0;
+  $("landing").hidden=!out||devWho;
+  if(devWho)renderWho("out");else if(!me||!needWho())$("who").hidden=true;
   $("joinHint").hidden=!(out&&JOIN);
   $("inapp").hidden=!(INAPP&&out);
   $("nocfg").hidden=authState!=="nocfg";
@@ -1724,7 +1732,7 @@ function loginErr(e){
   const c=(e&&e.code)||"";if(!c||c==="auth/popup-closed-by-user"||c==="auth/cancelled-popup-request")return;
   $("loginMsg").textContent=c==="auth/unauthorized-domain"?"這個網址還沒加到 Firebase 的授權網域。":c==="auth/network-request-failed"?"網路連線有問題，請再試一次。":c==="auth/disallowed-useragent"?"這個 App 內建的瀏覽器不能用 Google 登入，請改用 Safari 或 Chrome 打開。":"登入失敗（"+c+"），請再試一次。";
 }
-function stopAll(){stopSubs();notesReset();hhStop();clearTimeout(pubTimer);curKey=null;loaded=false;settings=null;expenses=[];incomes=[];coupons=[];bdays=[];curPrefs=null;hid=null;household=null;members={};others={};goal=null;contribs=[];view="home";setSub=null;applyBg("")}
+function stopAll(){whoEdit=false;stopSubs();notesReset();hhStop();clearTimeout(pubTimer);curKey=null;loaded=false;settings=null;expenses=[];incomes=[];coupons=[];bdays=[];curPrefs=null;hid=null;household=null;members={};others={};goal=null;contribs=[];view="home";setSub=null;applyBg("")}
 async function onUser(u){
   stopAll();me=u||null;joinInfo=null;
   if(!u){myId=null;profile=null;authState="out";render();return}
@@ -1735,7 +1743,7 @@ async function onUser(u){
     if(!profile){profile={name:u.displayName||"我",photo:u.photoURL||"",hids:[],cur:"",createdAt:Date.now()};await ref.set(profile)}
     else if(u.photoURL&&profile.photo!==u.photoURL)ref.update({photo:u.photoURL}).catch(()=>{});
   }catch(e){$("status").hidden=false;$("status").textContent="讀取帳號資料失敗，請重新整理。";return}
-  authState="in";
+  authState="in";rememberMe();whoForceLanding=false;
   if(JOIN&&!joinDone){await prepareJoin();return}
   startLedgers();
 }
@@ -1760,7 +1768,7 @@ $("backBtn").onclick=()=>{view="home";cur=today().slice(0,7);$("vdate").value=to
 document.querySelectorAll(".loginBtn").forEach(b=>{b.onclick=login});
 $("copyUrl").onclick=async()=>{toast(await copyText(location.href)?"已複製網址，貼到 Safari 或 Chrome 打開":"請長按網址列複製")};
 [...$("ledgerSw").children].forEach(b=>{b.onclick=()=>{if(b.dataset.k!==curKey)enterLedger(b.dataset.k)}});
-$("acctBtn").onclick=()=>{view="set";setSub="account";sstate=null;render();window.scrollTo(0,0)};
+$("acctBtn").onclick=()=>{whoEdit=false;setPicked(false);render();window.scrollTo(0,0)};
 $("hAllowBox").onclick=editAllowance;$("hAllowBox").onkeydown=e=>{if(e.key==="Enter")editAllowance()};
 $("tabCal").onclick=()=>{view="cal";const t=today();calY=+t.slice(0,4);calM=+t.slice(5,7);calSel=t;render();window.scrollTo(0,0)};
 initNotes();

@@ -24,6 +24,12 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const pg = await ctx.newPage(); pg.on("pageerror", e => errs.push(e.message)); pg.on("console", m => { if (m.type() === "error") errs.push("console: " + m.text()) });
   const shot = n => pg.screenshot({ path: path.join(process.env.SHOTS || "/tmp", n + ".png") });
   const wait = ms => pg.waitForTimeout(ms);
+  const loginAs = async (uid, name, pickSelf = true) => {
+    await pg.evaluate(([u, n]) => localStorage.setItem("__nextuser", JSON.stringify({ uid: u, name: n })), [uid, name]);
+    if (await pg.isVisible("#who .tile:has-text('其他帳號')")) await pg.click("#who .tile:has-text('其他帳號')"); else await pg.click(".loginBtn >> nth=0");
+    await wait(700);
+    if (pickSelf && await pg.isVisible("#whoBtns")) { await pg.click("#whoBtns .tile >> nth=0"); await wait(300); }
+  };
 
   // 1. landing
   await pg.goto(BASE); await wait(400);
@@ -177,7 +183,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
 
   // 6. second user joins with the invite link
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
-  ok(await pg.isVisible("#landing"), "signed out -> landing");
+  ok(await pg.isVisible("#who") && (await pg.innerText("#who")).includes("選擇使用者") && (await pg.innerText("#who")).includes("測試弟弟"), "signed out -> this device remembers 測試弟弟");
+  ok(await pg.isHidden("#landing"), "landing hidden when the device has a profile");
   await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u2", name: "測試媽媽" })));
   const local = invite.replace(/^https?:\/\/[^/]+\/family-ledger\//, BASE);
   await pg.goto(local); await wait(400);
@@ -201,8 +208,29 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
 
   // 7. owner sees the new member
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
-  await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u1", name: "測試弟弟" })));
-  await pg.click(".loginBtn >> nth=0"); await wait(600);
+  await loginAs("u1", "測試弟弟", false);
+  ok(await pg.isVisible("#whoBtns") && (await pg.innerText("#who")).includes("誰要記帳") && (await pg.innerText("#whoBtns")).includes("媽媽"), "picker shows me and family members");
+  await pg.click("#whoBtns .tile:has-text('新增')"); await pg.fill("#fs_n", "姐姐"); await pg.click("#fsSave"); await wait(600);
+  ok((await pg.innerText("#whoBtns")).includes("姐姐") && (await pg.innerText("#whoBtns")).includes("待邀請"), "added family member shows as 待邀請");
+  await shot("05-who");
+  await pg.click("#whoBtns .tile >> nth=0"); await wait(300);
+  ok(await pg.isVisible("#tabbar") && await pg.isHidden("#who"), "tapping my tile enters the app");
+  // 7b. invite from the 待邀請 tile -> 姐姐 joins and takes over that tile
+  await pg.click("#acctBtn"); await wait(300);
+  await pg.click("#whoBtns .tile:has-text('姐姐')"); await pg.click("#fsSave"); await wait(600);
+  const sisInv = await pg.evaluate(() => { const k = Object.keys(__store).find(k => /\/invites\//.test(k) && __store[k].pname === "姐姐"); return k ? k.split("/")[1] + "." + k.split("/")[3] : ""; });
+  ok(!!sisInv, "invite link remembers which tile it is for");
+  await pg.click("#whoBtns .tile >> nth=0"); await wait(200);
+  await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
+  await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u3", name: "測試姐姐" })));
+  await pg.goto(BASE + "?join=" + sisInv); await wait(400); await pg.click(".loginBtn >> nth=0"); await wait(700);
+  ok((await pg.inputValue("#joinCard input")) === "姐姐", "join form is pre-filled with the tile's name");
+  await pg.click("#joinCard button:has-text('加入')"); await wait(800);
+  ok(await pg.evaluate(() => { const k = Object.keys(__store).find(k => /^households\/[^/]+$/.test(k)); return !(__store[k].pending || []).length && __store[k.replace(/$/, "/members/u3")].name === "姐姐"; }), "joining takes over the 待邀請 tile");
+  for (let i = 0; i < 3; i++) { await pg.click("#wizard button:has-text('下一題')"); await wait(80); }
+  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300);
+  await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
+  await loginAs("u1", "測試弟弟");
   await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
   ok((await pg.innerText("#famCard")).includes("媽媽"), "owner sees the new member");
 
@@ -222,8 +250,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
 
   // 9. member leaves
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
-  await pg.evaluate(() => localStorage.setItem("__nextuser", JSON.stringify({ uid: "u2", name: "測試媽媽" })));
-  await pg.click(".loginBtn >> nth=0"); await wait(600);
+  await loginAs("u2", "測試媽媽");
   await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
   await pg.click("#famCard button:has-text('離開這個家')"); await pg.click("#fsSave"); await wait(600);
   ok(!(await pg.evaluate(() => "households/" + Object.keys(__store).find(k => /^households\/[^/]+$/.test(k)).split("/")[1] + "/members/u2" in __store)), "member left the household");
