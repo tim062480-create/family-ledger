@@ -96,7 +96,7 @@ function itemRow(it,showPage,inTodo){
   if(und)dt.append(mkEl("b",null,PRI[it.pri]||"📝"),mkEl("small",null,PRI_TXT[it.pri]?PRI_TXT[it.pri].slice(0,2):"待辦"));
   else dt.append(mkEl("b",null,nMD(it.date)),mkEl("small",null,"週"+nDow(it.date)+(it.time?" "+it.time:"")));
   const t=mkEl("span","nt"),tt=mkEl("span","ttl");
-  if(showPage&&it.ptag)tt.appendChild(mkEl("span","ptag",it.ptag));
+  {const tg=showPage?it.ptag:it.tag;if(tg)tt.appendChild(mkEl("span","ptag",tg))}
   tt.appendChild(document.createTextNode((!und&&PRI[it.pri]?PRI[it.pri]+" ":"")+(it.title||"（沒有標題）")));t.appendChild(tt);
   const sub=(it.note||"");if(sub)t.appendChild(mkEl("small",null,sub));
   const ic=mkEl("span","nic");
