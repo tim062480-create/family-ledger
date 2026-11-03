@@ -54,11 +54,19 @@ function notesSub(){
   notesLoaded=false;notes=[];notesRef=DB.collection(`users/${myId}/notes`);
   unsubs.push(notesRef.onSnapshot(sn=>{
     notes=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0)||(a.ts||0)-(b.ts||0));notesLoaded=true;
+    ensureTodoPage();
     if(loaded&&(view==="note"||view==="cal"||view==="home"))render();
   },()=>{}));
   memoRef=DB.doc(`users/${myId}/prefs/memo`);
   unsubs.push(memoRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;memoText=(d&&d.text)||"";const ta=$("nMemo");if(ta&&document.activeElement!==ta&&!memoTimer)ta.value=memoText;if(view==="note"&&!noteSel)renderMemoSum()},()=>{}));
   if(noteSel)watchImgs(noteSel);
+}
+// 每個人都有一頁「待辦」（顯示成待辦清單），放在最前面
+let todoMaking=false;
+function ensureTodoPage(){
+  if(todoMaking||!notesRef||notes.some(x=>x.kind==="todo"))return;todoMaking=true;
+  const first=notes.length?Math.min(...notes.map(x=>x.order||0)):Date.now();
+  notesRef.add({title:"待辦",kind:"todo",text:"",items:[],ts:Date.now(),order:first-1000}).catch(()=>{}).finally(()=>{setTimeout(()=>{todoMaking=false},3000)});
 }
 function notesReset(){memoRef=null;memoText="";notes=[];notesRef=null;notesLoaded=false;noteSel=null;noteImgs=[];if(noteImgOff){try{noteImgOff()}catch(e){}noteImgOff=null}}
 
@@ -67,7 +75,7 @@ function renderNotes(){
   let p=noteSel?notes.find(x=>x.id===noteSel):null;
   if(noteSel&&!p&&notesLoaded){closePage();p=null}
   $("nlView").hidden=!!p;$("npView").hidden=!p;$("npEdit").hidden=!p;$("nHead").textContent=p?(p.title||"未命名"):"記事本";
-  renderTabs(p);renderRemindCard($("nRemind"),!!p);
+  renderTabs(p);if(p)$("nRemind").hidden=true;else renderRemindCard($("nRemind"),false);
   // 「待辦清單」頁（例如代辦）：不顯示行程表，改顯示跟總日曆一樣的待辦清單
   {const tc=$("nTodo"),tp=!!(p&&p.kind==="todo");$("npSched").hidden=tp;
    if(tp){if(tc.parentElement!==$("npView"))$("npView").insertBefore(tc,$("npSched"));renderTodos()}
@@ -299,14 +307,14 @@ async function movePage(pid,to){
 }
 function editPage(){
   const p=notes.find(x=>x.id===noteSel);if(!p)return;
-  const others=notes.filter(x=>x.id!==p.id),idx=notes.findIndex(x=>x.id===p.id);
+  const others=notes.filter(x=>x.id!==p.id),idx=notes.findIndex(x=>x.id===p.id),lastTodo=p.kind==="todo"&&notes.filter(x=>x.kind==="todo").length===1;
   const posOpts=[["0","最前面（總日曆後面）"]].concat(others.map((x,i)=>[String(i+1),`「${x.title||"未命名"}」後面`]));
   openForm({title:"編輯頁面",fields:[{key:"t",label:"頁面名稱",value:p.title||"",full:true},{key:"s",label:"總日曆上的簡稱（例如：生資；空白就不顯示）",value:pageTag(p),full:true},
       {key:"pos",label:"按鈕位置",options:posOpts,value:String(idx),full:true},
-      {key:"kind",label:"這頁顯示成",options:[["sched","行程表（課表、行事曆）"],["todo","待辦清單（跟總日曆的待辦一樣）"]],value:p.kind==="todo"?"todo":"sched",full:true}],
+      ...(lastTodo?[]:[{key:"kind",label:"這頁顯示成",options:[["sched","行程表（課表、行事曆）"],["todo","待辦清單"]],value:p.kind==="todo"?"todo":"sched",full:true}])],
     validate:()=>fv("t")?"":"請輸入頁面名稱",
-    onSave:async()=>{await notesRef.doc(p.id).update({title:fv("t").slice(0,40),short:fv("s").slice(0,6),kind:fv("kind")});const to=+fv("pos");if(to!==idx)await movePage(p.id,to)},
-    onDelete:async()=>{const pid=p.id;closePage();const sn=await notesRef.doc(pid).collection("imgs").get();for(const d of sn.docs||[])await notesRef.doc(pid).collection("imgs").doc(d.id).delete();await notesRef.doc(pid).delete();render()}});
+    onSave:async()=>{await notesRef.doc(p.id).update({title:fv("t").slice(0,40),short:fv("s").slice(0,6),kind:lastTodo?"todo":fv("kind")});const to=+fv("pos");if(to!==idx)await movePage(p.id,to)},
+    onDelete:lastTodo?null:async()=>{const pid=p.id;closePage();const sn=await notesRef.doc(pid).collection("imgs").get();for(const d of sn.docs||[])await notesRef.doc(pid).collection("imgs").doc(d.id).delete();await notesRef.doc(pid).delete();render()}});
 }
 function itemFields(it,pageSel){
   const f=[];

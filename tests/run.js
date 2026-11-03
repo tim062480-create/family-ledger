@@ -24,6 +24,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const pg = await ctx.newPage(); pg.on("pageerror", e => errs.push(e.message)); pg.on("console", m => { if (m.type() === "error") errs.push("console: " + m.text()) });
   const shot = n => pg.screenshot({ path: path.join(process.env.SHOTS || "/tmp", n + ".png") });
   const wait = ms => pg.waitForTimeout(ms);
+  const tab = async sel => { await pg.evaluate(() => window.scrollTo(0, 0)); await wait(350); await pg.click(sel); };
   const loginAs = async (uid, name, pickSelf = true) => {
     await pg.evaluate(([u, n]) => localStorage.setItem("__nextuser", JSON.stringify({ uid: u, name: n })), [uid, name]);
     if (await pg.isVisible("#who .tile:has-text('其他帳號')")) await pg.click("#who .tile:has-text('其他帳號')"); else await pg.click(".loginBtn >> nth=0");
@@ -58,7 +59,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#vmsg")).includes("已記帳"), "confirm writes entries");
 
   // 3b. 記事本：頁面、行程、總日曆、提醒、行事曆檔、筆記
-  await pg.click("#tabNote"); await wait(200);
+  await tab("#tabNote"); await wait(200);
   ok(await pg.isVisible("#nlView") && await pg.isVisible("#ncGrid") && await pg.isVisible("#nTabCal"), "notebook tab shows the overall calendar and page buttons");
   ok(await pg.isHidden("#appTitle"), "app title hidden outside the home page");
   await pg.click("#npAdd"); await pg.fill("#fs_t", "期中考"); await pg.click("#fsSave"); await wait(400);
@@ -87,7 +88,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.$$eval("#npItems .nit", r => r.length)) >= 1 && !(await pg.$("#npItems .ntbl")), "list view still available");
   await pg.click("#npModeT"); await wait(200);
   await pg.fill("#npText", "考試範圍：第 1-5 章"); await wait(1200);
-  ok((await pg.evaluate(() => Object.entries(__store).find(([k]) => /^users\/u1\/notes\/[^/]+$/.test(k))[1].text)) === "考試範圍：第 1-5 章", "notes text autosaves");
+  ok((await pg.evaluate(() => Object.entries(__store).find(([k, v]) => /^users\/u1\/notes\/[^/]+$/.test(k) && v.title === "期中考")[1].text)) === "考試範圍：第 1-5 章", "notes text autosaves");
   await pg.click("#nTabCal"); await wait(300);
   ok((await pg.innerText("#nRemind")).includes("普化期中考") && !(await pg.innerText("#nRemind")).includes("還書"), "reminder card shows ★ / 通知 items in the next 3 days only");
   const lbl = await pg.$$eval("#ncGrid .pli", ls => ls.map(l => l.lastChild.textContent));
@@ -105,6 +106,10 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#nRemind")).includes("普化期中考"), "explicit 通知 still shows with the 3-day reminder off");
   await pg.check("#nSoon"); await wait(200);
   ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent))).includes("期中考"), "page has its own button");
+  ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent)))[1] === "待辦", "everyone gets a 待辦 page, first after 總日曆");
+  ok(await pg.evaluate(() => { const r = document.getElementById("nRemind"), c = document.querySelector(".ncal"); return !!(c.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING); }), "今明後天 sits under the calendar");
+  const toTodo = async () => { await pg.click("#nTabs .ntab:has-text('待辦')"); await wait(300); };
+  await toTodo();
   await pg.click("#nTodoAdd"); await pg.fill("#fs_ti", "領貨");
   ok((await pg.inputValue("#fs_pr")) === "a", "non-school to-do defaults to 雜事"); await pg.click("#fsSave"); await wait(400);
   await pg.click("#nTodoAdd"); await pg.fill("#fs_ti", "AI 作業");
@@ -113,18 +118,23 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#nTodoTabs button:has-text('功課')"); await wait(300);
   ok((await pg.innerText("#nTodoList")).includes("AI 作業") && !(await pg.innerText("#nTodoList")).includes("領貨"), "功課 tab shows only homework");
   await pg.click("#nTodoTabs button:has-text('全部')"); await wait(300);
+  ok(await pg.isHidden("#nRemind"), "今明後天 only on 總日曆, not on pages");
+  await pg.click("#nTabCal"); await wait(300);
   await pg.locator("#nRemind .nit", { hasText: "普化期中考" }).locator(".ntodo").click(); await wait(400);
+  await toTodo();
   ok((await pg.innerText("#nTodoList")).includes("普化期中考"), "dated item can be put into 待辦 from the calendar lists: " + (await pg.innerText("#nRemind")).replace(/\n/g," ") + " || " + (await pg.innerText("#nTodoList")).replace(/\n/g," "));
   ok(!(await pg.$("#nRemind .rseg")), "reminder shows only 今明後天 (no range buttons)");
   await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");
+  await pg.click("#nTabCal"); await wait(300);
   const md5 = await pg.evaluate(() => { const d = new Date(Date.now() + 8 * 3600e3 + 5 * 864e5); return (d.getUTCMonth() + 1) + "/" + d.getUTCDate(); });
   await pg.fill("#nMemo", `學校 不要忘東忘西！\n\n活動：\n${md5} 17:40 看牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題`); await wait(1200);
   const ms = await pg.innerText("#nMemoSum");
   ok(ms.includes("未來一個月") && ms.includes("看牙齒") && ms.includes("普化期中考") && !ms.includes("領貨"), "未來一個月 lists dated memo lines and calendar items (incl. 待辦), not undated ones");
   await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".tdck input").check(); await wait(600);
-  ok((await pg.innerText("#nTodoList")).includes("看牙齒"), "checking a memo line puts it into 待辦");
   ok((await pg.locator("#nMemoSum .msr", { hasText: "看牙齒" }).locator(".tdck input").isChecked()), "to-do items stay in 未來一個月, ticked");
+  await toTodo();
+  ok((await pg.innerText("#nTodoList")).includes("看牙齒"), "checking a memo line puts it into 待辦");
   await pg.click("#npAdd"); await pg.fill("#fs_t", "行事曆"); await pg.click("#fsSave"); await wait(500);
   await pg.click("#npEdit"); await pg.selectOption("#fs_pos", "0"); await pg.click("#fsSave"); await wait(600);
   ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent)))[1] === "行事曆", "page can be moved to the front");
@@ -134,33 +144,32 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.isHidden("#nTodo"), "總日曆 hides 待辦 once a to-do page exists");
   await pg.click("#nTabCal"); await wait(200);
   ok((await pg.evaluate(() => __store["users/u1/prefs/memo"] && __store["users/u1/prefs/memo"].text)) .startsWith("學校 不要忘東忘西！"), "隨手記 autosaves");
-  await pg.click("#tabCal"); await wait(300);
+  await tab("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) === 0, "birthday calendar does not show notebook items");
   ok((await pg.innerText("#vCal .vhd h2")) === "朋友和家人生日", "birthday page has its heading");
   ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "生日", "設定"]), "tab order 記帳・記事本・生日・設定");
-  await pg.click("#tabRec"); await wait(300);
-  ok((await pg.innerText("#homeRemind")).includes("普化期中考"), "home shows the reminder");
-  ok(await pg.evaluate(() => { const r = document.getElementById("homeRemind"), v = document.getElementById("voice"); return !!(r.compareDocumentPosition(v) & Node.DOCUMENT_POSITION_FOLLOWING); }), "reminder sits above 記一筆");
+  await tab("#tabRec"); await wait(300);
+  ok(await pg.isHidden("#homeRemind"), "home page no longer shows the 3-day reminder");
   ok(await pg.isVisible("#appTitle"), "app title shows on the home page");
   ok((await pg.innerText("#tabCal")).trim() === "生日", "second tab is named 生日");
   await shot("03b-notes");
 
   // 3c0. 每日一句先顯示選擇卡
-  await pg.click("#tabRec"); await wait(300);
+  await tab("#tabRec"); await wait(300);
   ok((await pg.innerText("#quote")).includes("選一種每日一句") && !(await pg.$("#quote .qt")), "first time shows a theme picker, not 太上感應篇");
   ok((await pg.$$eval("#quote .qpb b", b => b.map(x => x.textContent)))[0] === "改命", "改命 is the first theme");
   await pg.click("#quote .qpb:has-text('輕鬆小品')"); await wait(400);
   ok((await pg.innerText("#quote")).includes("輕鬆小品"), "picking a theme shows its quote");
   // 3c. 自己的每日一句
-  await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('背景與每日一句')"); await wait(200);
+  await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('背景與每日一句')"); await wait(200);
   await pg.click("#myQuoteAdd"); await pg.fill("#fs_qt", "今天也要好好照顧自己。"); await pg.fill("#fs_qs", "自己"); await pg.click("#fsSave"); await wait(400);
   ok((await pg.innerText("#myQuoteList")).includes("今天也要好好照顧自己"), "own quote is listed in settings");
   await pg.selectOption("#quoteSrc", "mine"); await wait(400);
-  await pg.click("#tabRec"); await wait(300);
+  await tab("#tabRec"); await wait(300);
   ok((await pg.innerText("#quote")).includes("今天也要好好照顧自己"), "home shows own quote when 只用我自己的句子");
 
   // 4. create a household + invite
-  await pg.click("#tabSet"); await wait(150); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(150);
+  await tab("#tabSet"); await wait(150); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(150);
   await pg.fill("#famCard input", "簡家"); await pg.click("#famCard button:has-text('建立')"); await wait(400);
   ok((await pg.innerText("#famCard")).includes("簡家"), "household created");
   await pg.click("#famCard button:has-text('產生邀請連結')"); await wait(300);
@@ -179,7 +188,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const famExp = await pg.evaluate(() => Object.entries(__store).filter(([k]) => k.includes("/ledgers/main/expenses/") && k.startsWith("households/")).map(([, v]) => v));
   ok(famExp.length === 1 && famExp[0].byName === "測試弟弟", "family expense records who wrote it");
   await pg.click("#ledgerSw button[data-k=me]"); await wait(200);
-  await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('分享給家人')"); await pg.selectOption("#shareLevel", "full"); await wait(1200);
+  await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('分享給家人')"); await pg.selectOption("#shareLevel", "full"); await wait(1200);
 
   // 6. second user joins with the invite link
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
@@ -215,6 +224,11 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await shot("05-who");
   await pg.click("#whoBtns .tile >> nth=0"); await wait(300);
   ok(await pg.isVisible("#tabbar") && await pg.isHidden("#who"), "tapping my tile enters the app");
+  await pg.evaluate(() => { document.body.style.minHeight = "3000px"; window.scrollTo(0, 800); }); await wait(400);
+  ok(await pg.evaluate(() => document.getElementById("tabbar").classList.contains("away")), "tab bar hides after scrolling down");
+  await pg.evaluate(() => window.scrollTo(0, 0)); await wait(400);
+  ok(await pg.evaluate(() => !document.getElementById("tabbar").classList.contains("away")), "tab bar comes back at the top");
+  await pg.evaluate(() => { document.body.style.minHeight = ""; });
   // 7b. invite from the 待邀請 tile -> 姐姐 joins and takes over that tile
   await pg.click("#acctBtn"); await wait(300);
   await pg.click("#whoBtns .tile:has-text('姐姐')"); await pg.click("#fsSave"); await wait(600);
@@ -231,7 +245,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300);
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
   await loginAs("u1", "測試弟弟");
-  await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
+  await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
   ok((await pg.innerText("#famCard")).includes("媽媽"), "owner sees the new member");
 
   // 8. import a backup (optional real file)
@@ -251,7 +265,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   // 9. member leaves
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
   await loginAs("u2", "測試媽媽");
-  await pg.click("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
+  await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);
   await pg.click("#famCard button:has-text('離開這個家')"); await pg.click("#fsSave"); await wait(600);
   ok(!(await pg.evaluate(() => "households/" + Object.keys(__store).find(k => /^households\/[^/]+$/.test(k)).split("/")[1] + "/members/u2" in __store)), "member left the household");
   ok(await pg.isHidden("#ledgerSw"), "ledger switch hidden after leaving");

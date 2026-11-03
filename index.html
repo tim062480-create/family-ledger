@@ -23,7 +23,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261104o">
+<link rel="stylesheet" href="style.css?v=20261104q">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -214,7 +214,6 @@
   <div id="vNote" hidden>
   <div class="vhd"><h2 id="nHead">記事本</h2><button type="button" id="npEdit" class="ghost sm" hidden>編輯這頁</button></div>
   <div class="ntabs" id="nTabs" role="tablist" aria-label="記事本頁面"></div>
-  <section class="card" id="nRemind" hidden></section>
   <div id="nlView">
   <section class="card cal ncal">
     <div class="calhead">
@@ -227,6 +226,7 @@
     <div class="callegend"><span><i class="lg-plan"></i>★ 行程</span><span><i class="lg-dot"></i>其他行程</span><button type="button" class="ghost sm" id="ncToday">回到今天</button></div>
     <div id="ncDay" class="npop" role="dialog" aria-label="這天的行程" hidden></div>
   </section>
+  <section class="card" id="nRemind" hidden></section>
   <section class="card" id="nTodo"><div class="lhead"><h2>待辦 <small class="nct" id="nTodoCount"></small></h2><button type="button" class="ghost sm" id="nTodoAdd">＋ 新增待辦</button></div><div class="seg tseg" id="nTodoTabs" role="group" aria-label="待辦分類"></div><div id="nTodoList"></div></section>
   <section class="card" id="nMemoSum" hidden></section>
   <section class="card"><h2>隨手記</h2><textarea id="nMemo" rows="8" maxlength="20000" placeholder="想到什麼就寫下來，會自動儲存" aria-label="隨手記"></textarea><p class="sub" id="nMemoMsg" style="margin:4px 0 0"></p></section>
@@ -408,8 +408,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
-<script src="profiles.js?v=20261104o"></script>
-<script src="notes.js?v=20261104o"></script>
-<script src="app.js?v=20261104o"></script>
+<script src="profiles.js?v=20261104q"></script>
+<script src="notes.js?v=20261104q"></script>
+<script src="app.js?v=20261104q"></script>
 </body>
 </html>

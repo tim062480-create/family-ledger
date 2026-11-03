@@ -62,7 +62,7 @@ function render(){
   if(view==="set")renderSet();
   {const v=$("voice");if(view==="month"){if(v.parentElement!==$("vMonth"))$("vMonth").insertBefore(v,$("monthTitle").nextSibling)}else if(v.parentElement!==$("vHome"))$("vHome").insertBefore(v,$("vHome").firstChild)}
   {const hr=$("homeRemind"),vh=$("vHome");if(vh.firstChild!==hr)vh.insertBefore(hr,vh.firstChild)}
-  $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note");$("tabNote").classList.toggle("on",view==="note");if(view==="note")renderNotes();renderRemindCard($("homeRemind"),true);$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
+  $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note");$("tabNote").classList.toggle("on",view==="note");if(view==="note")renderNotes();$("homeRemind").hidden=true;$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
   $("app").hidden=false;
   const ex=expenses.filter(e=>e.month===cur).sort((a,b)=>b.date.localeCompare(a.date));
   const spent=ex.reduce((s,e)=>s+(+e.amount||0),0),incM=incomeSum(cur),allow=allowanceOf(cur)+incM;
@@ -1779,6 +1779,9 @@ setupEvents();setupVoice();
 $("add").onsubmit=async ev=>{ev.preventDefault();const f=ev.target;if(!col)return;
   try{await col.add({...byFields(),date:f.date.value,month:f.date.value.slice(0,7),category:f.category.value,amount:+f.amount.value,note:f.note.value.trim(),remark:f.remark.value.trim()});f.amount.value="";f.note.value="";f.remark.value=""}catch(e){}
 };
+// 下面那排分頁：捲到最上面才出現，往下看內容時藏起來，不擋視線
+{let tk=0;const tb=$("tabbar"),upd=()=>{tk=0;tb.classList.toggle("away",window.scrollY>60)};
+ window.addEventListener("scroll",()=>{if(!tk)tk=requestAnimationFrame(upd)},{passive:true});upd()}
 setQuote();setDate();
 render();
 bootFirebase();
