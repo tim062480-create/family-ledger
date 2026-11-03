@@ -542,3 +542,5 @@ body.signedout #tabbar{display:none!important}
 .tab{padding:4px 6px}
 .aicopy{display:block;width:100%;padding:12px;font-weight:700;margin-bottom:10px}
 .aiapps{grid-template-columns:repeat(3,minmax(0,1fr))}
+.aitip{background:color-mix(in srgb,var(--accent) 9%,var(--card))}
+.aitip h2{font-size:15.5px}
