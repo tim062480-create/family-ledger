@@ -66,6 +66,11 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "第三次作業");
   ok((await pg.inputValue("#fs_st")) === "1", "作業 is starred automatically"); await pg.click("#fsSave"); await wait(400);
   ok((await pg.$$eval("#npItems .ntbl tbody tr", r => r.length)) >= 1, "page shows a table by default");
+  await pg.click("#npStarNone"); await pg.click("#npStarNone"); await wait(400);
+  ok((await pg.$$eval("#npItems .nl.star", r => r.length)) === 0, "☆ 全部清除 removes every star on the page");
+  await pg.click("#npStarAll"); await pg.click("#npStarAll"); await wait(400);
+  ok((await pg.$$eval("#npItems .nl:not(.star)", r => r.length)) === 0, "★ 全部標上 stars every item");
+  await pg.locator("#npItems .nl", { hasText: "還書" }).locator(".nstar").click(); await wait(400);
   const rowStar = pg.locator("#npItems .nl", { hasText: "第三次作業" }).locator(".nstar");
   await rowStar.click(); await wait(400);
   ok((await rowStar.getAttribute("aria-pressed")) === "false", "row ★ button turns the star off directly");

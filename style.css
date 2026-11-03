@@ -465,3 +465,5 @@ body.signedout #tabbar{display:none!important}
 .mqr .t{display:block;font-size:14.5px;line-height:1.6}
 .mqr small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
 #fsFields textarea{width:100%;color:var(--ink)}
+.nbulk{margin:0 0 8px}
+.nbulk .ghost{font-size:12.5px;padding:4px 10px}

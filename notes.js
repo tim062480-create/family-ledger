@@ -270,7 +270,7 @@ function watchImgs(pid){
   const off=notesRef.doc(pid).collection("imgs").onSnapshot(sn=>{if(noteSel!==pid)return;noteImgs=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));if(view==="note")renderPageImgs()},()=>{});
   noteImgOff=off;unsubs.push(off);
 }
-function openPage(pid){noteSel=pid;$("npText").value=(notes.find(x=>x.id===pid)||{}).text||"";$("npImgMsg").textContent="";$("npTextMsg").textContent="";watchImgs(pid);view="note";render();window.scrollTo(0,0)}
+function openPage(pid){noteSel=pid;$("npBulkMsg").textContent="";$("npText").value=(notes.find(x=>x.id===pid)||{}).text||"";$("npImgMsg").textContent="";$("npTextMsg").textContent="";watchImgs(pid);view="note";render();window.scrollTo(0,0)}
 function closePage(){flushText();noteSel=null;noteImgs=[];if(noteImgOff){try{noteImgOff()}catch(e){}noteImgOff=null}}
 function newPage(){
   openForm({title:"新增頁面",sub:"一個主題一頁，例如「這學期課表」「期中考」「社團」。",fields:[{key:"t",label:"頁面名稱",value:"",full:true,placeholder:"例如：這學期課表"}],
@@ -439,6 +439,15 @@ function notesICS(){
 function initNotes(){
   $("tabNote").onclick=()=>{flushText();goNotes()};
   $("npEdit").onclick=editPage;
+  // 一鍵標註／清除：這一頁有日期的行程全部標 ★ 或全部取消（按兩下確認）
+  const bulk=(btn,v,label)=>{btn.onclick=async()=>{
+    const p=notes.find(x=>x.id===noteSel);if(!p)return;const dated=(p.items||[]).filter(x=>x.date),chg=dated.filter(x=>!!x.star!==v).length;
+    if(!chg){$("npBulkMsg").textContent=v?"已經全部標上了":"已經沒有 ★ 了";return}
+    if(btn.dataset.arm!=="1"){btn.dataset.arm="1";btn.textContent=`確定？（${chg} 個）`;setTimeout(()=>{btn.dataset.arm="";btn.textContent=label},3000);return}
+    btn.dataset.arm="";btn.textContent=label;btn.disabled=true;
+    try{await notesRef.doc(p.id).update({items:(p.items||[]).map(x=>x.date?{...x,star:v}:x)});toast(v?`已標上 ${chg} 個 ★`:`已清除 ${chg} 個 ★`);$("npBulkMsg").textContent=""}catch(e){$("npBulkMsg").textContent="沒有存到，請再試一次"}
+    btn.disabled=false}};
+  bulk($("npStarAll"),true,"★ 全部標上");bulk($("npStarNone"),false,"☆ 全部清除");
   $("npModeT").onclick=()=>setPageMode("table");$("npModeL").onclick=()=>setPageMode("list");
   $("nTodoAdd").onclick=()=>newItemOn("",{todo:true,...(todoTab()!=="all"?{pri:todoTab()}:{})});
   $("nMemo").oninput=()=>{$("nMemoMsg").textContent="";clearTimeout(renderMemoSum._t);renderMemoSum._t=setTimeout(renderMemoSum,300);clearTimeout(memoTimer);memoTimer=setTimeout(flushMemo,800)};
