@@ -68,6 +68,20 @@ function ensureTodoPage(){
   const first=notes.length?Math.min(...notes.map(x=>x.order||0)):Date.now();
   notesRef.add({title:"待辦",kind:"todo",text:"",items:[],ts:Date.now(),order:first-1000}).catch(()=>{}).finally(()=>{setTimeout(()=>{todoMaking=false},3000)});
 }
+// 可以收起來的卡片：預設收起，只留標題；點標題打開（記在這台裝置）
+const foldOpen=k=>{try{return localStorage.getItem("fl_fold_"+k)==="1"}catch(e){return false}};
+function foldCard(box,key){
+  if(!box||box.hidden||!box.firstElementChild)return;
+  const hd=box.firstElementChild,body=mkEl("div","fbody");while(hd.nextSibling)body.appendChild(hd.nextSibling);box.appendChild(body);
+  const cnt=key==="remind"?body.querySelectorAll(".nit").length:null,open=foldOpen(key);
+  box.classList.add("fold");box.classList.toggle("open",open);body.hidden=!open;
+  const h2=hd.matches("h2")?hd:hd.querySelector("h2");
+  if(h2&&cnt!=null&&!h2.querySelector(".nct"))h2.appendChild(mkEl("small","nct",cnt?`${cnt} 件`:"沒有事"));
+  const ar=mkEl("span","farr",open?"收起 ▴":"展開 ▾");hd.appendChild(ar);
+  hd.setAttribute("role","button");hd.tabIndex=0;hd.setAttribute("aria-expanded",open?"true":"false");
+  const tg=()=>{const o=body.hidden;body.hidden=!o;box.classList.toggle("open",o);ar.textContent=o?"收起 ▴":"展開 ▾";hd.setAttribute("aria-expanded",o?"true":"false");try{localStorage.setItem("fl_fold_"+key,o?"1":"0")}catch(e){}};
+  hd.onclick=e=>{if(e.target.closest("button"))return;tg()};hd.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();tg()}};
+}
 function notesReset(){memoRef=null;memoText="";notes=[];notesRef=null;notesLoaded=false;noteSel=null;noteImgs=[];if(noteImgOff){try{noteImgOff()}catch(e){}noteImgOff=null}}
 
 // ---- 畫面 ----
@@ -75,7 +89,7 @@ function renderNotes(){
   let p=noteSel?notes.find(x=>x.id===noteSel):null;
   if(noteSel&&!p&&notesLoaded){closePage();p=null}
   $("nlView").hidden=!!p;$("npView").hidden=!p;$("npEdit").hidden=!p;$("nHead").textContent=p?(p.title||"未命名"):"記事本";
-  renderTabs(p);if(p)$("nRemind").hidden=true;else renderRemindCard($("nRemind"),false);
+  renderTabs(p);if(p)$("nRemind").hidden=true;else{renderRemindCard($("nRemind"),false);foldCard($("nRemind"),"remind")}
   // 「待辦清單」頁（例如代辦）：不顯示行程表，改顯示跟總日曆一樣的待辦清單
   {const tc=$("nTodo"),tp=!!(p&&p.kind==="todo");$("npSched").hidden=tp;
    if(tp){if(tc.parentElement!==$("npView"))$("npView").insertBefore(tc,$("npSched"));renderTodos()}
@@ -393,7 +407,8 @@ async function memoToTodo(o,box){
   const it={id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:o.date,time:memoTime(o.txt),title:memoTitle(o.txt),note:(/前/.test(o.txt)?`${nMD(o.date)} 前・`:"")+"來自隨手記",star:true,todo:true,pri:autoCat(o.txt+" "+((o.sec&&o.sec.h)||"")),remind:null,ts:Date.now()};
   try{if(p)await notesRef.doc(p.id).update({items:(p.items||[]).concat([it])});else await notesRef.add({title:"學校",text:"",items:[it],ts:Date.now(),order:Date.now()});toast("已放進待辦，也加到總日曆 ✓")}catch(e){toast("沒有存到，請再試一次")}
 }
-function renderMemoSum(){
+function renderMemoSum(){renderMemoSum0();foldCard($("nMemoSum"),"month")}
+function renderMemoSum0(){
   const box=$("nMemoSum");if(!box)return;box.innerHTML="";
   const t=today(),end=addDays(t,30),inR=k=>k&&k>=t&&k<=end;
   const seen=new Set(),rows=[];

@@ -544,3 +544,8 @@ body.signedout #tabbar{display:none!important}
 .aiapps{grid-template-columns:repeat(3,minmax(0,1fr))}
 .aitip{background:color-mix(in srgb,var(--accent) 9%,var(--card))}
 .aitip h2{font-size:15.5px}
+
+.fold>:first-child{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fold>:first-child h2,.fold>h2:first-child{margin:0}
+.fold.open>:first-child{margin-bottom:8px}
+.farr{font-size:12.5px;color:var(--accent);font-weight:600;white-space:nowrap;margin-left:auto}

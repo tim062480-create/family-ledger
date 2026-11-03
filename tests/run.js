@@ -63,8 +63,12 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#vmsg")).includes("已記帳"), "confirm writes entries");
 
   // 3b. 記事本：頁面、行程、總日曆、提醒、行事曆檔、筆記
+  await pg.evaluate(() => { localStorage.setItem("fl_fold_remind", "1"); localStorage.setItem("fl_fold_month", "1"); });
   await tab("#tabNote"); await wait(200);
   ok(await pg.isVisible("#nlView") && await pg.isVisible("#ncGrid") && await pg.isVisible("#nTabCal"), "notebook tab shows the overall calendar and page buttons");
+  await pg.click("#nRemind > :first-child"); await wait(150);
+  ok(await pg.isHidden("#nRemind .fbody"), "今明後天 folds when you tap its title");
+  await pg.click("#nRemind > :first-child"); await wait(150);
   ok(await pg.isHidden("#appTitle"), "app title hidden outside the home page");
   await pg.click("#npAdd"); await pg.fill("#fs_t", "期中考"); await pg.click("#fsSave"); await wait(400);
   ok(await pg.isVisible("#npView") && (await pg.innerText("#nHead")) === "期中考", "new page opens");
