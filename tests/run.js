@@ -72,6 +72,11 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#nRemind > :first-child"); await wait(150);
   ok(await pg.isHidden("#appTitle"), "app title hidden outside the home page");
   ok(await pg.isHidden("#nTabsMore"), "other pages fold under 其他");
+  await pg.evaluate(() => { document.body.style.minHeight = "4000px"; window.scrollTo(0, 120); }); await wait(100);
+  const yb = await pg.evaluate(() => document.getElementById("nTabs").getBoundingClientRect().top);
+  await pg.evaluate(() => document.querySelector("#nTabs .ntab:nth-child(2)").click()); await wait(300);
+  ok(Math.abs(await pg.evaluate(() => document.getElementById("nTabs").getBoundingClientRect().top) - yb) < 2, "switching pages keeps the screen where it was");
+  await pg.evaluate(() => { document.getElementById("nTabCal").click(); document.body.style.minHeight = ""; window.scrollTo(0, 0); }); await wait(300);
   if (await pg.isHidden("#npAdd")) await pg.click("#nTabMore"); await pg.click("#npAdd"); await pg.fill("#fs_t", "期中考"); await pg.click("#fsSave"); await wait(400);
   ok(await pg.isVisible("#npView") && (await pg.innerText("#nHead")) === "期中考", "new page opens");
   const tmr = await pg.evaluate(() => new Date(Date.now() + 8 * 3600e3 + 864e5).toISOString().slice(0, 10));
@@ -305,6 +310,14 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300); await noPin();
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
   await loginAs("u1", "測試弟弟");
+  // 7b2. 音樂：古典樂
+  await pg.evaluate(() => window.scrollTo(0, 0)); await pg.click("#musicBtn"); await wait(150);
+  await pg.click("#mGenre button[data-g='classic']"); await wait(100);
+  ok((await pg.innerText("#mQ")).includes("古典樂"), "music pop-up offers 古典樂");
+  ok(await pg.evaluate(() => CLASSICS.every(c => { const s = c.build(); return s.ev.length > 50 && s.ev.every(e => e.m > 20 && e.m < 100 && e.t >= 0 && e.d > 0); })), "every classical piece builds valid notes");
+  const e0 = errs.length; await pg.click("#mYes"); await wait(700); await pg.click("#mNext"); await wait(500);
+  ok(errs.length === e0 && (await pg.innerText("#mQ")).includes("CLASSICS" ? "《" : ""), "classical music plays and skips without errors");
+  await pg.click("#mClose"); await wait(100);
   // 7c. 一鍵邀請全家：一個連結，加入時選「我是哪一位」
   await pg.click("#acctBtn"); await wait(300);
   await pg.click("#whoBtns .tile:has-text('新增')"); await pg.fill("#fs_n", "爸爸"); await pg.click("#fsSave"); await wait(600);

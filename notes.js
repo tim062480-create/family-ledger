@@ -185,12 +185,12 @@ let moreOpen=false;
 function renderTabs(p){
   const box=$("nTabs"),more=$("nTabsMore");box.innerHTML="";more.innerHTML="";
   const mk=(to,label,on,fn,id)=>{const b=mkEl("button","ntab"+(on?" on":""),label);b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",on?"true":"false");if(id)b.id=id;b.onclick=fn;to.appendChild(b);return b};
-  const go=x=>()=>{if(noteSel!==x.id){flushText();openPage(x.id)}};
-  mk(box,"📅 總日曆",!p,()=>{if(noteSel){closePage();render();window.scrollTo(0,0)}},"nTabCal");
+  const go=x=>()=>{if(noteSel!==x.id){flushText();openPage(x.id,true)}};
+  mk(box,"📅 總日曆",!p,()=>{if(noteSel)keepTabs(()=>{closePage();render()})},"nTabCal");
   const main=notes.filter(x=>x.kind==="todo"),rest=notes.filter(x=>x.kind!=="todo");
   main.forEach(x=>mk(box,"✅ "+(x.title||"待辦"),p&&p.id===x.id,go(x)));
   const inRest=!!(p&&p.kind!=="todo");if(inRest)moreOpen=true;
-  const ob=mk(box,`📂 其他${rest.length?` ${rest.length}`:""} ${moreOpen?"▴":"▾"}`,inRest,()=>{moreOpen=!moreOpen;renderTabs(p)},"nTabMore");
+  const ob=mk(box,`📂 其他${rest.length?` ${rest.length}`:""} ${moreOpen?"▴":"▾"}`,inRest,()=>{moreOpen=!moreOpen;keepTabs(()=>renderTabs(p))},"nTabMore");
   ob.removeAttribute("role");ob.setAttribute("aria-expanded",moreOpen?"true":"false");ob.setAttribute("aria-controls","nTabsMore");
   more.hidden=!moreOpen;
   rest.forEach(x=>mk(more,x.title||"未命名",p&&p.id===x.id,go(x)));
@@ -332,7 +332,10 @@ function watchImgs(pid){
   const off=notesRef.doc(pid).collection("imgs").onSnapshot(sn=>{if(noteSel!==pid)return;noteImgs=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));if(view==="note")renderPageImgs()},()=>{});
   noteImgOff=off;unsubs.push(off);
 }
-function openPage(pid){noteSel=pid;$("npBulkMsg").textContent="";$("npText").value=(notes.find(x=>x.id===pid)||{}).text||"";$("npImgMsg").textContent="";$("npTextMsg").textContent="";watchImgs(pid);view="note";render();window.scrollTo(0,0)}
+function keepTabs(fn){const el=$("nTabs"),y0=el&&!el.hidden&&el.offsetParent?el.getBoundingClientRect().top:null;fn();
+  if(y0==null)return window.scrollTo(0,0);const y1=el.getBoundingClientRect().top;if(y1!==y0)window.scrollBy(0,y1-y0)}
+function openPage(pid,keep){if(keep)return keepTabs(()=>openPage0(pid));openPage0(pid);window.scrollTo(0,0)}
+function openPage0(pid){noteSel=pid;$("npBulkMsg").textContent="";$("npText").value=(notes.find(x=>x.id===pid)||{}).text||"";$("npImgMsg").textContent="";$("npTextMsg").textContent="";watchImgs(pid);view="note";render()}
 function closePage(){flushText();noteSel=null;noteImgs=[];if(noteImgOff){try{noteImgOff()}catch(e){}noteImgOff=null}}
 function newPage(){
   openForm({title:"新增頁面",sub:"一個主題一頁，例如「這學期課表」「期中考」「社團」。",fields:[{key:"t",label:"頁面名稱",value:"",full:true,placeholder:"例如：這學期課表"}],

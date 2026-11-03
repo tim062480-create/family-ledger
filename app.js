@@ -1081,6 +1081,36 @@ const MOODS=[
   {name:"雨天窗邊",bpm:60,root:57,wave:"sine",scale:[0,3,5,7,10],prog:[[0,3,7,10],[-4,0,3,7],[3,7,10,14],[-2,2,5,10]]},
   {name:"星空晚安",bpm:52,root:55,wave:"sine",scale:[0,2,4,7,9],prog:[[0,4,7,11],[5,9,12,16],[-3,0,4,7],[2,6,9,12]]}
 ];
+// 古典樂：曲子本身已是公有領域，這裡是網頁自己用合成音色演奏，沒有用任何人的錄音
+const CLASSICS=[
+  {name:"巴哈《C 大調前奏曲》",bpm:66,build(){const B=[[60,64,67,72,76],[60,62,69,74,77],[59,62,67,74,77],[60,64,67,72,76],[60,64,69,76,81],[60,62,66,69,74],[59,62,67,74,79],[59,60,64,67,72],[57,60,64,67,72],[50,57,62,66,72],[55,59,62,67,71],[55,58,64,67,73],[53,57,62,69,74],[53,56,62,65,71],[52,55,60,67,72],[52,53,57,60,65],[50,53,57,60,65],[43,50,55,59,65],[48,52,55,60,64],[48,55,58,60,64],[41,53,57,60,64],[42,48,57,60,63],[44,53,59,60,62],[43,53,55,59,62],[43,52,55,60,64],[43,50,55,60,65],[43,50,55,59,65],[43,51,57,60,66],[43,52,55,60,67],[43,50,55,60,65],[43,50,55,59,65],[36,48,55,58,64],[36,48,53,57,64],[36,47,55,62,65]];
+    const ev=[],pat=[0,1,2,3,4,2,3,4];B.forEach((c,i)=>{const t0=i*4;for(let h=0;h<2;h++){ev.push({t:t0+h*2,m:c[0],d:2,v:.07},{t:t0+h*2+.25,m:c[1],d:1.75,v:.06});for(let k=2;k<8;k++)ev.push({t:t0+h*2+k*.25,m:c[pat[k]],d:.9,v:.06})}});
+    const e=B.length*4;[36,48,64,67,72].forEach(m=>ev.push({t:e,m,d:6,v:.07}));return{ev,len:e+6}}},
+  {name:"帕海貝爾《D 大調卡農》",bpm:60,build(){const bass=[50,45,47,42,43,38,43,45],ch=[[62,66,69],[61,64,69],[62,66,71],[61,66,69],[62,67,71],[62,66,69],[62,67,71],[61,64,69]],
+    mel=[[],[78,76,74,73,71,69,71,73],[74,73,71,69,67,66,67,64],[66,69,67,66,64,66,62,61,59,62,69,67,71,69,67,69]],ev=[];let t=0;
+    mel.forEach(line=>{for(let r=0;r<2;r++){bass.forEach((b,i)=>{const t0=t+i*2;ev.push({t:t0,m:b,d:2.2,v:.08});ch[i].forEach((m,k)=>ev.push({t:t0+.5+k*.5,m,d:1.2,v:.035}))});
+      if(line.length){const st=16/line.length;line.forEach((m,k)=>ev.push({t:t+k*st,m,d:st*1.1,v:.075}))}t+=16}});
+    [38,50,62,66,69,74].forEach(m=>ev.push({t,m,d:6,v:.06}));return{ev,len:t+6}}},
+  {name:"貝多芬《給愛麗絲》",bpm:72,build(){const ev=[],A=[45,52,57],E=[40,52,56],x=.5;let t=0;const n=(m,d=x,v=.08)=>{ev.push({t,m,d:d*1.6,v});t+=d},
+    arp=(c,top)=>{c.forEach((m,k)=>ev.push({t:t+k*x,m,d:1.6,v:.045}));top.forEach(m=>n(m))};
+    const head=()=>{[76,75,76,75,76,71,74,72].forEach(m=>n(m));arp(A,[69,60,64,69]);arp(E,[71,64,68,71]);arp(A,[72,64,76,75])};
+    const head2=()=>{[76,75,76,75,76,71,74,72].forEach(m=>n(m));arp(A,[69,60,64,69]);arp(E,[71,64,72,71]);arp(A,[69,null,null,null].filter(Boolean));t+=x*3};
+    for(let r=0;r<2;r++){head();head2()}
+    const mid=[[48,[71,72,74]],[43,[76,67,77,76]],[45,[74,65,76,74]],[40,[72,64,74,72]],[40,[71,64,64,76]]];mid.forEach(([b,top])=>{ev.push({t,m:b,d:1.6,v:.05});ev.push({t:t+x,m:b+7,d:1.2,v:.04});top.forEach(m=>n(m))});
+    head2();return{ev:ev.filter(e=>e.m),len:t+4}}},
+  {name:"薩替《吉諾佩第一號》",bpm:72,build(){const ev=[],bars=[[43,[59,62,66]],[38,[57,61,66]]];
+    const mel=[[0,0],[0,1],[78,1],[81,1],[79,1],[78,1],[73,1],[71,1],[73,1],[74,1],[69,3],[66,3],[66,3],[66,3],[0,3],[78,1],[81,1],[79,1],[78,1],[73,1],[71,1],[73,1],[74,1],[69,3],[73,3],[78,3],[76,6]];
+    const total=mel.reduce((a,[,d])=>a+d,0),nb=Math.ceil(total/3)+8;for(let i=0;i<nb;i++){const[b,c]=bars[i%2],t0=i*3;ev.push({t:t0,m:b,d:3.4,v:.07});c.forEach(m=>ev.push({t:t0+1,m,d:2.4,v:.035}))}
+    let t=24;mel.forEach(([m,d])=>{if(m)ev.push({t,m,d:d*1.3,v:.07});t+=d});return{ev,len:nb*3+3}}}
+];
+let mGenre="soft";try{mGenre=localStorage.getItem("mGenre")||"soft"}catch(e){}
+let cIdx=0,cSong=null,cEv=0,cT0=0;
+function cStart(at){cSong=CLASSICS[cIdx].build();cSong.ev.sort((a,b)=>a.t-b.t);cEv=0;cT0=at}
+function cSchedule(){
+  const S=CLASSICS[cIdx],sec=60/S.bpm;
+  while(cEv<cSong.ev.length){const e=cSong.ev[cEv],at=cT0+e.t*sec;if(at>AC.currentTime+.5)break;if(at>=AC.currentTime-.05)mNote(e.m,at,Math.max(.4,e.d*sec),e.v,"triangle");cEv++}
+  if(cEv>=cSong.ev.length&&AC.currentTime>cT0+cSong.len*sec){cIdx=(cIdx+1)%CLASSICS.length;cStart(AC.currentTime+.3);mUI()}
+}
 let AC=null,mOut=null,mIn=null,mTimer=null,mPlaying=false,mIdx=0,nextT=0,stepN=0;
 const mf=m=>440*Math.pow(2,(m-69)/12);
 function mInit(){
@@ -1119,7 +1149,10 @@ function silentWav(){
 }
 function mUI(){
   $("mAsk").hidden=mPlaying;$("mCtl").hidden=!mPlaying;
-  $("mQ").textContent=mPlaying?"正在播放："+MOODS[mIdx].name:"要播放輕音樂嗎？";
+  const cl=mGenre==="classic";
+  $("mQ").textContent=mPlaying?"正在播放："+(cl?CLASSICS[cIdx].name:MOODS[mIdx].name):(cl?"要播放古典樂嗎？":"要播放輕音樂嗎？");
+  document.querySelectorAll("#mGenre button").forEach(b=>{const on=b.dataset.g===mGenre;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false")});
+  $("mFoot").textContent=cl?"古典名曲（作曲家都已過世百年，曲子是公有領域），由網頁即時用合成音色演奏。手機若開靜音可能聽不到。":"原創輕音樂，由網頁即時產生。手機若開靜音可能聽不到。";
   $("musicBtn").classList.toggle("on",mPlaying);
 }
 function mPlay(){
@@ -1128,7 +1161,8 @@ function mPlay(){
     if(!mSilent){mSilent=new Audio(silentWav());mSilent.loop=true}
     const pr=mSilent.play();if(pr&&pr.catch)pr.catch(()=>{});
     if(!AC)mInit();AC.resume();nextT=AC.currentTime+.1;stepN=0;clearInterval(mTimer);
-    mTimer=setInterval(()=>{mSchedule();if(stepN>=8*40){mIdx=(mIdx+1)%MOODS.length;stepN=0;mUI()}},100);mPlaying=true;
+    if(mGenre==="classic")cStart(AC.currentTime+.15);
+    mTimer=setInterval(()=>{if(mGenre==="classic")return cSchedule();mSchedule();if(stepN>=8*40){mIdx=(mIdx+1)%MOODS.length;stepN=0;mUI()}},100);mPlaying=true;
   }catch(e){$("mQ").textContent="這台裝置沒辦法播放"}
   mUI();
 }
@@ -1138,7 +1172,9 @@ $("mYes").onclick=()=>mPlay();
 $("mNo").onclick=()=>{$("musicPop").hidden=true};
 $("mClose").onclick=()=>{mStop();$("musicPop").hidden=true};
 $("mStopBtn").onclick=()=>mStop();
-$("mNext").onclick=()=>{mIdx=(mIdx+1)%MOODS.length;stepN=0;if(AC)nextT=AC.currentTime+.15;mUI()};
+$("mNext").onclick=()=>{if(mGenre==="classic"){cIdx=(cIdx+1)%CLASSICS.length;if(AC&&mPlaying)cStart(AC.currentTime+.4)}else{mIdx=(mIdx+1)%MOODS.length;stepN=0;if(AC)nextT=AC.currentTime+.15}mUI()};
+document.querySelectorAll("#mGenre button").forEach(b=>b.onclick=()=>{if(mGenre===b.dataset.g)return;mGenre=b.dataset.g;try{localStorage.setItem("mGenre",mGenre)}catch(e){}
+  if(mPlaying&&AC){nextT=AC.currentTime+.4;stepN=0;if(mGenre==="classic")cStart(AC.currentTime+.4)}mUI()});
 $("mVol").oninput=e=>{if(mOut)mOut.gain.value=+e.target.value};
 
 
