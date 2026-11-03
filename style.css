@@ -459,3 +459,9 @@ body.signedout #tabbar{display:none!important}
 .tdck input{width:20px;height:20px;margin:0;accent-color:var(--good)}
 .seg.tseg{margin:2px 0 6px}
 .seg.tseg button{padding:5px 14px;font-size:13px}
+
+.mqr{display:block;width:100%;background:none;border:none;border-bottom:1px solid var(--line);border-radius:0;padding:10px 2px;text-align:left;color:var(--ink)}
+.mqr:last-child{border-bottom:none}
+.mqr .t{display:block;font-size:14.5px;line-height:1.6}
+.mqr small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+#fsFields textarea{width:100%;color:var(--ink)}

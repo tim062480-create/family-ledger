@@ -330,7 +330,7 @@ function enterLedger(kind){
   unsubs.push(cpCol.onSnapshot(sn=>{coupons=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)renderCoupons()},()=>{}));
   unsubs.push(incCol.onSnapshot(sn=>{incomes=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)render();schedulePublish()},()=>{}));
   notesSub();
-  unsubs.push(prefsRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;curPrefs=d;applyBg(d&&d.bg);if(loaded)render()},()=>{}));
+  unsubs.push(prefsRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;curPrefs=d;applyBg(d&&d.bg);setQuote();if(view==="set"&&setSub==="look")renderLook();if(loaded)render()},()=>{}));
   render();window.scrollTo(0,0);
 }
 function renderLedgerSw(){
@@ -686,7 +686,7 @@ function setTitle(k){if(curKey==="fam"&&k==="cat")return"共同帳的預算與�
 function setValue(k){
   if(k==="family")return hid?hhName():"還沒有";
   if(k==="account")return(me&&me.email)||"";
-  if(k==="look")return(curPrefs&&curPrefs.bg?"有背景":"無背景")+"・"+(quoteOn()?"每日一句開":"每日一句關");
+  if(k==="look")return(curPrefs&&curPrefs.bg?"有背景":"無背景")+"・"+(quoteOn()?"每日一句開":"每日一句關")+(myQuotes().length?`・自己的句子 ${myQuotes().length} 則`:"");
   if(k==="remind"){const t=curPrefs&&curPrefs.remindTime;return t?"每天 "+t:"未設定"}
   if(k==="goal")return goal?goal.name:(hid?"未設定":"需先加入家庭");
   if(!settings)return"";
@@ -776,6 +776,7 @@ function openForm(cfg){
     const l=document.createElement("label");if(f.full)l.className="full";l.append(document.createTextNode(f.label));
     let inp;
     if(f.options){inp=document.createElement("select");f.options.forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;inp.appendChild(o)})}
+    else if(f.textarea){inp=document.createElement("textarea");inp.rows=4;inp.maxLength=400;if(f.placeholder)inp.placeholder=f.placeholder}
     else{inp=document.createElement("input");inp.type=f.type||"text";if(f.type==="number"){inp.min="0";inp.inputMode="numeric"}if(f.placeholder)inp.placeholder=f.placeholder}
     inp.id="fs_"+f.key;inp.value=f.value==null?"":f.value;
     if(f.list){const dl=document.createElement("datalist");dl.id="dl_"+f.key;f.list.forEach(v=>{const o=document.createElement("option");o.value=v;dl.appendChild(o)});inp.setAttribute("list",dl.id);l.appendChild(dl)}
@@ -1003,7 +1004,23 @@ function renderReminder(){
 }
 
 // ---- look: background + daily quote ----
-function renderLook(){$("quoteOn").checked=quoteOn()}
+function renderLook(){
+  $("quoteOn").checked=quoteOn();$("quoteSrc").value=quoteSrc();
+  const box=$("myQuoteList");box.innerHTML="";const list=myQuotes();
+  if(!list.length){box.appendChild(mkEl("p","sub","還沒有自己的句子。按「＋ 新增句子」寫下喜歡的話、座右銘或提醒自己的事。"));return}
+  list.forEach((q,i)=>{const b=mkEl("button","mqr");b.type="button";b.appendChild(mkEl("span","t",q.t));if(q.src)b.appendChild(mkEl("small",null,"— "+q.src));b.onclick=()=>editMyQuote(i);box.appendChild(b)});
+}
+function editMyQuote(i){
+  const list=myQuotes(),isNew=i==null,q=isNew?{}:list[i];
+  openForm({title:isNew?"新增句子":"修改句子",sub:"每天會從句子裡依序換一則顯示在首頁。",fields:[{key:"qt",label:"句子",value:q.t||"",full:true,textarea:true,placeholder:"例如：今天也要好好照顧自己。"},{key:"qs",label:"出處（可不填）",value:q.src||"",full:true,placeholder:"例如：自己、某本書、某個人"}],
+    validate:()=>fv("qt")?"":"請輸入句子",
+    onSave:async()=>{const nq={id:q.id||("q"+Date.now().toString(36)),t:fv("qt").slice(0,400),src:fv("qs").slice(0,60)};const nl=isNew?list.concat([nq]):list.map((x,j)=>j===i?nq:x);
+      const patch={myQuotes:nl};if(isNew&&!list.length&&!(curPrefs&&curPrefs.quoteSrc))patch.quoteSrc="both";
+      curPrefs={...(curPrefs||{}),...patch};renderLook();setQuote();await prefsRef.set(patch,{merge:true})},
+    onDelete:isNew?null:async()=>{const nl=list.filter((x,j)=>j!==i);curPrefs={...(curPrefs||{}),myQuotes:nl};renderLook();setQuote();await prefsRef.set({myQuotes:nl},{merge:true})}});
+}
+$("myQuoteAdd").onclick=()=>editMyQuote(null);
+$("quoteSrc").onchange=async e=>{const v=e.target.value;if(v==="mine"&&!myQuotes().length){$("quoteMsg").textContent="先新增至少一句自己的句子，才能只用自己的句子。";e.target.value=quoteSrc();return}$("quoteMsg").textContent="";curPrefs={...(curPrefs||{}),quoteSrc:v};setQuote();try{await prefsRef.set({quoteSrc:v},{merge:true})}catch(err){}};
 $("quoteOn").onchange=async e=>{try{await prefsRef.set({quote:e.target.checked},{merge:true})}catch(err){}};
 $("bgFile").onchange=async e=>{
   const f=e.target.files&&e.target.files[0];if(!f||!prefsRef)return;
@@ -1302,8 +1319,14 @@ const QUOTES=[
   {t:"余問曰：『然則數可逃乎？』曰：『命自我作，福自己求。《詩》《書》所稱，的為明訓。我教典中說，求功名得功名，求富貴得富貴，求男女得男女，求長壽得長壽。夫誑語乃釋迦大戒。諸佛菩薩，豈誑語欺人？』",src:QSRC}
 ];
 const QSTART=Date.UTC(2026,9,3);
+// 自己的句子：存在 prefs/ui.myQuotes；quoteSrc = builtin（內建）／mine（只用我的）／both（兩種都用）
+const myQuotes=()=>(curPrefs&&Array.isArray(curPrefs.myQuotes))?curPrefs.myQuotes.filter(x=>x&&x.t):[];
+const quoteSrc=()=>{const s=curPrefs&&curPrefs.quoteSrc;if(s==="builtin"||s==="mine"||s==="both")return s;return myQuotes().length?"both":"builtin"};
+function quotePool(){const mine=myQuotes(),s=quoteSrc();if(s==="mine"&&mine.length)return mine;if(s==="both")return QUOTES.concat(mine);return QUOTES}
+let lastQuoteKey="";
 function setQuote(){
-  const d=new Date(today()+"T00:00:00Z"),n=Math.floor((d-QSTART)/864e5),k=((n%QUOTES.length)+QUOTES.length)%QUOTES.length,item=QUOTES[k];
+  const pool=quotePool(),d=new Date(today()+"T00:00:00Z"),n=Math.floor((d-QSTART)/864e5),k=((n%pool.length)+pool.length)%pool.length,item=pool[k];
+  const key=today()+"|"+item.t+"|"+(item.src||"");if(key===lastQuoteKey&&$("quote").firstChild)return;lastQuoteKey=key;
   const q=$("quote");q.textContent="";q.classList.add("clamp");q.dataset.open="0";
   const t=document.createElement("div");t.className="qt";t.textContent=item.t;
   const more=document.createElement("div");more.className="qmore";more.textContent="展開全文";more.hidden=true;
