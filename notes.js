@@ -71,7 +71,9 @@ function renderNotes(){
   // 「待辦清單」頁（例如代辦）：不顯示行程表，改顯示跟總日曆一樣的待辦清單
   {const tc=$("nTodo"),tp=!!(p&&p.kind==="todo");$("npSched").hidden=tp;
    if(tp){if(tc.parentElement!==$("npView"))$("npView").insertBefore(tc,$("npSched"));renderTodos()}
-   else if(tc.parentElement!==$("nlView"))$("nlView").insertBefore(tc,$("nMemoSum"))}
+   else if(tc.parentElement!==$("nlView"))$("nlView").insertBefore(tc,$("nMemoSum"));
+   // 有「待辦清單」頁的話，總日曆就不再顯示待辦
+   tc.hidden=!tp&&notes.some(x=>x.kind==="todo")}
   if(p){renderPage(p);return}
   $("nSoon").checked=soonOn();renderNoteCal();renderTodos();{const ta=$("nMemo");if(document.activeElement!==ta&&!memoTimer)ta.value=memoText}renderMemoSum();
 }
@@ -389,7 +391,7 @@ function renderMemoSum(){
   rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,`未來一個月 <small class="nct"></small>`.replace(/<.*/,"")));
   hd.firstChild.appendChild(mkEl("small","nct",`${nMD(t)}–${nMD(end)}・${rows.length} 件`));box.appendChild(hd);
-  box.appendChild(mkEl("p","sub","總日曆上的事和隨手記裡寫了日期的事都在這裡；勾「待辦」就移到上面的待辦。"));
+  {const tp=notes.find(x=>x.kind==="todo");box.appendChild(mkEl("p","sub",`總日曆上的事和隨手記裡寫了日期的事都在這裡；勾「待辦」就移到${tp?`「${tp.title}」頁`:"上面的待辦"}。`))}
   box.hidden=false;
   if(!rows.length){box.appendChild(mkEl("p","sub","未來一個月沒有排事情 🎉"));return}
   const mon0=nMon(t);let lastW=null;
