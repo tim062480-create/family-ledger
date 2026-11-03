@@ -374,3 +374,9 @@ body.signedout #tabbar{display:none!important}
 .nsw{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
 .nsw input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--accent)}
 .nsw small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+
+.nit{padding:0;gap:4px}
+.nit .nmain{flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:none;color:var(--ink);text-align:left;padding:10px 2px;border:none;border-radius:0}
+.nstar{flex:none;width:44px;height:44px;padding:0;border:none;border-radius:12px;background:none;color:var(--muted);font-size:22px;line-height:1}
+.nstar.on{color:var(--s1)}
+.nstar:active{background:var(--track)}

@@ -60,7 +60,13 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "普化期中考"); await pg.fill("#fs_no", "第 1-5 章");
   await pg.selectOption("#fs_rm", "1"); await pg.click("#fsSave"); await wait(400);
   ok((await pg.innerText("#npItems")).includes("普化期中考"), "item listed on its page");
-  await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "還書"); await pg.selectOption("#fs_st", "0"); await pg.click("#fsSave"); await wait(400);
+  await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "還書");
+  ok((await pg.inputValue("#fs_st")) === "0", "ordinary item is not starred by default"); await pg.click("#fsSave"); await wait(400);
+  await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "第三次作業");
+  ok((await pg.inputValue("#fs_st")) === "1", "作業 is starred automatically"); await pg.click("#fsSave"); await wait(400);
+  const rowStar = pg.locator("#npItems .nit", { hasText: "第三次作業" }).locator(".nstar");
+  await rowStar.click(); await wait(400);
+  ok((await rowStar.getAttribute("aria-pressed")) === "false", "row ★ button turns the star off directly");
   await pg.fill("#npText", "考試範圍：第 1-5 章"); await wait(1200);
   ok((await pg.evaluate(() => Object.entries(__store).find(([k]) => /^users\/u1\/notes\/[^/]+$/.test(k))[1].text)) === "考試範圍：第 1-5 章", "notes text autosaves");
   await pg.click("#nTabCal"); await wait(300);
