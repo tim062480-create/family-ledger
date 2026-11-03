@@ -92,7 +92,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.fill("#nMemo", "學校 不要忘東忘西！"); await wait(1200);
   ok((await pg.evaluate(() => __store["users/u1/prefs/memo"] && __store["users/u1/prefs/memo"].text)) === "學校 不要忘東忘西！", "隨手記 autosaves");
   await pg.click("#tabCal"); await wait(300);
-  ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) >= 1, "main 日曆 shows ★ items too");
+  ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) === 0, "birthday calendar does not show notebook items");
+  ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "生日", "設定"]), "tab order 記帳・記事本・生日・設定");
   await pg.click("#tabRec"); await wait(300);
   ok((await pg.innerText("#homeRemind")).includes("普化期中考"), "home shows the reminder");
   ok(await pg.isVisible("#appTitle"), "app title shows on the home page");
