@@ -24,6 +24,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const pg = await ctx.newPage(); pg.on("pageerror", e => errs.push(e.message)); pg.on("console", m => { if (m.type() === "error") errs.push("console: " + m.text()) });
   const shot = n => pg.screenshot({ path: path.join(process.env.SHOTS || "/tmp", n + ".png") });
   const wait = ms => pg.waitForTimeout(ms);
+  const noPin = async () => { await wait(450); if (await pg.isVisible("#fsheet") && (await pg.innerText("#fsheet")).includes("要幫你的帳設密碼")) { await pg.click("#fsCancel"); await wait(150); } };
   const tab = async sel => { await pg.evaluate(() => window.scrollTo(0, 0)); await wait(350); await pg.click(sel); };
   const loginAs = async (uid, name, pickSelf = true) => {
     await pg.evaluate(([u, n]) => localStorage.setItem("__nextuser", JSON.stringify({ uid: u, name: n })), [uid, name]);
@@ -50,6 +51,9 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const icsText = fs.readFileSync(await ics.path(), "utf8"); ok(/RRULE:FREQ=DAILY/.test(icsText) && /TZID=Asia\/Taipei/.test(icsText), "calendar file repeats daily in Taipei time");
   await pg.click("#wizard button:has-text('完成')"); await wait(400);
   ok(await pg.isVisible("#voice"), "home with 記一筆 after wizard");
+  await wait(400);
+  ok((await pg.isVisible("#fsheet")) && (await pg.innerText("#fsheet")).includes("要幫你的帳設密碼嗎"), "new account is asked once whether to set a password");
+  await pg.click("#fsCancel"); await wait(200);
 
   // 3. rule-based parsing
   await pg.fill("#vtext", "午餐一百二十元 備註好吃，捷運 30"); await pg.click("#parse"); await wait(150);
@@ -208,7 +212,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(!pg.url().includes("join="), "join param removed from URL");
   ok(await pg.isVisible("#wizard"), "new member gets own ledger wizard");
   for (let i = 0; i < 3; i++) { await pg.click("#wizard button:has-text('下一題')"); await wait(80); }
-  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300);
+  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300); await noPin();
   await pg.click("#ledgerSw button[data-k=fam]"); await wait(400);
   ok(!(await pg.isVisible("#wizard")) && (await pg.innerText("#monthList")).includes("花"), "member sees the shared family ledger");
   await pg.click(".mrow >> nth=0"); await wait(300);
@@ -263,7 +267,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#joinCard button:has-text('加入')"); await wait(800);
   ok(await pg.evaluate(() => { const k = Object.keys(__store).find(k => /^households\/[^/]+$/.test(k)); return !(__store[k].pending || []).length && __store[k.replace(/$/, "/members/u3")].name === "姐姐"; }), "joining takes over the 待邀請 tile");
   for (let i = 0; i < 3; i++) { await pg.click("#wizard button:has-text('下一題')"); await wait(80); }
-  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300);
+  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300); await noPin();
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
   await loginAs("u1", "測試弟弟");
   // 7c. 一鍵邀請全家：一個連結，加入時選「我是哪一位」
@@ -281,7 +285,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#joinCard .jt:has-text('爸爸')"); await pg.click("#joinCard button:has-text('加入')"); await wait(800);
   ok(await pg.evaluate(() => { const k = Object.keys(__store).find(k => /^households\/[^/]+$/.test(k)); return !(__store[k].pending || []).some(p => p.name === "爸爸") && __store[k + "/members/u4"].name === "爸爸"; }), "picking your tile takes it over");
   for (let i = 0; i < 3; i++) { await pg.click("#wizard button:has-text('下一題')"); await wait(80); }
-  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300);
+  await pg.click("#wizard button:has-text('先不用')"); await pg.click("#wizard button:has-text('完成')"); await wait(300); await noPin();
   await pg.evaluate(() => firebase.auth().signOut()); await wait(200);
   await loginAs("u1", "測試弟弟");
   await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('家庭成員與邀請')"); await wait(200);

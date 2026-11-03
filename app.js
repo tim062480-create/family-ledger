@@ -382,7 +382,7 @@ function showWizard(){
     nx.disabled=true;
     const chosen=wz.list.filter(c=>c.on),allow=Math.max(0,+wz.allow||0);
     const data={categories:chosen.map(c=>({name:c.name,budget:Math.max(0,+c.budget||0)})),allowance:{[cur]:allow},defaultAllowance:allow,...(fam?{createdBy:myId}:{share:"none"})};
-    try{await base.set(data);wz=null;view="home";setPicked(true)}
+    try{await base.set(data);wz=null;view="home";setPicked(true);if(curKey==="me")offerPin()}
     catch(e){$("wzMsg").textContent="儲存失敗，請稍後再試";nx.disabled=false}
   };
   nav.appendChild(nx);
@@ -770,7 +770,7 @@ $("fbSend").onclick=async()=>{
 // ---- generic form sheet ----
 let fsCfg=null,fsDelArmed=false;
 function openForm(cfg){
-  fsCfg=cfg;fsDelArmed=false;$("fsTitle").textContent=cfg.title;$("fsSave").textContent=cfg.okLabel||"儲存";$("fsMsg").textContent="";
+  fsCfg=cfg;fsDelArmed=false;$("fsTitle").textContent=cfg.title;$("fsCancel").textContent=cfg.cancelLabel||"取消";$("fsSave").textContent=cfg.okLabel||"儲存";$("fsMsg").textContent="";
   $("fsSub").hidden=!cfg.sub;$("fsSub").textContent=cfg.sub||"";
   const box=$("fsFields");box.innerHTML="";
   cfg.fields.forEach(f=>{

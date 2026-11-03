@@ -37,7 +37,7 @@ function renderWho(mode){
     return;
   }
   // 自己
-  tile(faceEl(myFace(),myId),myName(),whoEdit?"修改":(profile&&profile.pinHash?"🔒":""),()=>{if(whoEdit){editMe();return}askPin(()=>{setPicked(true);view="home";render();window.scrollTo(0,0)})});
+  tile(faceEl(myFace(),myId),myName(),whoEdit?"修改":(profile&&profile.pinHash?"🔒":""),()=>{if(whoEdit){editMe();return}askPin(()=>{setPicked(true);view="home";render();window.scrollTo(0,0);offerPin()})});
   // 已經加入的家人
   Object.values(members).filter(m=>m.id!==myId).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).forEach(m=>{
     const lv=others[m.id]&&others[m.id].level;
@@ -150,3 +150,11 @@ function lockWho(){
     onSave:async()=>{await saveProfile({whoLocked:true});whoEdit=false;render();toast("已收起來，之後想修改請到「設定 → 帳號」")}});
 }
 async function unlockWho(){await saveProfile({whoLocked:false});toast("選人畫面又會顯示「新增」和「編輯」了");renderAccount()}
+
+// 第一次進來（還沒設過密碼、也沒問過）：問一次要不要設密碼
+function offerPin(){
+  if(!profile||profile.pinHash||profile.pinAsked)return;
+  saveProfile({pinAsked:true});
+  setTimeout(()=>openForm({title:"要幫你的帳設密碼嗎？",sub:"設了以後，在「誰要記帳？」點你的頭像要輸入密碼，別人拿到你的手機也點不進你的帳。之後也可以到「設定 → 帳號 → 密碼鎖」再設定。",fields:[],okLabel:"好，設定密碼",
+    cancelLabel:"先不用",onSave:()=>{setTimeout(editPin,50)}}),300);
+}
