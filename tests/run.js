@@ -53,9 +53,9 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
 
   // 3b. 記事本：頁面、行程、總日曆、提醒、行事曆檔、筆記
   await pg.click("#tabNote"); await wait(200);
-  ok(await pg.isVisible("#nlView") && await pg.isVisible("#ncGrid"), "notebook tab shows the overall calendar");
+  ok(await pg.isVisible("#nlView") && await pg.isVisible("#ncGrid") && await pg.isVisible("#nTabCal"), "notebook tab shows the overall calendar and page buttons");
   await pg.click("#npAdd"); await pg.fill("#fs_t", "期中考"); await pg.click("#fsSave"); await wait(400);
-  ok(await pg.isVisible("#npView") && (await pg.innerText("#npTitle")) === "期中考", "new page opens");
+  ok(await pg.isVisible("#npView") && (await pg.innerText("#nHead")) === "期中考", "new page opens");
   const tmr = await pg.evaluate(() => new Date(Date.now() + 8 * 3600e3 + 864e5).toISOString().slice(0, 10));
   await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "普化期中考"); await pg.fill("#fs_no", "第 1-5 章");
   await pg.selectOption("#fs_rm", "1"); await pg.click("#fsSave"); await wait(400);
@@ -63,13 +63,17 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#npItemAdd"); await pg.fill("#fs_d", tmr); await pg.fill("#fs_ti", "還書"); await pg.selectOption("#fs_st", "0"); await pg.click("#fsSave"); await wait(400);
   await pg.fill("#npText", "考試範圍：第 1-5 章"); await wait(1200);
   ok((await pg.evaluate(() => Object.entries(__store).find(([k]) => /^users\/u1\/notes\/[^/]+$/.test(k))[1].text)) === "考試範圍：第 1-5 章", "notes text autosaves");
-  await pg.click("#npBack"); await wait(300);
-  ok((await pg.innerText("#nRemind")).includes("普化期中考") && !(await pg.innerText("#nRemind")).includes("還書"), "reminder card shows only items with 通知");
+  await pg.click("#nTabCal"); await wait(300);
+  ok((await pg.innerText("#nRemind")).includes("普化期中考") && !(await pg.innerText("#nRemind")).includes("還書"), "reminder card shows ★ / 通知 items in the next 3 days only");
   const lbl = await pg.$$eval("#ncGrid .l.plan", ls => ls.map(l => l.textContent));
   ok(lbl.some(x => x.startsWith("普化")) && !lbl.some(x => x.includes("還書")), "only ★ items label the calendar: " + JSON.stringify(lbl));
   const [nics] = await Promise.all([pg.waitForEvent("download"), pg.click("#nIcs")]);
   const nt = fs.readFileSync(await nics.path(), "utf8");
-  ok(/SUMMARY:普化期中考/.test(nt) && /TRIGGER:-PT15H/.test(nt) && !/還書/.test(nt), "calendar file holds items with reminders");
+  ok(/SUMMARY:普化期中考/.test(nt) && /TRIGGER:-PT15H/.test(nt) && /TRIGGER:-P1DT15H/.test(nt) && !/還書/.test(nt), "calendar file holds ★ items with 3-day alarms");
+  await pg.uncheck("#nSoon"); await wait(300);
+  ok((await pg.innerText("#nRemind")).includes("普化期中考"), "explicit 通知 still shows with the 3-day reminder off");
+  await pg.check("#nSoon"); await wait(200);
+  ok((await pg.$$eval("#nTabs .ntab", b => b.map(x => x.textContent))).includes("期中考"), "page has its own button");
   await pg.click("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) >= 1, "main 日曆 shows ★ items too");
   await pg.click("#tabRec"); await wait(300);

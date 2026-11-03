@@ -3,8 +3,9 @@
 // 一個頁面：{title, text, items:[{id,date,time,title,note,star,remind}], ts, order}
 //   star：要不要顯示在總日曆；remind：null 不通知，0/1/3/7 = 當天／前幾天提醒。
 let notes=[],notesRef=null,notesLoaded=false,noteSel=null,noteImgs=[],noteImgOff=null,noteTxtTimer=null,ncY=0,ncM=0,ncSel="";
-const RM_OPTS=[["","不通知"],["0","當天"],["1","前 1 天"],["3","前 3 天"],["7","前 1 週"]];
-const RM_TXT={0:"當天",1:"前 1 天",3:"前 3 天",7:"前 1 週"};
+const RM_OPTS=[["","不通知"],["0","當天"],["1","前 1 天"],["2","前 2 天"],["3","前 3 天"],["7","前 1 週"]];
+const RM_TXT={0:"當天",1:"前 1 天",2:"前 2 天",3:"前 3 天",7:"前 1 週"};
+const soonOn=()=>!(curPrefs&&curPrefs.noteSoon===false);
 const NOTE_IMG_MAX=12;
 const nWK="日一二三四五六";
 const nDow=k=>nWK[new Date(k+"T00:00:00Z").getUTCDay()];
@@ -17,7 +18,7 @@ const nRel=d=>d===0?"今天":d===1?"明天":d===2?"後天":`${d} 天後`;
 
 function noteItems(){const out=[];notes.forEach(p=>(p.items||[]).forEach(it=>out.push({...it,pid:p.id,page:p.title||"未命名"})));return out.sort(nSort)}
 function planMap(){const m={};noteItems().forEach(it=>{if(it.star&&it.date)(m[it.date]=m[it.date]||[]).push(it)});return m}
-function dueReminders(){return noteItems().filter(it=>{if(!nHasRm(it)||!it.date)return false;const d=nDays(it.date);return d>=0&&d<=+it.remind})}
+function dueReminders(){const soon=soonOn();return noteItems().filter(it=>{if(!it.date)return false;const d=nDays(it.date);if(d<0)return false;return (nHasRm(it)&&d<=+it.remind)||(soon&&it.star&&d<=2)})}
 
 function notesSub(){
   notesLoaded=false;notes=[];notesRef=DB.collection(`users/${myId}/notes`);
@@ -33,15 +34,16 @@ function notesReset(){notes=[];notesRef=null;notesLoaded=false;noteSel=null;note
 function renderNotes(){
   let p=noteSel?notes.find(x=>x.id===noteSel):null;
   if(noteSel&&!p&&notesLoaded){closePage();p=null}
-  $("nlView").hidden=!!p;$("npView").hidden=!p;
+  $("nlView").hidden=!!p;$("npView").hidden=!p;$("npEdit").hidden=!p;$("nHead").textContent=p?(p.title||"未命名"):"記事本";
+  renderTabs(p);renderRemindCard($("nRemind"),!!p);
   if(p){renderPage(p);return}
-  renderRemindCard($("nRemind"),false);renderNoteCal();renderPageList();
+  $("nSoon").checked=soonOn();renderNoteCal();
 }
 function renderRemindCard(box,compact){
   if(!box)return;const due=dueReminders();box.innerHTML="";box.hidden=!due.length;if(!due.length)return;
-  const h=mkEl("h2",null,"🔔 行程提醒");box.appendChild(h);
+  const h=mkEl("h2",null,"🔔 今天、明天、後天");box.appendChild(h);
   due.slice(0,compact?3:8).forEach(it=>box.appendChild(itemRow(it,true)));
-  if(compact&&due.length>3){const m=mkEl("button","ghost sm",`還有 ${due.length-3} 個，看記事本`);m.type="button";m.onclick=()=>goNotes();const bt=mkEl("div","bt");bt.appendChild(m);box.appendChild(bt)}
+  if(compact&&due.length>3){const m=mkEl("button","ghost sm",`還有 ${due.length-3} 個，看記事本`);m.type="button";m.onclick=()=>{if(view==="note"&&noteSel){closePage();render()}else goNotes()};const bt=mkEl("div","bt");bt.appendChild(m);box.appendChild(bt)}
 }
 function itemRow(it,showPage){
   const d=nDays(it.date);
@@ -58,16 +60,13 @@ function itemRow(it,showPage){
   r.onclick=()=>{const p=notes.find(x=>x.id===it.pid);if(p)editItem(p,p.items.find(x=>x.id===it.id))};
   return r;
 }
-function renderPageList(){
-  const box=$("npList");box.innerHTML="";
-  if(!notes.length){box.appendChild(mkEl("p","sub","還沒有頁面。按「＋ 新增頁面」，例如「這學期課表」「考試」「社團」，一個主題一頁。"));return}
-  notes.forEach(p=>{
-    const its=(p.items||[]).slice().sort(nSort),next=its.find(x=>nDays(x.date)>=0);
-    const b=mkEl("button","npr");b.type="button";
-    const l=mkEl("span","l");l.appendChild(mkEl("b",null,p.title||"未命名"));
-    l.appendChild(mkEl("small",null,its.length?`${its.length} 個行程`+(next?`・下一個 ${nMD(next.date)} ${next.title}`:"・都過了"):(p.text?"筆記":"空白頁")));
-    b.append(l,mkEl("span","r","›"));b.onclick=()=>openPage(p.id);box.appendChild(b);
-  });
+function renderTabs(p){
+  const box=$("nTabs");box.innerHTML="";
+  const mk=(label,on,fn,id)=>{const b=mkEl("button","ntab"+(on?" on":""),label);b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",on?"true":"false");if(id)b.id=id;b.onclick=fn;box.appendChild(b);return b};
+  mk("📅 總日曆",!p,()=>{if(noteSel){closePage();render();window.scrollTo(0,0)}},"nTabCal");
+  notes.forEach(x=>mk(x.title||"未命名",p&&p.id===x.id,()=>{if(noteSel!==x.id){flushText();openPage(x.id)}}));
+  const add=mk("＋",false,newPage,"npAdd");add.setAttribute("aria-label","新增頁面");add.classList.add("add");add.removeAttribute("role");
+  const on=box.querySelector(".ntab.on");if(on)requestAnimationFrame(()=>{const l=on.offsetLeft-16;if(l<box.scrollLeft||l+on.offsetWidth>box.scrollLeft+box.clientWidth)box.scrollLeft=Math.max(0,l)});
 }
 function renderNoteCal(){
   if(!ncY){const t=today();ncY=+t.slice(0,4);ncM=+t.slice(5,7);ncSel=t}
@@ -99,7 +98,6 @@ function renderNoteDay(){
   const bt=mkEl("div","bt"),add=mkEl("button","ghost sm","＋ 新增行程在這天");add.type="button";add.onclick=()=>newItemOn(ncSel);bt.appendChild(add);box.appendChild(bt);
 }
 function renderPage(p){
-  $("npTitle").textContent=p.title||"未命名";
   const box=$("npItems");box.innerHTML="";
   const its=(p.items||[]).map(it=>({...it,pid:p.id,page:p.title})).sort(nSort);
   if(!its.length)box.appendChild(mkEl("p","sub","還沒有行程。按「＋ 新增行程」加上日期和要做的事。"));
@@ -180,7 +178,7 @@ function notesICS(){
   const st=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
   const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//family-ledger//notes//zh-TW","CALSCALE:GREGORIAN","METHOD:PUBLISH",
     "BEGIN:VTIMEZONE","TZID:Asia/Taipei","BEGIN:STANDARD","DTSTART:19700101T000000","TZOFFSETFROM:+0800","TZOFFSETTO:+0800","TZNAME:CST","END:STANDARD","END:VTIMEZONE"];
-  const list=noteItems().filter(it=>nHasRm(it)&&nDays(it.date)>=0);
+  const soon=soonOn(),list=noteItems().filter(it=>nDays(it.date)>=0&&(nHasRm(it)||(soon&&it.star)));
   list.forEach(it=>{
     const d=it.date.replace(/-/g,""),n=+it.remind;
     L.push("BEGIN:VEVENT",`UID:${it.pid}-${it.id}@family-ledger`,"DTSTAMP:"+st);
@@ -188,17 +186,18 @@ function notesICS(){
     else{const nx=new Date(Date.UTC(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6,8)+1)).toISOString().slice(0,10).replace(/-/g,"");L.push(`DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${nx}`)}
     L.push("SUMMARY:"+icsEsc(it.title),"DESCRIPTION:"+icsEsc([it.page,it.note].filter(Boolean).join("・")));
     // 沒有時間的行程：在那天（或前幾天）早上 9 點提醒；有時間的：當天提前 1 小時，或前幾天同一時間
-    const trig=it.time?(n?`-P${n}D`:"-PT1H"):(n?(n===1?"-PT15H":`-P${n-1}DT15H`):"PT9H");
-    L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(it.title),"TRIGGER:"+trig,"END:VALARM","END:VEVENT");
+    const trig=n=>it.time?(n?`-P${n}D`:"-PT1H"):(n?(n===1?"-PT15H":`-P${n-1}DT15H`):"PT9H");
+    const ns=new Set();if(nHasRm(it))ns.add(+it.remind);if(soon&&it.star)[2,1,0].forEach(x=>ns.add(x));
+    [...ns].sort((a,b)=>b-a).forEach(k=>L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(it.title),"TRIGGER:"+trig(k),"END:VALARM"));
+    L.push("END:VEVENT");
   });
   L.push("END:VCALENDAR");return{text:L.join("\r\n")+"\r\n",count:list.length};
 }
 
 function initNotes(){
   $("tabNote").onclick=()=>{flushText();goNotes()};
-  $("npAdd").onclick=newPage;
-  $("npBack").onclick=()=>{closePage();render();window.scrollTo(0,0)};
   $("npEdit").onclick=editPage;
+  $("nSoon").onchange=e=>{const v=e.target.checked;curPrefs={...(curPrefs||{}),noteSoon:v};if(prefsRef)prefsRef.set({noteSoon:v},{merge:true}).catch(()=>{});render()};
   $("npItemAdd").onclick=()=>{const p=notes.find(x=>x.id===noteSel);if(p)editItem(p,null)};
   $("npText").oninput=()=>{$("npTextMsg").textContent="";clearTimeout(noteTxtTimer);noteTxtTimer=setTimeout(()=>{noteTxtTimer=1;flushText()},800)};
   $("npText").onblur=flushText;
@@ -213,8 +212,8 @@ function initNotes(){
   $("ncNext").onclick=()=>{ncM++;if(ncM>12){ncM=1;ncY++}renderNoteCal()};
   $("ncToday").onclick=()=>{const t=today();ncY=+t.slice(0,4);ncM=+t.slice(5,7);ncSel=t;renderNoteCal()};
   $("nIcs").onclick=()=>{const r=notesICS(),m=$("nIcsMsg");
-    if(!r.count){m.textContent="目前沒有設定通知、還沒到的行程。在行程裡把「通知」改成當天或前幾天就可以。";return}
+    if(!r.count){m.textContent="目前沒有要提醒、還沒到的行程。打開上面的「提醒我今天、明天、後天的事」，或在行程裡設定「通知」。";return}
     saveFile("schedule-reminders.ics",r.text,"text/calendar;charset=utf-8");
-    m.textContent=`已下載 ${r.count} 個行程。打開這個檔案，選「全部加入」就會加到手機行事曆，時間到會通知。之後有新增或修改，再按一次就好。`};
+    m.textContent=`已下載 ${r.count} 個行程（★ 的行程會在前 2 天、前 1 天和當天提醒）。打開這個檔案，選「全部加入」就會加到手機行事曆，時間到會通知。之後有新增或修改，再按一次就好。`};
   window.addEventListener("pagehide",flushText);
 }

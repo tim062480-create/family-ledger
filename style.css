@@ -365,3 +365,12 @@ body.signedout #tabbar{display:none!important}
 .tab{padding:4px 12px}
 .hasbg .vhd h2,.hasbg #setHead h2,.hasbg #bdHead h2{flex:0 1 auto;background:color-mix(in srgb,var(--card) 82%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-radius:12px;padding:4px 12px}
 .hasbg .vhd #npEdit{margin-left:auto}
+
+.ntabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 0 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ntabs::-webkit-scrollbar{display:none}
+.ntab{flex:none;white-space:nowrap;border-radius:999px;padding:8px 14px;font-size:14px;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.ntab.on{background:var(--accent);color:var(--onaccent);border-color:var(--accent);font-weight:600}
+.ntab.add{color:var(--accent);font-weight:700;padding:8px 16px}
+.nsw{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.nsw input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--accent)}
+.nsw small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
