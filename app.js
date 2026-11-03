@@ -687,7 +687,7 @@ function setTitle(k){if(curKey==="fam"&&k==="cat")return"共同帳的預算與�
 function setValue(k){
   if(k==="family")return hid?hhName():"還沒有";
   if(k==="account")return(me&&me.email)||"";
-  if(k==="look")return(curPrefs&&curPrefs.bg?"有背景":"無背景")+"・"+(quoteOn()?"每日一句開":"每日一句關")+(myQuotes().length?`・自己的句子 ${myQuotes().length} 則`:"");
+  if(k==="look")return(curPrefs&&curPrefs.bg?"有背景":"無背景")+"・"+(quoteOn()?"每日一句開":"每日一句關")+(quoteSetKey()?`・${quoteSetName(quoteSetKey())}`:"");
   if(k==="remind"){const t=curPrefs&&curPrefs.remindTime;return t?"每天 "+t:"未設定"}
   if(k==="goal")return goal?goal.name:(hid?"未設定":"需先加入家庭");
   if(!settings)return"";
@@ -1007,23 +1007,35 @@ function renderReminder(){
 
 // ---- look: background + daily quote ----
 function renderLook(){
-  $("quoteOn").checked=quoteOn();$("quoteSrc").value=quoteSrc();$("quoteSet").value=quoteSetKey()||"";
+  $("quoteOn").checked=quoteOn();
+  {const sel=$("quoteSet"),cur=quoteSetKey()||"";sel.innerHTML="";
+   const og=(label,opts)=>{const g=document.createElement("optgroup");g.label=label;opts.forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;g.appendChild(o)});sel.appendChild(g)};
+   if(!cur){const o=document.createElement("option");o.value="";o.textContent="還沒選";o.disabled=true;sel.appendChild(o)}
+   og("內建主題",QUOTE_SETS.map(s=>[s.k,`${s.name}：${s.desc}`]));
+   const th=myThemes();if(th.length)og("我的主題",(th.length>1?[["my:*","我自己的全部句子"]]:[]).concat(th.map(t=>["my:"+t,t])));
+   sel.value=cur}
   const box=$("myQuoteList");box.innerHTML="";const list=myQuotes();
-  if(!list.length){box.appendChild(mkEl("p","sub","還沒有自己的句子。按「＋ 新增句子」寫下喜歡的話、座右銘或提醒自己的事。"));return}
-  list.forEach((q,i)=>{const b=mkEl("button","mqr");b.type="button";b.appendChild(mkEl("span","t",q.t));if(q.src)b.appendChild(mkEl("small",null,"— "+q.src));b.onclick=()=>editMyQuote(i);box.appendChild(b)});
+  if(!list.length){box.appendChild(mkEl("p","sub","還沒有自己的主題。按「＋ 新增句子」寫下喜歡的話，可以取一個主題名稱，例如「我的座右銘」「考試加油」。"));return}
+  myThemes().forEach(th=>{
+    const its=list.map((q,i)=>({q,i})).filter(x=>myThemeOf(x.q)===th);
+    const hd=mkEl("div","mqh");hd.appendChild(mkEl("b",null,`${th}（${its.length}）`));
+    if(quoteSetKey()!=="my:"+th){const u=mkEl("button","ghost sm","用這個主題");u.type="button";u.onclick=()=>pickQuoteSet("my:"+th);hd.appendChild(u)}else hd.appendChild(mkEl("small","m","使用中"));
+    box.appendChild(hd);
+    its.forEach(({q,i})=>{const b=mkEl("button","mqr");b.type="button";b.appendChild(mkEl("span","t",q.t));if(q.src)b.appendChild(mkEl("small",null,"— "+q.src));b.onclick=()=>editMyQuote(i);box.appendChild(b)});
+  });
 }
 function editMyQuote(i){
   const list=myQuotes(),isNew=i==null,q=isNew?{}:list[i];
-  openForm({title:isNew?"新增句子":"修改句子",sub:"每天會從句子裡依序換一則顯示在首頁。",fields:[{key:"qt",label:"句子",value:q.t||"",full:true,textarea:true,placeholder:"例如：今天也要好好照顧自己。"},{key:"qs",label:"出處（可不填）",value:q.src||"",full:true,placeholder:"例如：自己、某本書、某個人"}],
+  const curK=quoteSetKey()||"",defTh=isNew?(curK.startsWith("my:")&&curK!=="my:*"?curK.slice(3):(myThemes()[0]||MY_DEF)):myThemeOf(q);
+  openForm({title:isNew?"新增句子":"修改句子",sub:"每天會從選的主題裡依序換一則顯示在首頁。",fields:[{key:"qt",label:"句子",value:q.t||"",full:true,textarea:true,placeholder:"例如：今天也要好好照顧自己。"},{key:"qs",label:"出處（可不填）",value:q.src||"",full:true,placeholder:"例如：自己、某本書、某個人"},{key:"qth",label:"主題（打新的名字就會新增一個主題）",value:defTh,full:true,list:myThemes().length?myThemes():[MY_DEF],placeholder:"例如：我的座右銘"}],
     validate:()=>fv("qt")?"":"請輸入句子",
-    onSave:async()=>{const nq={id:q.id||("q"+Date.now().toString(36)),t:fv("qt").slice(0,400),src:fv("qs").slice(0,60)};const nl=isNew?list.concat([nq]):list.map((x,j)=>j===i?nq:x);
-      const patch={myQuotes:nl};if(isNew&&!list.length&&!(curPrefs&&curPrefs.quoteSrc))patch.quoteSrc="both";
+    onSave:async()=>{const th=(fv("qth")||MY_DEF).slice(0,20),nq={id:q.id||("q"+Date.now().toString(36)),t:fv("qt").slice(0,400),src:fv("qs").slice(0,60),theme:th};const nl=isNew?list.concat([nq]):list.map((x,j)=>j===i?nq:x);
+      const patch={myQuotes:nl};if(isNew&&!(curPrefs&&curPrefs.quoteSet))patch.quoteSet="my:"+th;
       curPrefs={...(curPrefs||{}),...patch};renderLook();setQuote();await prefsRef.set(patch,{merge:true})},
     onDelete:isNew?null:async()=>{const nl=list.filter((x,j)=>j!==i);curPrefs={...(curPrefs||{}),myQuotes:nl};renderLook();setQuote();await prefsRef.set({myQuotes:nl},{merge:true})}});
 }
 $("myQuoteAdd").onclick=()=>editMyQuote(null);
 $("quoteSet").onchange=e=>{const v=e.target.value;if(v)pickQuoteSet(v)};
-$("quoteSrc").onchange=async e=>{const v=e.target.value;if(v==="mine"&&!myQuotes().length){$("quoteMsg").textContent="先新增至少一句自己的句子，才能只用自己的句子。";e.target.value=quoteSrc();return}$("quoteMsg").textContent="";curPrefs={...(curPrefs||{}),quoteSrc:v};setQuote();try{await prefsRef.set({quoteSrc:v},{merge:true})}catch(err){}};
 $("quoteOn").onchange=async e=>{try{await prefsRef.set({quote:e.target.checked},{merge:true})}catch(err){}};
 $("bgFile").onchange=async e=>{
   const f=e.target.files&&e.target.files[0];if(!f||!prefsRef)return;
@@ -1352,15 +1364,41 @@ const QUOTE_SETS=[
     QL("偶爾發呆，也是在幫自己充電。","輕鬆小品"),QL("把桌上收乾淨一角，心情也會跟著清爽。","輕鬆小品"),
     QL("今天走路的時候，抬頭看看樹。","輕鬆小品"),QL("累了就休息，明天的你會感謝現在的你。","輕鬆小品"),
     QL("存下的每一塊錢，都是給未來自己的禮物。","輕鬆小品"),QL("給自己一點掌聲，你已經很努力了。","輕鬆小品"),
-    QL("一杯熱茶、一首喜歡的歌，就是很好的晚上。","輕鬆小品"),QL("把今天最開心的一件事記下來吧。","輕鬆小品")]}
+    QL("一杯熱茶、一首喜歡的歌，就是很好的晚上。","輕鬆小品"),QL("把今天最開心的一件事記下來吧。","輕鬆小品")]},
+  {k:"daojia",name:"道家智慧",desc:"老子、莊子的話",list:[
+    QL("上善若水。水善利萬物而不爭。","《老子・第八章》"),QL("知人者智，自知者明。勝人者有力，自勝者強。","《老子・第三十三章》"),
+    QL("知足者富，強行者有志。","《老子・第三十三章》"),QL("天下難事，必作於易；天下大事，必作於細。","《老子・第六十三章》"),
+    QL("合抱之木，生於毫末；九層之臺，起於累土。","《老子・第六十四章》"),QL("禍兮福之所倚，福兮禍之所伏。","《老子・第五十八章》"),
+    QL("大方無隅，大器晚成，大音希聲，大象無形。","《老子・第四十一章》"),QL("吾生也有涯，而知也無涯。","《莊子・養生主》"),
+    QL("君子之交淡若水，小人之交甘若醴。","《莊子・山木》"),QL("北冥有魚，其名為鯤。鯤之大，不知其幾千里也。","《莊子・逍遙遊》"),
+    QL("至人無己，神人無功，聖人無名。","《莊子・逍遙遊》"),QL("井蛙不可以語於海者，拘於虛也。","《莊子・秋水》")]},
+  {k:"licai",name:"理財小語",desc:"跟錢好好相處的小提醒",list:[
+    QL("記帳不是為了不花錢，是為了知道錢去了哪裡。","理財小語"),QL("先存錢，再花錢。","理財小語"),
+    QL("想買的東西先放進購物車，等三天再決定。","理財小語"),QL("比價之前，先問自己：真的需要嗎？","理財小語"),
+    QL("固定支出先算好，剩下的才是能自由花的錢。","理財小語"),QL("每個月存下一點點，時間會幫你變多。","理財小語"),
+    QL("別讓分期付款，變成分期煩惱。","理財小語"),QL("把存錢目標寫下來，就比較容易達成。","理財小語"),
+    QL("買之前想一想：這個東西我會用幾次？","理財小語"),QL("偶爾犒賞自己沒關係，記下來就好。","理財小語"),
+    QL("緊急備用金，是給未來的自己一份安心。","理財小語"),QL("今天少喝一杯飲料，就離目標近一步。","理財小語")]},
+  {k:"jiaren",name:"家人溫暖",desc:"想到家人的小提醒",list:[
+    QL("今天記得跟家人一起吃頓飯。","家人溫暖"),QL("打通電話給好久沒聊的家人吧。","家人溫暖"),
+    QL("一句「辛苦了」，就能讓家人開心一整天。","家人溫暖"),QL("回家的時候，記得說聲「我回來了」。","家人溫暖"),
+    QL("幫家裡做一件小事，例如倒垃圾或洗碗。","家人溫暖"),QL("把今天發生的趣事，跟家人分享。","家人溫暖"),
+    QL("家人的生日快到了嗎？可以先想想禮物。","家人溫暖"),QL("拍一張全家的合照，留住今天。","家人溫暖"),
+    QL("吵架了也沒關係，先說對不起的人最勇敢。","家人溫暖"),QL("謝謝家人，一直在身邊。","家人溫暖")]}
 ];
-const quoteSetKey=()=>{const k=curPrefs&&curPrefs.quoteSet;return QUOTE_SETS.some(s=>s.k===k)?k:null};
-const quoteSetList=()=>{const s=QUOTE_SETS.find(x=>x.k===quoteSetKey());return s?s.list:QUOTES};
+const MY_DEF="我的句子";
+const myThemeOf=q=>(q&&q.theme)||MY_DEF;
+const myThemes=()=>[...new Set(myQuotes().map(myThemeOf))];
+const quoteSetKey=()=>{const k=curPrefs&&curPrefs.quoteSet;if(QUOTE_SETS.some(s=>s.k===k))return k;
+  if(typeof k==="string"&&k.startsWith("my:")&&myQuotes().length&&(k==="my:*"||myThemes().includes(k.slice(3))))return k;
+  if(!k&&myQuotes().length)return "my:*";return null};
+const quoteSetList=()=>{const k=quoteSetKey()||"";if(k.startsWith("my:")){const l=k==="my:*"?myQuotes():myQuotes().filter(q=>myThemeOf(q)===k.slice(3));return l.length?l:QUOTES}const s=QUOTE_SETS.find(x=>x.k===k);return s?s.list:QUOTES};
+const quoteSetName=k=>{if(!k)return"";if(k==="my:*")return"我自己的全部句子";if(k.startsWith("my:"))return k.slice(3);const s=QUOTE_SETS.find(x=>x.k===k);return s?s.name:""};
 let prefsSeen=false;
 // 自己的句子：存在 prefs/ui.myQuotes；quoteSrc = builtin（內建）／mine（只用我的）／both（兩種都用）
 const myQuotes=()=>(curPrefs&&Array.isArray(curPrefs.myQuotes))?curPrefs.myQuotes.filter(x=>x&&x.t):[];
 const quoteSrc=()=>{const s=curPrefs&&curPrefs.quoteSrc;if(s==="builtin"||s==="mine"||s==="both")return s;return myQuotes().length?"both":"builtin"};
-function quotePool(){const mine=myQuotes(),s=quoteSrc(),base=quoteSetList();if(s==="mine"&&mine.length)return mine;if(s==="both"){const l=(quoteSetKey()?base:[]).concat(mine);return l.length?l:base}return base}
+function quotePool(){return quoteSetList()}
 let lastQuoteKey="";
 // 還沒選過主題（也沒有自己的句子）：先顯示選擇卡，不直接顯示太上感應篇
 function quotePicker(){
@@ -1369,13 +1407,15 @@ function quotePicker(){
   const g=mkEl("div","qpg");
   QUOTE_SETS.forEach(s=>{const b=mkEl("button","qpb");b.type="button";b.append(mkEl("b",null,s.name),mkEl("small",null,s.desc),mkEl("span",null,"「"+s.list[(s.k==="gaiming"?7:0)].t.slice(0,26)+(s.list[(s.k==="gaiming"?7:0)].t.length>26?"…":"")+"」"));
     b.onclick=e=>{e.stopPropagation();pickQuoteSet(s.k)};g.appendChild(b)});
+  {const b=mkEl("button","qpb qpown");b.type="button";b.append(mkEl("b",null,"✏️ 自己寫"),mkEl("small",null,"建立自己的主題"),mkEl("span",null,"寫下喜歡的話、座右銘、提醒自己的事"));
+   b.onclick=e=>{e.stopPropagation();view="set";setSub="look";render();window.scrollTo(0,0);setTimeout(()=>editMyQuote(null),50)};g.appendChild(b)}
   q.appendChild(g);
   const off=mkEl("button","ghost sm qpoff","先不用");off.type="button";off.onclick=async e=>{e.stopPropagation();curPrefs={...(curPrefs||{}),quote:false};render();try{await prefsRef.set({quote:false},{merge:true})}catch(err){}};q.appendChild(off);
 }
 async function pickQuoteSet(k){curPrefs={...(curPrefs||{}),quoteSet:k};lastQuoteKey="";setQuote();requestAnimationFrame(fitQuote);if(view==="set"&&setSub==="look")renderLook();try{await prefsRef.set({quoteSet:k},{merge:true})}catch(e){}}
 function setQuote(){
   {const q=$("quote");if(!prefsSeen){q.textContent="";lastQuoteKey="";return}
-   if(!quoteSetKey()&&!myQuotes().length&&!(curPrefs&&curPrefs.quoteSrc)){quotePicker();return}
+   if(!quoteSetKey()){quotePicker();return}
    q.classList.remove("qpick")}
   const pool=quotePool(),d=new Date(today()+"T00:00:00Z"),n=Math.floor((d-QSTART)/864e5),k=((n%pool.length)+pool.length)%pool.length,item=pool[k];
   const key=today()+"|"+item.t+"|"+(item.src||"");if(key===lastQuoteKey&&$("quote").firstChild)return;lastQuoteKey=key;

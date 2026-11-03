@@ -509,3 +509,5 @@ body.signedout #tabbar{display:none!important}
 #tabbar{transition:transform .25s ease,opacity .25s ease}
 #tabbar.away{transform:translateY(120%);opacity:0;pointer-events:none}
 .ntodo.on{background:color-mix(in srgb,var(--good) 12%,transparent)}
+.mqh{display:flex;justify-content:space-between;align-items:center;margin:12px 0 2px;font-size:14px}
+.qpown{border-style:dashed}
