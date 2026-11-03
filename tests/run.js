@@ -164,6 +164,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await tab("#tabSet"); await pg.click("#setMenu .mi:has-text('背景與每日一句')"); await wait(200);
   await pg.click("#myQuoteAdd"); await pg.fill("#fs_qt", "今天也要好好照顧自己。"); await pg.fill("#fs_qs", "自己"); await pg.click("#fsSave"); await wait(400);
   ok((await pg.innerText("#myQuoteList")).includes("今天也要好好照顧自己"), "own quote is listed in settings");
+  await pg.click("#appIconGrid .aib:has-text('小豬撲滿')"); await wait(300);
+  ok((await pg.getAttribute('link[rel="apple-touch-icon"]', "href")).includes("piggy"), "home-screen icon can be chosen");
   await pg.selectOption("#quoteSet", "my:我的句子"); await wait(400);
   ok((await pg.$$eval("#quoteSet option", o => o.map(x => x.value))).includes("daojia"), "more built-in themes (道家智慧 etc.)");
   await tab("#tabRec"); await wait(300);

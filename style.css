@@ -511,3 +511,9 @@ body.signedout #tabbar{display:none!important}
 .ntodo.on{background:color-mix(in srgb,var(--good) 12%,transparent)}
 .mqh{display:flex;justify-content:space-between;align-items:center;margin:12px 0 2px;font-size:14px}
 .qpown{border-style:dashed}
+
+.aig{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.aib{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;padding:4px;color:var(--ink);border-radius:14px}
+.aib img{width:100%;aspect-ratio:1;border-radius:22%;box-shadow:0 2px 8px rgba(0,0,0,.15);border:3px solid transparent}
+.aib.on img{border-color:var(--accent)}
+.aib span{font-size:11.5px}

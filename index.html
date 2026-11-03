@@ -19,11 +19,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="icons/home/coral-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261104s">
+<link rel="stylesheet" href="style.css?v=20261104t">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -325,6 +325,12 @@
     <div class="lhead" style="margin-top:14px"><h3 style="margin:0;font-size:15px">我的主題</h3><button type="button" class="ghost sm" id="myQuoteAdd">＋ 新增句子</button></div>
     <div id="myQuoteList"></div>
   </section>
+  <section class="card">
+    <h2>主畫面圖示</h2>
+    <p class="sub" style="margin-bottom:10px">選一個喜歡的圖示。選好後，把手機主畫面上舊的圖示刪掉，再用 Safari 的「分享 → 加入主畫面」加一次就會換新。</p>
+    <div class="aig" id="appIconGrid"></div>
+    <div class="bt"><button type="button" class="ghost sm" id="appIconOwn">用自己的照片</button><small class="m" id="appIconMsg"></small></div>
+  </section>
   </div>
   <div class="subpg" data-sub="feedback" hidden>
   <section class="card">
@@ -405,8 +411,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
-<script src="profiles.js?v=20261104s"></script>
-<script src="notes.js?v=20261104s"></script>
-<script src="app.js?v=20261104s"></script>
+<script src="profiles.js?v=20261104t"></script>
+<script src="notes.js?v=20261104t"></script>
+<script src="app.js?v=20261104t"></script>
 </body>
 </html>

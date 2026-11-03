@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb3c4"/><stop offset="1" stop-color="#f27a98"/></linearGradient></defs>
+<rect width="512" height="512" fill="url(#g)"/>
+<circle cx="256" cy="120" r="44" fill="#ffd76a" stroke="#fff" stroke-width="10"/><rect x="238" y="102" width="36" height="36" rx="6" fill="none" stroke="#e5a52a" stroke-width="0"/>
+<path d="M118 300c0-78 64-128 146-128 54 0 98 20 122 52l40-6-10 46c8 12 12 24 12 36 0 40-30 74-74 92l-6 40h-46l-4-28c-12 2-24 2-36 2-10 0-22 0-32-2l-4 28h-46l-8-48c-36-18-54-50-54-84z" fill="#fff6f8"/>
+<path d="M206 190q50-14 100 0" stroke="#f27a98" stroke-width="14" stroke-linecap="round" fill="none"/>
+<circle cx="350" cy="276" r="12" fill="#5a3340"/>
+<ellipse cx="412" cy="318" rx="22" ry="18" fill="#ffc9d6"/><circle cx="406" cy="318" r="4" fill="#d9607e"/><circle cx="418" cy="318" r="4" fill="#d9607e"/>
+<path d="M118 290q-30-6-34 24" stroke="#fff6f8" stroke-width="14" stroke-linecap="round" fill="none"/>
+</svg>

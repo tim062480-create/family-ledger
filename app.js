@@ -332,7 +332,7 @@ function enterLedger(kind){
   unsubs.push(cpCol.onSnapshot(sn=>{coupons=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)renderCoupons()},()=>{}));
   unsubs.push(incCol.onSnapshot(sn=>{incomes=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)render();schedulePublish()},()=>{}));
   notesSub();
-  unsubs.push(prefsRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;curPrefs=d;prefsSeen=true;applyBg(d&&d.bg);setQuote();if(view==="set"&&setSub==="look")renderLook();if(loaded)render()},()=>{}));
+  unsubs.push(prefsRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;curPrefs=d;prefsSeen=true;applyBg(d&&d.bg);applyAppIcon();setQuote();if(view==="set"&&setSub==="look")renderLook();if(loaded)render()},()=>{}));
   render();window.scrollTo(0,0);
 }
 function renderLedgerSw(){
@@ -1007,6 +1007,7 @@ function renderReminder(){
 
 // ---- look: background + daily quote ----
 function renderLook(){
+  renderAppIcons();
   $("quoteOn").checked=quoteOn();
   {const sel=$("quoteSet"),cur=quoteSetKey()||"";sel.innerHTML="";
    const og=(label,opts)=>{const g=document.createElement("optgroup");g.label=label;opts.forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;g.appendChild(o)});sel.appendChild(g)};
@@ -1034,6 +1035,25 @@ function editMyQuote(i){
       curPrefs={...(curPrefs||{}),...patch};renderLook();setQuote();await prefsRef.set(patch,{merge:true})},
     onDelete:isNew?null:async()=>{const nl=list.filter((x,j)=>j!==i);curPrefs={...(curPrefs||{}),myQuotes:nl};renderLook();setQuote();await prefsRef.set({myQuotes:nl},{merge:true})}});
 }
+// 主畫面圖示：每個人可以選自己喜歡的（iPhone 加入主畫面時會用頁面上的 apple-touch-icon）
+const APP_ICONS=[["coral","暖橘記帳本"],["piggy","小豬撲滿"],["home","溫暖小家"],["calendar","日曆"],["wallet","錢包"],["ji","記"]];
+function applyAppIcon(){
+  const k=curPrefs&&curPrefs.appIcon,img=curPrefs&&curPrefs.appIconImg;
+  const href=k==="custom"&&img?img:`icons/home/${APP_ICONS.some(x=>x[0]===k)?k:"coral"}-180.png`;
+  let l=document.querySelector('link[rel="apple-touch-icon"]');if(!l){l=document.createElement("link");l.rel="apple-touch-icon";document.head.appendChild(l)}
+  if(l.getAttribute("href")!==href)l.setAttribute("href",href);
+}
+function renderAppIcons(){
+  const g=$("appIconGrid");if(!g)return;g.innerHTML="";const cur=(curPrefs&&curPrefs.appIcon)||"coral";
+  APP_ICONS.forEach(([k,n])=>{const b=mkEl("button","aib"+(cur===k?" on":""));b.type="button";b.setAttribute("aria-pressed",cur===k?"true":"false");
+    const im=document.createElement("img");im.src=`icons/home/${k}-180.png`;im.alt="";b.append(im,mkEl("span",null,n));b.onclick=()=>setAppIcon(k);g.appendChild(b)});
+  if(curPrefs&&curPrefs.appIconImg){const b=mkEl("button","aib"+(cur==="custom"?" on":""));b.type="button";const im=document.createElement("img");im.src=curPrefs.appIconImg;im.alt="";b.append(im,mkEl("span",null,"我的照片"));b.onclick=()=>setAppIcon("custom");g.appendChild(b)}
+}
+async function setAppIcon(k,img){
+  const patch={appIcon:k,...(img?{appIconImg:img}:{})};curPrefs={...(curPrefs||{}),...patch};applyAppIcon();renderAppIcons();
+  $("appIconMsg").textContent="選好了！刪掉主畫面舊的圖示，再「加入主畫面」一次就會換新。";try{await prefsRef.set(patch,{merge:true})}catch(e){}
+}
+$("appIconOwn").onclick=()=>{const fi=document.createElement("input");fi.type="file";fi.accept="image/*";fi.onchange=async()=>{const f=fi.files&&fi.files[0];if(!f)return;try{setAppIcon("custom",await squareThumb(f,180))}catch(e){$("appIconMsg").textContent="這張照片讀不出來"}};fi.click()};
 $("myQuoteAdd").onclick=()=>editMyQuote(null);
 $("quoteSet").onchange=e=>{const v=e.target.value;if(v)pickQuoteSet(v)};
 $("quoteOn").onchange=async e=>{try{await prefsRef.set({quote:e.target.checked},{merge:true})}catch(err){}};
