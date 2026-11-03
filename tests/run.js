@@ -90,8 +90,11 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.innerText("#nTodoList")).includes("領貨") && (await pg.innerText("#nTodoList")).includes("現在要做"), "to-do without a date goes to 待辦 with its category");
   await pg.locator("#nTodoList .nit", { hasText: "領貨" }).locator(".ncheck").click(); await wait(400);
   ok((await pg.innerText("#nTodoList")).includes("做完了"), "ticking a to-do marks it done");
-  await pg.fill("#nMemo", "學校 不要忘東忘西！"); await wait(1200);
-  ok((await pg.evaluate(() => __store["users/u1/prefs/memo"] && __store["users/u1/prefs/memo"].text)) === "學校 不要忘東忘西！", "隨手記 autosaves");
+  await pg.fill("#nMemo", "學校 不要忘東忘西！\n\n活動：\n12/30 17:40 牙齒\n\n🔴事情\n ◦ 領貨\n ◦ 想主題\n🟡學習\n ◦ 複習"); await wait(1200);
+  const ms = await pg.innerText("#nMemoSum");
+  ok(ms.includes("接下來") && ms.includes("牙齒") && ms.includes("事情（2）") && ms.includes("學習（1）"), "隨手記整理 groups by heading and pulls out dates");
+  ok((await pg.locator("#nMemoSum .msr", { hasText: "領貨" }).locator(".ma").innerText()).includes("待辦"), "整理 knows 領貨 is already a to-do");
+  ok((await pg.evaluate(() => __store["users/u1/prefs/memo"] && __store["users/u1/prefs/memo"].text)) .startsWith("學校 不要忘東忘西！"), "隨手記 autosaves");
   await pg.click("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) === 0, "birthday calendar does not show notebook items");
   ok((await pg.innerText("#vCal .vhd h2")) === "朋友和家人生日", "birthday page has its heading");

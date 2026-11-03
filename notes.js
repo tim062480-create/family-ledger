@@ -34,7 +34,7 @@ function notesSub(){
     if(loaded&&(view==="note"||view==="cal"||view==="home"))render();
   },()=>{}));
   memoRef=DB.doc(`users/${myId}/prefs/memo`);
-  unsubs.push(memoRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;memoText=(d&&d.text)||"";const ta=$("nMemo");if(ta&&document.activeElement!==ta&&!memoTimer)ta.value=memoText},()=>{}));
+  unsubs.push(memoRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;memoText=(d&&d.text)||"";const ta=$("nMemo");if(ta&&document.activeElement!==ta&&!memoTimer)ta.value=memoText;if(view==="note"&&!noteSel)renderMemoSum()},()=>{}));
   if(noteSel)watchImgs(noteSel);
 }
 function notesReset(){memoRef=null;memoText="";notes=[];notesRef=null;notesLoaded=false;noteSel=null;noteImgs=[];if(noteImgOff){try{noteImgOff()}catch(e){}noteImgOff=null}}
@@ -46,7 +46,7 @@ function renderNotes(){
   $("nlView").hidden=!!p;$("npView").hidden=!p;$("npEdit").hidden=!p;$("nHead").textContent=p?(p.title||"未命名"):"記事本";
   renderTabs(p);renderRemindCard($("nRemind"),!!p);
   if(p){renderPage(p);return}
-  $("nSoon").checked=soonOn();renderNoteCal();renderTodos();{const ta=$("nMemo");if(document.activeElement!==ta&&!memoTimer)ta.value=memoText}
+  $("nSoon").checked=soonOn();renderNoteCal();renderTodos();{const ta=$("nMemo");if(document.activeElement!==ta&&!memoTimer)ta.value=memoText}renderMemoSum();
 }
 function renderRemindCard(box,compact){
   if(!box)return;const due=dueReminders();box.innerHTML="";box.hidden=!due.length;if(!due.length)return;
@@ -250,14 +250,60 @@ function editItem(p,it){
     onDelete:isNew?null:()=>notesRef.doc(p.id).update({items:(p.items||[]).filter(x=>x.id!==it.id)})});
   if(isNew)wireAutoStar();
 }
-function newItemOn(date){
+function newItemOn(date,pre){
   const def=(noteSel&&notes.find(x=>x.id===noteSel))||notes.find(x=>x.title==="學校")||notes[0];
-  openForm({title:date?"新增行程":"新增待辦",fields:itemFields({date},def?def.id:"__new"),
+  openForm({title:date?"新增行程":"新增待辦",fields:itemFields({date,...(pre||{})},def?def.id:"__new"),
     validate:()=>fv("d")&&!/^\d{4}-\d{2}-\d{2}$/.test(fv("d"))?"日期格式不對":(!fv("ti")?"請輸入要做的事":""),
     onSave:async()=>{let pid=fv("pg");const ni={...readItem("i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),ts:Date.now()};
       if(pid==="__new"||!notes.find(x=>x.id===pid)){await notesRef.add({title:"我的行程",text:"",items:[ni],ts:Date.now(),order:Date.now()});return}
       const p=notes.find(x=>x.id===pid);await notesRef.doc(pid).update({items:(p.items||[]).concat([ni])})}});
   wireAutoStar();
+}
+// ---- 隨手記整理：照標題分組，抓出日期，排出接下來要做的事（規則解析，不用 AI）----
+const MEMO_BUL=/^\s*(?:[◦•●○▪・\-\*–—]|\d+[.)、])\s*(.+)$/;
+function memoDate(s){
+  const m=/(\d{1,2})\s*[\/月]\s*(\d{1,2})/.exec(s);if(!m)return "";
+  const mo=+m[1],d=+m[2];if(mo<1||mo>12||d<1||d>31)return "";
+  const ty=+today().slice(0,4);let k=`${ty}-${pad2(mo)}-${pad2(d)}`;
+  if(nDays(k)<-180)k=`${ty+1}-${pad2(mo)}-${pad2(d)}`;return k;
+}
+const memoTime=s=>{const m=/(\d{1,2}):(\d{2})/.exec(s);return m&&+m[1]<24?`${pad2(+m[1])}:${m[2]}`:""};
+function parseMemo(text){
+  const secs=[];let cur=null;
+  String(text||"").split(/\r?\n/).forEach(raw=>{
+    const line=raw.replace(/\s+$/,"");if(!line.trim())return;
+    const b=MEMO_BUL.exec(line);
+    if(b){if(!cur){cur={h:"",c:"",items:[]};secs.push(cur)}cur.items.push(b[1].trim());return}
+    const t=line.trim(),emo=/^(🔴|🟢|🟡|🟠|🔵|⚪|⭐)/.exec(t);
+    if(emo||/[：:]$/.test(t)){cur={h:t.replace(/^(🔴|🟢|🟡|🟠|🔵|⚪|⭐)\s*/,"").replace(/[：:]$/,""),c:emo?emo[1]:"",items:[]};secs.push(cur);return}
+    if(cur&&memoDate(t)){cur.items.push(t);return}
+  });
+  return secs.filter(s=>s.items.length);
+}
+const memoNorm=s=>String(s||"").toLowerCase().replace(/[\s（）()：:・,，、\-–_]/g,"");
+function memoFind(txt){
+  const a=memoNorm(txt.replace(/\d{1,2}\s*[\/月]\s*\d{1,2}[日號]?|\d{1,2}:\d{2}(-\d{1,2}:\d{2})?|（.）|\(.\)/g,""));if(a.length<2)return null;
+  return noteItems().find(it=>{const b=memoNorm(it.title);return b.length>=2&&(b.includes(a)||a.includes(b))})||null;
+}
+function renderMemoSum(){
+  const box=$("nMemoSum");if(!box)return;box.innerHTML="";
+  const secs=parseMemo($("nMemo").value||memoText);box.hidden=!secs.length;if(!secs.length)return;
+  const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,"隨手記整理"));box.appendChild(hd);
+  box.appendChild(mkEl("p","sub","照你在隨手記寫的標題和日期自動整理；按「＋」可以加到待辦或總日曆。"));
+  const row=(txt,sec)=>{
+    const date=memoDate(txt),f=memoFind(txt),r=mkEl("div","msr"+(f&&f.done?" done":""));
+    const dt=mkEl("span","md");if(date){const d=nDays(date);dt.append(mkEl("b",null,nMD(date)),mkEl("small",null,d<0?"已過":d<=2?nRel(d):`${d} 天後`));if(d>=0&&d<=2)r.classList.add("soon");if(d<0)r.classList.add("past")}else dt.appendChild(mkEl("b",null,sec.c||"•"));
+    const t=mkEl("span","mt",txt);if(sec&&sec.h&&date)t.appendChild(mkEl("small",null,(sec.c?sec.c+" ":"")+sec.h));
+    const a=mkEl("button","ghost sm ma");a.type="button";
+    if(f){a.textContent=f.date?"✓ 日曆":"✓ 待辦";a.title=`已在「${f.page}」`;a.onclick=()=>openPage(f.pid)}
+    else{a.textContent="＋";a.setAttribute("aria-label",`把「${txt}」加到${date?"總日曆":"待辦"}`);
+      const title=txt.replace(/\d{1,2}\s*[\/月]\s*\d{1,2}[日號]?\s*(（.）|\(.\))?/,"").replace(/\d{1,2}:\d{2}(\s*[-–~]\s*\d{1,2}:\d{2})?/,"").replace(/^\s*[前後]/,"").trim()||txt;
+      a.onclick=()=>newItemOn(date,{title,time:memoTime(txt),pri:sec&&sec.c==="🔴"?"r":null,note:date&&/前/.test(txt)?`${nMD(date)} 前`:""})}
+    r.append(dt,t,a);return r;
+  };
+  const dated=[];secs.forEach(s=>s.items.forEach(x=>{const d=memoDate(x);if(d&&nDays(d)>=0)dated.push({x,d,s})}));
+  if(dated.length){box.appendChild(mkEl("div","nmh","📅 接下來（有日期的）"));dated.sort((a,b)=>a.d.localeCompare(b.d)).forEach(o=>box.appendChild(row(o.x,o.s)))}
+  secs.forEach(s=>{const und=s.items.filter(x=>!memoDate(x));if(!und.length)return;box.appendChild(mkEl("div","nmh",(s.c?s.c+" ":"")+(s.h||"其他")+`（${und.length}）`));und.forEach(x=>box.appendChild(row(x,s)))});
 }
 function flushMemo(){
   memoTimer=null;if(!memoRef)return;const v=$("nMemo").value.slice(0,20000);memoText=v;
@@ -296,7 +342,7 @@ function initNotes(){
   $("npEdit").onclick=editPage;
   $("npModeT").onclick=()=>setPageMode("table");$("npModeL").onclick=()=>setPageMode("list");
   $("nTodoAdd").onclick=()=>newItemOn("");
-  $("nMemo").oninput=()=>{$("nMemoMsg").textContent="";clearTimeout(memoTimer);memoTimer=setTimeout(flushMemo,800)};
+  $("nMemo").oninput=()=>{$("nMemoMsg").textContent="";clearTimeout(renderMemoSum._t);renderMemoSum._t=setTimeout(renderMemoSum,300);clearTimeout(memoTimer);memoTimer=setTimeout(flushMemo,800)};
   $("nMemo").onblur=()=>{if(memoTimer){clearTimeout(memoTimer);flushMemo()}};
   $("nSoon").onchange=e=>{const v=e.target.checked;curPrefs={...(curPrefs||{}),noteSoon:v};if(prefsRef)prefsRef.set({noteSoon:v},{merge:true}).catch(()=>{});render()};
   $("npItemAdd").onclick=()=>{const p=notes.find(x=>x.id===noteSel);if(p)editItem(p,null)};

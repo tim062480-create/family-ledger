@@ -419,3 +419,14 @@ body.signedout #tabbar{display:none!important}
 .ptag{display:inline-block;font-size:11.5px;font-weight:700;color:var(--s1);background:color-mix(in srgb,var(--s1) 13%,transparent);border-radius:6px;padding:0 6px;margin-right:6px;vertical-align:1px;line-height:1.6}
 .vhd h2{font-size:24px;font-weight:700}
 .hasbg .vhd h2{padding:2px 12px}
+
+.msr{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line)}
+.msr:last-child{border-bottom:none}
+.msr .md{flex:none;width:50px;text-align:center;line-height:1.2}
+.msr .md b{display:block;font-size:14.5px;font-variant-numeric:tabular-nums}
+.msr .md small{font-size:11px;color:var(--muted)}
+.msr.soon .md small{color:var(--accent);font-weight:700}
+.msr .mt{flex:1;min-width:0;font-size:14.5px;line-height:1.4}
+.msr .mt small{display:block;color:var(--muted);font-size:12px}
+.msr .ma{flex:none;padding:4px 10px;font-size:12.5px}
+.msr.past{opacity:.5}
