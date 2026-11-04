@@ -15,7 +15,7 @@ const KEYS={
  "人情禮物":/禮|紅包|送禮|份子/,
  "捐款":/捐/
 };
-KEYS["餐飲"]=/飯|饭|麵|面|早餐|午餐|晚餐|宵夜|餐|吃|喝|飲|饮|茶|咖啡|便當|便当|零食|麥當勞|麦当劳|素食|吐司/;
+KEYS["餐飲"]=/飯|饭|麵|面|早餐|午餐|晚餐|宵夜|消夜|餐|吃|喝|飲|饮|茶|咖啡|便當|便当|零食|麥當勞|麦当劳|素食|吐司|豆花|甜點|甜点|蛋糕|蛋餅|蛋饼|飯糰|饭团|麵包|面包|雞排|鸡排|鹹酥雞|滷味|卤味|火鍋|火锅|壽司|寿司|漢堡|汉堡|披薩|披萨|點心|点心|豆漿|豆浆|粥|燒肉|烧肉|牛排|小吃|冰|珍奶|奶茶|水餃|水饺|鍋貼|锅贴|肉圓|蚵仔煎|臭豆腐|鬆餅|松饼|可頌|三明治|沙拉|拉麵|拉面|丼|咖哩|便利商店|超商|7-?11|全家|萊爾富|摩斯|肯德基|星巴克|路易莎/i;
 KEYS["食物"]=KEYS["餐飲"];
 KEYS["交通"]=/捷運|捷运|公車|公车|火車|火车|高鐵|高铁|計程|计程|uber|ubike|加油|機車|机车|停車|停车|油錢|悠遊卡|交通/i;
 KEYS["攀岩"]=/攀岩|岩館|岩馆|抱石|岩鞋|粉袋/;
@@ -220,14 +220,16 @@ function localParse(t0){
   }
   const rest=f.rest.replace(/備註|備考|备注|备註/g,"備注");
   const re=/([^\d]*?)(\d+)\s*(?:元|塊|块)?\s*(?:備注\s*([^\d\s,，、;；。\n]*))?/g;let m;
-  const clean=s=>s.replace(/^[\s元塊块,，、;；。.]+/,"").replace(/NT\$?|花了|花|共|買了|買|還有|然後|以及|和|跟|加上/gi," ").replace(/[,，、;；。.]/g," ").replace(/\s+/g," ").trim();
+  const clean=s=>s.replace(/^[\s元塊块,，、;；。.]+/,"").replace(/NT\$?|花了|(?<![豆雪煙烟蔥葱天])花(?![生枝椰茶卷束園园店蓮莲材瓶])|共|買了|買|還有|然後|以及|和|跟|加上/gi," ").replace(/[,，、;；。.]/g," ").replace(/\s+/g," ").trim();
   const raw=x=>x.replace(/^[\s,，、;；。.]+|[\s,，、;；。.]+$/g,"");
-  const addRem=(it,x)=>{x=ub(clean(x));if(!x||!it)return;it.remark=it.remark?it.remark+"・"+x:x};
+  const addRem=(it,x)=>{x=ub(clean(x));if(!x||!it)return;it.remark=it.remark?it.remark+"・"+x:x;if(!String(it.category).startsWith("coupon:")&&it.category===guess(""))it.category=guess(it.note+" "+it.remark)};
   let lastEnd=0;
   while((m=re.exec(rest))){
     let pre=m[1]||"";let desc="",remark="";
     // 金額後面、下一個分隔符號前的字，算上一筆的備註（例如「活大素食 62 晚餐，捷運 30」）
     if(out.length){const sp=pre.search(/[,，、;；。\n]/);if(sp>=0){addRem(out[out.length-1],pre.slice(0,sp));pre=pre.slice(sp+1)}}
+    // 沒有逗號時，緊接在金額後面的「下午茶」「午餐」這類字，也算上一筆的備註（例如「豆花 65 下午茶 小時堂 100 午餐」）
+    if(out.length){const mm=pre.match(/^\s*(早午餐|早餐|午餐|晚餐|宵夜|消夜|下午茶|點心|午茶|早點)(?=\s|$)/);if(mm&&pre.slice(mm[0].length).trim()){addRem(out[out.length-1],mm[1]);pre=pre.slice(mm[0].length)}}
     lastEnd=re.lastIndex;
     const k=pre.indexOf("備注");
     const raw=x=>x.replace(/^[\s,，、;；。.]+|[\s,，、;；。.]+$/g,"");
