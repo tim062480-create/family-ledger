@@ -190,7 +190,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await tab("#tabAi"); await wait(300);
   ok(await pg.isVisible("#aiCopy") && await pg.isHidden("#aiApps"), "AI tab starts with the copy button only");
   await pg.click("#aiCopy"); await wait(200);
-  ok(await pg.isVisible("#aiApps") && (await pg.$$eval("#aiApps button", b => b.map(x => x.textContent))).join() === "ChatGPT,Claude,Gemini", "after copying, the three AIs appear");
+  ok(await pg.isVisible("#aiApps") && (await pg.$$eval("#aiApps a[target=_blank]", b => b.map(x => x.textContent))).join() === "ChatGPT,Claude,Gemini", "after copying, the three AIs appear");
   ok((await pg.evaluate(() => aiPrompt())).includes("family-ledger-ai") && (await pg.evaluate(() => aiPrompt())).includes("期中考"), "prompt includes the format and my pages");
   const aiJson = '好的，整理如下：\n```json\n' + JSON.stringify({ app: "family-ledger-ai", v: 1, actions: [
     { do: "addExpense", date: "2026-11-02", category: "餐飲", amount: 88, note: "AI午餐", remark: "" },
