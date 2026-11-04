@@ -224,13 +224,15 @@ function closeDayPop(){ncOpen=false;const b=$("ncDay");if(b){b.hidden=true;b.inn
 function renderNoteDay(){
   const box=$("ncDay");box.innerHTML="";if(!ncSel||!ncOpen){box.hidden=true;return}
   const [y,m,d]=ncSel.split("-").map(Number);
+  if(box.parentElement!==document.body)document.body.appendChild(box);
   const hd=mkEl("div","npop-h");hd.appendChild(mkEl("h2",null,`${m} 月 ${d} 日　星期${nDow(ncSel)}`));
+  const ad=mkEl("button","sm npadd","＋ 新增");ad.type="button";ad.id="ncDayAdd";ad.onclick=()=>newItemOn(ncSel,{star:true});hd.appendChild(ad);
   const x=mkEl("button","ghost npx2","×");x.type="button";x.setAttribute("aria-label","關閉");x.onclick=closeDayPop;hd.appendChild(x);box.appendChild(hd);
   const its=noteItems().filter(x=>x.date===ncSel).sort((a,b)=>(b.star?1:0)-(a.star?1:0)||nSort(a,b));
-  if(!its.length)box.appendChild(mkEl("p","sub","這天沒有行程。"));
-  its.forEach(it=>box.appendChild(itemRow(it,true)));
-  const bt=mkEl("div","bt"),add=mkEl("button","ghost sm","＋ 新增行程在這天");add.type="button";add.onclick=()=>newItemOn(ncSel);bt.appendChild(add);box.appendChild(bt);
-  box.hidden=false;placeDayPop();
+  const body=mkEl("div","npop-b");box.appendChild(body);
+  if(!its.length)body.appendChild(mkEl("p","sub","這天沒有行程，按右上角「＋ 新增」加一個。"));
+  its.forEach(it=>body.appendChild(itemRow(it,true)));
+  box.hidden=false;
 }
 // 小格子放在點的那一列下面；太靠下面就放到那一列上面
 function placeDayPop(){
@@ -243,7 +245,7 @@ function renderPage(p){
   const box=$("npItems");box.innerHTML="";
   const its=(p.items||[]).map(it=>({...it,pid:p.id,page:p.title})).sort(nSort);
   if(!its.length)box.appendChild(mkEl("p","sub","還沒有行程。按「＋ 新增行程」加上日期和要做的事。"));
-  const und=its.filter(x=>!x.date).sort(todoSort);if(und.length){box.appendChild(mkEl("div","nmh","待辦（沒有日期）"));und.forEach(it=>box.appendChild(itemRow(it,false)))}
+  const und=its.filter(x=>!x.date).sort(todoSort);if(und.length){box.appendChild(mkEl("div","nmh","沒有日期的事"));und.forEach(it=>box.appendChild(itemRow(it,false)))}
   $("npPastLast").checked=pastLast();
   const tbl=pageMode()==="table";$("npModeT").classList.toggle("on",tbl);$("npModeL").classList.toggle("on",!tbl);
   $("npModeT").setAttribute("aria-pressed",tbl?"true":"false");$("npModeL").setAttribute("aria-pressed",tbl?"false":"true");
@@ -361,10 +363,10 @@ function editPage(){
 function itemFields(it,pageSel){
   const f=[];
   if(pageSel)f.push({key:"pg",label:"放在哪一頁",options:notes.map(p=>[p.id,p.title||"未命名"]).concat([["__new","＋ 新的一頁「我的行程」"]]),value:pageSel,full:true});
-  f.push({key:"d",label:"日期（不填＝待辦）",type:"date",value:it.date===undefined?today():it.date},{key:"tm",label:"時間（可不填）",type:"time",value:it.time||""},
+  f.push({key:"d",label:"日期（可不填）",type:"date",value:it.date===undefined?today():it.date},{key:"tm",label:"時間（可不填）",type:"time",value:it.time||""},
     {key:"ti",label:"要做的事",value:it.title||"",full:true,placeholder:"例如：期中考、交報告"},
     {key:"no",label:"備註（可不填）",value:it.note||"",full:true,placeholder:"例如：第 3 週、教室、範圍"},
-    {key:"st",label:"顯示在總日曆",options:[["1","★ 顯示"],["0","不顯示"]],value:it.id?(it.star?"1":"0"):(autoStar(it.title)?"1":"0")},
+    {key:"st",label:"顯示在總日曆",options:[["1","★ 顯示"],["0","不顯示"]],value:it.id?(it.star?"1":"0"):(it.star||autoStar(it.title)?"1":"0")},
     {key:"rm",label:"通知",options:RM_OPTS,value:nHasRm(it)?String(it.remind):""},
     {key:"td",label:"放進待辦",options:[["1","✓ 放進待辦"],["0","不放"]],value:(it.todo!==undefined?it.todo:it.date==="")?"1":"0"},
     ...(it.date!==""&&!it.todo?[{key:"sec",label:"分段（可不填，例如「小組討論」）",value:it.sec||"",full:true,list:[...new Set(notes.flatMap(p=>(p.items||[]).map(x=>x.sec).filter(Boolean)))]}]:[]),
@@ -540,6 +542,7 @@ function initNotes(){
   };
   $("ncPrev").onclick=()=>{closeDayPop();ncM--;if(ncM<1){ncM=12;ncY--}renderNoteCal()};
   $("ncNext").onclick=()=>{closeDayPop();ncM++;if(ncM>12){ncM=1;ncY++}renderNoteCal()};
+  $("ncAdd").onclick=e=>{e.stopPropagation();closeDayPop();newItemOn(ncSel||today(),{star:true})};
   $("ncToday").onclick=()=>{closeDayPop();const t=today();ncY=+t.slice(0,4);ncM=+t.slice(5,7);ncSel=t;renderNoteCal()};
   document.addEventListener("click",e=>{if(!ncOpen)return;const b=$("ncDay");if(b.contains(e.target)||e.target.closest("#fsheet,#sheetBg,#toast"))return;closeDayPop()});
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ncOpen)closeDayPop()});

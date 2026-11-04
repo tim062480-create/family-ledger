@@ -128,6 +128,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.isHidden("#ncDay"), "day details hidden until a date is tapped");
   await pg.click(`#ncGrid .cday[data-key="${tmr}"]`); await wait(200);
   ok(await pg.isVisible("#ncDay") && (await pg.innerText("#ncDay")).includes("普化期中考"), "tapping a date pops up its items over the calendar");
+  ok(await pg.evaluate(() => { const b = document.getElementById("ncDay").getBoundingClientRect(), e = document.elementFromPoint(b.left + b.width / 2, b.top + 20); return document.getElementById("ncDay").contains(e) && b.bottom <= innerHeight; }), "day pop-up sits on top of everything, inside the screen");
+  ok(await pg.isVisible("#ncDayAdd") && await pg.isVisible("#ncAdd"), "add buttons are visible on the calendar and in the day pop-up");
   await pg.click("#ncDay .npx2"); await wait(150);
   ok(await pg.isHidden("#ncDay"), "pop-up closes");
   const [nics] = await Promise.all([pg.waitForEvent("download"), pg.click("#nIcs")]);

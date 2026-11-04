@@ -572,3 +572,23 @@ body.signedout #tabbar{display:none!important}
 .guide p{margin:8px 0 0;color:var(--muted);line-height:1.7;font-size:15px}
 
 #who .whoSw{display:block;margin:12px auto 0;font-size:14px}
+
+/* 只有兩指才縮放：關掉雙擊放大；iPhone 輸入框字小於 16px 會自動放大，觸控裝置一律 16px */
+html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@media (pointer:coarse){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px!important}
+}
+
+/* 日曆點一天：改成固定在畫面下方的小視窗，不會被下面的卡片蓋住 */
+.npop{position:fixed!important;left:10px;right:10px;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));z-index:80;max-width:620px;margin:0 auto;max-height:62vh;display:flex;flex-direction:column;padding:12px 14px 10px;box-shadow:0 -6px 40px rgba(0,0,0,.35)}
+.npop[hidden]{display:none}
+.npop-h{flex:none;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.npop-h h2{flex:1}
+.npop-b{overflow:auto;-webkit-overflow-scrolling:touch;min-height:0}
+.npadd{flex:none;padding:6px 14px;border-radius:999px}
+.calbt{display:flex;gap:6px;margin-left:auto}
+.callegend{flex-wrap:wrap;row-gap:6px}
+/* iPhone 的日期、時間欄位會撐出格子，固定不超出 */
+input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;width:100%;max-width:100%;min-width:0;box-sizing:border-box;min-height:44px;text-align:left}
+#fsFields>*{min-width:0}
+.grid2>*{min-width:0}
