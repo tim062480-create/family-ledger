@@ -105,7 +105,7 @@ function renderAiPlan(){
   no.onclick=()=>{aiPlan=null;renderAiPlan()};bt.append(go,no);box.appendChild(bt);
 }
 function renderAi(){
-  const g=$("aiApps");if(!g.firstChild){AI_APPS.forEach(([n,u])=>{const b=mkEl("button","aia",n);b.type="button";b.onclick=()=>window.open(u,"_blank","noopener");g.appendChild(b)})}
+  const g=$("aiApps");if(!g.firstChild){AI_APPS.forEach(([n,u])=>{const b=mkEl("a","aia",n);b.href=u;b.target="_blank";b.rel="noopener noreferrer";g.appendChild(b)})}
   renderAiPlan();
 }
 function initAi(){
