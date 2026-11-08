@@ -589,6 +589,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:10
 .calbt{display:flex;gap:6px;margin-left:auto}
 .callegend{flex-wrap:wrap;row-gap:6px}
 /* iPhone 的日期、時間欄位會撐出格子，固定不超出 */
-input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;width:100%;max-width:100%;min-width:0;box-sizing:border-box;min-height:44px;text-align:left}
+#fsFields input[type=date],#fsFields input[type=time]{-webkit-appearance:none;appearance:none;width:100%;max-width:100%;min-width:0;box-sizing:border-box;min-height:44px;text-align:left}
+input[type=date],input[type=time]{max-width:100%;box-sizing:border-box}
 #fsFields>*{min-width:0}
 .grid2>*{min-width:0}
