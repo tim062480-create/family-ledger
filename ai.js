@@ -22,7 +22,8 @@ function aiPrompt(){
 - addIncome 收入：{"do":"addIncome","date":"YYYY-MM-DD","amount":500,"note":"說明"}
 - addPage 新增一頁（例如一堂課的課表、一份行事曆）：{"do":"addPage","title":"頁名","short":"日曆上的簡稱，2～4 個字","text":"這頁的筆記（上課時間、地點、成績比例等）","items":[行程, ...]}
 - addItems 把行程加到已經有的頁面：{"do":"addItems","page":"頁名","items":[行程, ...]}
-  行程的格式：{"date":"YYYY-MM-DD","time":"","title":"要做的事","note":"備註，例如第幾週","star":true 或 false}
+  行程的格式：{"date":"YYYY-MM-DD","time":"","title":"要做的事","note":"備註，例如第幾週","star":true 或 false,"todo":true 或 false}
+  todo 代表要不要同時放進「待辦」（使用者說要加到待辦時用 true，可再加 "cat":"雜事、功課、家 三選一"）。
   star 代表要不要顯示在總日曆：考試、作業、報告、截止日用 true，一般上課用 false。
 - addTodo 待辦：{"do":"addTodo","title":"要做的事","date":"YYYY-MM-DD 或 \"\"","time":"","cat":"雜事、功課、家 三選一","note":""}
 - addMemo 在隨手記加一段文字：{"do":"addMemo","text":"內容"}
@@ -62,7 +63,7 @@ const aiDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(String(d||""))?d:"";
 const aiTime=t=>/^\d{1,2}:\d{2}$/.test(String(t||""))?String(t).padStart(5,"0"):"";
 const aiCat=c=>{const cs=cats().map(x=>x.name||x);if(cs.includes(c))return c;const f=cs.find(x=>String(c||"").includes(x)||x.includes(String(c||"")));return f||(cs.includes("其他")?"其他":cs[0]||"其他")};
 const aiTodoCat=c=>/功課|作業|考|課/.test(c||"")?"s":/家/.test(c||"")?"h":"a";
-function aiItem(x){return{id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),date:aiDate(x.date),time:aiTime(x.time),title:String(x.title||"").slice(0,80),note:String(x.note||"").slice(0,120),star:x.star===true||(x.star!==false&&autoStar(x.title)),remind:null,ts:Date.now()}}
+function aiItem(x){return{id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),date:aiDate(x.date),time:aiTime(x.time),title:String(x.title||"").slice(0,80),note:String(x.note||"").slice(0,120),star:x.star===true||(x.star!==false&&autoStar(x.title)),remind:null,ts:Date.now(),...(x.todo===true?{todo:true,done:false,pri:aiTodoCat(x.cat||"功課")}:{})}}
 // 每一筆變成預覽：{ok, text, warn, run}
 function aiPlanOf(acts){
   return acts.map(a=>{const d=String(a&&a.do||"");
