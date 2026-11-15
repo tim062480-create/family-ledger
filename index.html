@@ -23,7 +23,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261115b">
+<link rel="stylesheet" href="style.css?v=20261115c">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -245,6 +245,30 @@
   </div>
   </div>
 
+  <div id="vDiary" hidden>
+  <div class="vhd"><h2>日記</h2><button type="button" id="dyLockBtn" class="ghost sm">🔓 設密碼</button></div>
+  <section class="card dylock" id="dyLocked" hidden>
+    <h2>🔒 日記上鎖了</h2>
+    <p class="sub">請輸入日記密碼。</p>
+    <input id="dyPin" type="password" inputmode="numeric" autocomplete="off" placeholder="4–6 位數字" aria-label="日記密碼">
+    <div class="bt"><button type="button" id="dyUnlock">打開日記</button><button type="button" id="dyForgot" class="ghost sm">忘記密碼</button></div>
+    <p class="m" id="dyPinMsg" role="alert"></p>
+  </section>
+  <div id="dyBody">
+  <section class="card dycal">
+    <div class="dyhead"><button type="button" id="dyPrev" class="ghost npnav" aria-label="上個月">‹</button><h2 id="dyMonth"></h2><button type="button" id="dyNext" class="ghost npnav" aria-label="下個月">›</button></div>
+    <div class="dygrid" id="dyGrid"></div>
+    <div class="dyjump"><label>跳到 <input type="date" id="dyJump" aria-label="跳到某一天"></label><button type="button" id="dyToday" class="ghost sm">回到今天</button><small id="dyCount"></small></div>
+  </section>
+  <section class="card dyed">
+    <div class="dyhd"><h2 id="dyTitle"></h2><small id="dySaved" aria-live="polite"></small></div>
+    <div class="dymoods" id="dyMoods" role="group" aria-label="今天的心情"></div>
+    <textarea id="dyText" rows="10" placeholder="今天發生了什麼事？想到什麼就寫下來，會自動儲存。" aria-label="日記內容"></textarea>
+  </section>
+  <section class="card" id="dyPast" hidden></section>
+  </div>
+  </div>
+
   <div id="vAi" hidden>
   <div class="vhd"><h2>AI 幫你輸入 <small class="aihint">懶得輸入？交給 AI</small></h2></div>
   <section class="card">
@@ -452,6 +476,7 @@
 <nav id="tabbar" hidden>
   <button type="button" id="tabRec" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg><span>記帳</span></button>
   <button type="button" id="tabNote" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h10.5a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6z"/><path d="M6 3.5v17M9.5 8h6M9.5 11.5h6M9.5 15h4"/></svg><span>記事本</span></button>
+  <button type="button" id="tabDiary" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><path d="M9 7.5h6"/></svg><span>日記</span></button>
   <button type="button" id="tabCal" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20.5h16"/><path d="M5.5 20.5v-6.5a1.5 1.5 0 0 1 1.5-1.5h10a1.5 1.5 0 0 1 1.5 1.5v6.5"/><path d="M5.5 16.5c1.2 0 1.6-1 2.6-1s1.4 1 2.6 1 1.6-1 2.6-1 1.4 1 2.6 1 1.6-1 2.6-1"/><path d="M12 12.5V9.5"/><path d="M12 7.2c-.9-.8-.9-2 0-3.2.9 1.2.9 2.4 0 3.2z"/></svg><span>生日</span></button>
   <button type="button" id="tabAi" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>AI 輸入</span></button>
   <button type="button" id="tabSet" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>設定</span></button>
@@ -462,7 +487,8 @@
 <script src="config.js"></script>
 <script src="profiles.js?v=20261105n"></script>
 <script src="ai.js?v=20261109a"></script>
+<script src="diary.js?v=20261115c"></script>
 <script src="notes.js?v=20261106e"></script>
-<script src="app.js?v=20261115b"></script>
+<script src="app.js?v=20261115c"></script>
 </body>
 </html>

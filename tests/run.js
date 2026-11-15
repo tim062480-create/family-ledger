@@ -51,7 +51,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.isVisible("#wizard"), "picking yourself goes back to setup");
   ok((await pg.isVisible("#fsheet")) && (await pg.innerText("#fsheet")).includes("要幫你的帳設密碼嗎"), "new account is asked once whether to set a password");
   await pg.click("#fsCancel"); await wait(200);
-  ok((await pg.innerText("#wzBody")).includes("你想用哪些功能") && (await pg.$$("#wzBody .opt.feat.on")).length === 3, "first question asks which features to use (all on by default)");
+  ok((await pg.innerText("#wzBody")).includes("你想用哪些功能") && (await pg.$$("#wzBody .opt.feat.on")).length === 4, "first question asks which features to use (all on by default)");
   await pg.click("#wizard button:has-text('下一題')"); await wait(100);
   await pg.fill("#wzBody input", "14000"); await pg.click("#wizard button:has-text('下一題')");
   await wait(100); await pg.click("#wizard button:has-text('下一題')"); await wait(100);
@@ -185,7 +185,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await tab("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) === 0, "birthday calendar does not show notebook items");
   ok((await pg.innerText("#vCal .vhd h2")) === "朋友和家人生日", "birthday page has its heading");
-  ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "生日", "AI 輸入", "設定"]), "tab order 記帳・記事本・生日・AI 輸入・設定");
+  ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "日記", "生日", "AI 輸入", "設定"]), "tab order 記帳・記事本・日記・生日・AI 輸入・設定");
   await tab("#tabRec"); await wait(300);
   ok(await pg.isHidden("#homeRemind"), "home page no longer shows the 3-day reminder");
   ok(await pg.isVisible("#appTitle"), "app title shows on the home page");
@@ -346,6 +346,27 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await tab("#tabSet"); await wait(200); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(300);
   await pg.click("#feat_rec"); await wait(200); await pg.click("#feat_bd"); await wait(300);
   ok(await pg.isVisible("#tabRec") && await pg.isVisible("#tabCal"), "turning them back on shows the tabs again");
+  // 日記
+  await tab("#tabDiary"); await wait(400);
+  ok(await pg.isVisible("#vDiary") && (await pg.innerText("#dyTitle")).includes("今天"), "日記 opens on today");
+  await pg.fill("#dyText", "今天去攀岩，手好痠。"); await wait(1200);
+  ok(await pg.evaluate(() => Object.entries(__store).some(([k, v]) => /^users\/u1\/diary\//.test(k) && (v.text || "").includes("攀岩"))), "diary text auto-saves");
+  await pg.click("#dyMoods .dymood >> nth=0"); await wait(300);
+  ok(await pg.locator("#dyGrid .dyc.sel .dym").innerText() === "😄", "mood shows on the calendar");
+  await pg.fill("#dyJump", "2025-03-14"); await pg.dispatchEvent("#dyJump", "change"); await wait(300);
+  ok((await pg.innerText("#dyMonth")) === "2025 年 3 月" && (await pg.innerText("#dyTitle")).includes("2025 年 3 月 14 日"), "can jump to any past date");
+  await pg.fill("#dyText", "一年前的日記"); await pg.click("#dyToday"); await wait(1000);
+  ok(await pg.evaluate(() => (__store["users/u1/diary/2025-03-14"] || {}).text === "一年前的日記"), "switching days saves what was typed");
+  await pg.click("#dyLockBtn"); await wait(200); await pg.fill("#fs_d1", "2468"); await pg.fill("#fs_d2", "2468"); await pg.click("#fsSave"); await wait(400);
+  await pg.evaluate(() => { dyOpen = false; renderDiary(); }); await wait(200);
+  ok(await pg.isVisible("#dyLocked") && await pg.isHidden("#dyBody"), "with a password the diary is locked");
+  await pg.fill("#dyPin", "1111"); await pg.click("#dyUnlock"); await wait(300);
+  ok((await pg.innerText("#dyPinMsg")).includes("不對") && await pg.isHidden("#dyBody"), "wrong diary password stays locked");
+  await pg.fill("#dyPin", "2468"); await pg.click("#dyUnlock"); await wait(300);
+  ok(await pg.isVisible("#dyBody"), "right password opens the diary");
+  await pg.click("#dyLockBtn"); await wait(200); await pg.click("#fsDel"); await pg.click("#fsDel"); await wait(400);
+  ok(await pg.evaluate(() => !curPrefs.diaryPin), "diary password can be removed");
+  await tab("#tabSet"); await wait(200); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(300);
   await pg.click("#setBack"); await wait(200); await tab("#tabRec"); await wait(200);
   // 7c. 一鍵邀請全家：一個連結，加入時選「我是哪一位」
   await pg.click("#acctBtn"); await wait(300);

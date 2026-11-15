@@ -47,7 +47,7 @@ function render(){
   $("tabbar").hidden=true;
   $("appTitle").hidden=!!(curKey&&loaded&&settings&&view!=="home");
   renderMonths();
-  $("vHome").hidden=view!=="home";$("vMonth").hidden=view!=="month";$("vSet").hidden=view!=="set";$("vCal").hidden=view!=="cal";$("vBd").hidden=view!=="bd";$("vNote").hidden=view!=="note";$("vAi").hidden=view!=="ai";
+  $("vHome").hidden=view!=="home";$("vMonth").hidden=view!=="month";$("vSet").hidden=view!=="set";$("vCal").hidden=view!=="cal";$("vBd").hidden=view!=="bd";$("vNote").hidden=view!=="note";$("vAi").hidden=view!=="ai";$("vDiary").hidden=view!=="diary";
   $("backBtn").hidden=view!=="month"||!settings;
   {const [yy,mm]=cur.split("-").map(Number);$("monthTitle").textContent=`${yy} 年 ${mm} 月`}
   $("status").hidden=true;
@@ -60,14 +60,14 @@ function render(){
   $("who").hidden=true;
   if(!settings){showWizard();$("app").hidden=true;$("backBtn").hidden=true;return}
   $("wizard").hidden=true;
-  {const inSet=view==="set"||view==="cal"||view==="bd"||view==="note"||view==="ai";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
+  {const inSet=view==="set"||view==="cal"||view==="bd"||view==="note"||view==="ai"||view==="diary";$("quote").hidden=inSet||!quoteOn();$("subline").hidden=inSet;$("datebar").hidden=inSet}
   if(view==="set")renderSet();
   {const v=$("voice");if(view==="month"){if(v.parentElement!==$("vMonth"))$("vMonth").insertBefore(v,$("monthTitle").nextSibling)}else if(v.parentElement!==$("vHome"))$("vHome").insertBefore(v,$("vHome").firstChild)}
   {const hr=$("homeRemind"),vh=$("vHome");if(vh.firstChild!==hr)vh.insertBefore(hr,vh.firstChild)}
-  {const homeish=!["set","cal","bd","note","ai"].includes(view);
-   if(curKey==="me"&&((homeish&&!feat("rec"))||(view==="note"&&!feat("note"))||((view==="cal"||view==="bd")&&!feat("bd")))){const fv=firstView();if(fv!==view&&!(homeish&&fv==="home")){view=fv;if(fv==="note"&&typeof goNotes==="function"){goNotes();return}return render()}}
-   const me1=curKey==="me";$("tabRec").hidden=me1&&!feat("rec");$("tabNote").hidden=me1&&!feat("note");$("tabCal").hidden=me1&&!feat("bd");$("tabAi").hidden=me1&&!feat("rec")&&!feat("note")}
-  $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note"&&view!=="ai");$("tabNote").classList.toggle("on",view==="note");$("tabAi").classList.toggle("on",view==="ai");if(view==="ai")renderAi();if(view==="note")renderNotes();$("homeRemind").hidden=true;$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
+  {const homeish=!["set","cal","bd","note","ai","diary"].includes(view);
+   if(curKey==="me"&&((homeish&&!feat("rec"))||(view==="note"&&!feat("note"))||((view==="cal"||view==="bd")&&!feat("bd"))||(view==="diary"&&!feat("diary")))){const fv=firstView();if(fv!==view&&!(homeish&&fv==="home")){view=fv;if(fv==="note"&&typeof goNotes==="function"){goNotes();return}return render()}}
+   const me1=curKey==="me";$("tabRec").hidden=me1&&!feat("rec");$("tabNote").hidden=me1&&!feat("note");$("tabCal").hidden=me1&&!feat("bd");$("tabDiary").hidden=!me1||!feat("diary");$("tabAi").hidden=me1&&!feat("rec")&&!feat("note")}
+  $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note"&&view!=="ai"&&view!=="diary");$("tabDiary").classList.toggle("on",view==="diary");if(view==="diary")renderDiary();$("tabNote").classList.toggle("on",view==="note");$("tabAi").classList.toggle("on",view==="ai");if(view==="ai")renderAi();if(view==="note")renderNotes();$("homeRemind").hidden=true;$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
   $("app").hidden=false;
   const ex=expenses.filter(e=>e.month===cur).sort((a,b)=>b.date.localeCompare(a.date));
   const spent=ex.reduce((s,e)=>s+(+e.amount||0),0),incM=incomeSum(cur),allow=allowanceOf(cur)+incM;
@@ -376,7 +376,7 @@ function enterLedger(kind){
   unsubs.push(bdRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;bdays=(d&&Array.isArray(d.list))?d.list:[];if(loaded&&(view==="cal"||view==="bd"))render()},()=>{}));
   unsubs.push(cpCol.onSnapshot(sn=>{coupons=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)renderCoupons()},()=>{}));
   unsubs.push(incCol.onSnapshot(sn=>{incomes=sn.docs.map(d=>({id:d.id,...d.data()}));if(loaded)render();schedulePublish()},()=>{}));
-  notesSub();
+  notesSub();if(typeof diarySub==="function")diarySub();
   unsubs.push(prefsRef.onSnapshot(sn=>{const d=sn.exists?sn.data():null;curPrefs=d;prefsSeen=true;applyBg(d&&d.bg);applyAppIcon();setQuote();if(view==="set"&&setSub==="look")renderLook();if(loaded)render()},()=>{}));
   render();window.scrollTo(0,0);
 }
@@ -390,14 +390,14 @@ function renderAcct(){
 }
 
 // ---- 功能開關：使用者可以只用記帳、記事本或生日 ----
-const FEATS=[["rec","✏️ 記帳","記下每一筆花費，看每月、各類預算"],["note","📒 記事本","行程、待辦、總日曆、課表"],["bd","🎂 生日","記家人朋友的生日，國曆農曆都算好"]];
+const FEATS=[["rec","✏️ 記帳","記下每一筆花費，看每月、各類預算"],["note","📒 記事本","行程、待辦、總日曆、課表"],["bd","🎂 生日","記家人朋友的生日，國曆農曆都算好"],["diary","📔 日記","每天寫幾句、記心情，可以設密碼，也能翻回過去的日子"]];
 const feat=k=>{const f=curPrefs&&curPrefs.features;return !f||f[k]!==false};
-const firstView=()=>feat("rec")?"home":feat("note")?"note":"cal";
+const firstView=()=>feat("rec")?"home":feat("note")?"note":feat("bd")?"cal":"diary";
 async function saveFeats(f){if(!prefsRef)return;curPrefs={...(curPrefs||{}),features:f};await prefsRef.set({features:f},{merge:true})}
 // ---- wizard ----
 function showWizard(){
   const fam=curKey==="fam";
-  if(!wz)wz={step:0,allow:"",list:PRESETS.map(([n,e])=>({name:n,emoji:e,on:DEFAULT_ON.includes(n),budget:""})),remind:null,time:"21:00",feat:{rec:true,note:true,bd:true}};
+  if(!wz)wz={step:0,allow:"",list:PRESETS.map(([n,e])=>({name:n,emoji:e,on:DEFAULT_ON.includes(n),budget:""})),remind:null,time:"21:00",feat:{rec:true,note:true,bd:true,diary:true}};
   const STEPS=fam?["allow","cats","budget"]:(wz.feat.rec?["feat","allow","cats","budget","remind"]:["feat"]);
   const N=STEPS.length,key=STEPS[wz.step],b=$("wzBody");$("wizard").hidden=false;b.innerHTML="";$("wzMsg").textContent="";
   $("wzStep").textContent=`第 ${wz.step+1} 題 / 共 ${N} 題`;$("wzDots").textContent=Array.from({length:N},(_,i)=>i<=wz.step?"●":"○").join(" ");
@@ -1894,7 +1894,7 @@ function renderAccount(){
   c.appendChild(mkEl("div","bdgrp","要用的功能"));
   c.appendChild(mkEl("p","sub","關掉的功能，下方的分頁就不會出現；資料都還在，隨時可以再打開。")).style.margin="0 0 8px";
   {const box=mkEl("div","bt featSet");FEATS.forEach(([k,lab])=>{const on=feat(k);const b=mkEl("button",on?"":"ghost",(on?"☑ ":"☐ ")+lab);b.type="button";b.id="feat_"+k;b.setAttribute("aria-pressed",String(on));
-    b.onclick=async()=>{const f={rec:feat("rec"),note:feat("note"),bd:feat("bd")};f[k]=!f[k];if(!FEATS.some(([x])=>f[x])){toast("至少要留一個功能");return}b.disabled=true;try{await saveFeats(f);renderAccount();render()}catch(e){toast("沒有存到，請再試一次");b.disabled=false}};box.appendChild(b)});c.appendChild(box)}
+    b.onclick=async()=>{const f={};FEATS.forEach(([x])=>{f[x]=feat(x)});f[k]=!f[k];if(!FEATS.some(([x])=>f[x])){toast("至少要留一個功能");return}b.disabled=true;try{await saveFeats(f);renderAccount();render()}catch(e){toast("沒有存到，請再試一次");b.disabled=false}};box.appendChild(b)});c.appendChild(box)}
   c.appendChild(mkEl("div","bdgrp","密碼鎖"));
   c.appendChild(mkEl("p","sub",profile&&profile.pinHash?"已設定 🔒：在「選擇使用者」點你的頭像要輸入密碼。":"可以設一組 4–6 位數字的密碼，別人拿到你的手機也不能點進你的帳。")).style.margin="0 0 8px";
   {const pb=mkEl("button","ghost",profile&&profile.pinHash?"更改或取消密碼":"設定密碼");pb.type="button";pb.onclick=editPin;const r3=mkEl("div","bt");r3.appendChild(pb);c.appendChild(r3)}
@@ -1987,7 +1987,7 @@ $("copyUrl").onclick=async()=>{toast(await copyText(location.href)?"已複製網
 $("acctBtn").onclick=()=>{whoEdit=false;whoAsk=true;setPicked(false);render();window.scrollTo(0,0)};
 $("hAllowBox").onclick=editAllowance;$("hAllowBox").onkeydown=e=>{if(e.key==="Enter")editAllowance()};
 $("tabCal").onclick=()=>{view="cal";const t=today();calY=+t.slice(0,4);calM=+t.slice(5,7);calSel=t;render();window.scrollTo(0,0)};
-initNotes();initAi();
+initNotes();initAi();initDiary();
 $("tabSet").onclick=()=>{view="set";setSub=null;sstate=null;setupOpen=false;render();window.scrollTo(0,0)};
 $("tabRec").onclick=()=>{view="home";cur=today().slice(0,7);$("vdate").value=today();sstate=null;setupOpen=false;render();window.scrollTo(0,0)};
 $("add").date.value=today();$("vdate").value=today();
