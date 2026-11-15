@@ -1,4 +1,5 @@
 // End-to-end smoke test with a mock Firebase: node tests/run.js
+{ const r = require("child_process").spawnSync(process.execPath, [__dirname + "/parse_harness.js"], { encoding: "utf8" }); console.log((r.status === 0 ? "PASS " : "FAIL ") + "記帳句子解析：" + r.stdout.trim().split("\n").pop()); if (r.status) console.log(r.stdout); }
 // Needs Playwright (and a Chromium it can launch). Optional: BACKUP=path/to/backup.json to test importing it.
 const { chromium } = require("playwright");
 const http = require("http"), fs = require("fs"), path = require("path");

@@ -9,16 +9,18 @@ const KEYS={
  "居住":/房租|水電|瓦斯|網路費|管理費/,
  "醫療":/看診|醫|藥|掛號|牙|診所/,
  "教育":/書|學費|課|補習|文具|影印/,
- "通訊":/電話費|手機費|月租|話費/,
+ "通訊":/電話費|手機費|月租|話費|網卡|esim|sim卡|icloud|cloud|雲端|google one|dropbox/i,
  "運動":/運動|健身|球|游泳|攀岩|岩館/,
  "旅遊":/旅|住宿|機票|民宿|門票/,
  "人情禮物":/禮|紅包|送禮|份子/,
  "捐款":/捐/
 };
-KEYS["餐飲"]=/飯|饭|麵|面|早餐|午餐|晚餐|宵夜|消夜|餐|吃|喝|飲|饮|茶|咖啡|便當|便当|零食|麥當勞|麦当劳|素食|吐司|豆花|甜點|甜点|蛋糕|蛋餅|蛋饼|飯糰|饭团|麵包|面包|雞排|鸡排|鹹酥雞|滷味|卤味|火鍋|火锅|壽司|寿司|漢堡|汉堡|披薩|披萨|點心|点心|豆漿|豆浆|粥|燒肉|烧肉|牛排|小吃|冰|珍奶|奶茶|水餃|水饺|鍋貼|锅贴|肉圓|蚵仔煎|臭豆腐|鬆餅|松饼|可頌|三明治|沙拉|拉麵|拉面|丼|咖哩|便利商店|超商|7-?11|全家|萊爾富|摩斯|肯德基|星巴克|路易莎/i;
+KEYS["餐飲"]=/飯|饭|麵|面|早餐|午餐|晚餐|宵夜|消夜|餐|吃|喝|飲|饮|茶|咖啡|便當|便当|零食|麥當勞|麦当劳|素食|吐司|豆花|甜點|甜点|蛋糕|蛋餅|蛋饼|飯糰|饭团|麵包|面包|雞排|鸡排|鹹酥雞|滷味|卤味|火鍋|火锅|壽司|寿司|漢堡|汉堡|披薩|披萨|點心|点心|豆漿|豆浆|粥|燒肉|烧肉|牛排|小吃|冰|珍奶|奶茶|水餃|水饺|鍋貼|锅贴|肉圓|蚵仔煎|臭豆腐|鬆餅|松饼|可頌|三明治|沙拉|拉麵|拉面|丼|咖哩|便利商店|超商|7-?11|全家|請客|請吃|聚餐|飲料|手搖|萊爾富|摩斯|肯德基|星巴克|路易莎/i;
 KEYS["食物"]=KEYS["餐飲"];
-KEYS["交通"]=/捷運|捷运|公車|公车|火車|火车|高鐵|高铁|台鐵|臺鐵|台铁|區間車|自強號|莒光號|客運|客运|統聯|统联|國光|国光|車票|车票|機票|机票|船票|車錢|车钱|車資|车资|路費|路费|過路費|etag|計程|计程|小黃|uber|ubike|youbike|加油|機車|机车|停車|停车|油錢|悠遊卡|一卡通|交通|(?:回|去|到|往|搭車到|坐車回)(?:台北|臺北|台北市|新北|桃園|桃园|新竹|苗栗|台中|臺中|彰化|南投|雲林|云林|嘉義|嘉义|台南|臺南|高雄|屏東|屏东|宜蘭|宜兰|花蓮|花莲|台東|臺東|基隆|澎湖|金門|金门|馬祖|马祖|家|老家|宿舍|學校|学校|公司)/i;
+KEYS["交通"]=/捷運|捷运|公車|公车|火車|火车|高鐵|高铁|台鐵|臺鐵|台铁|區間車|自強號|莒光號|客運|客运|統聯|统联|國光|国光|車票|车票|機票|机票|船票|車錢|车钱|車資|车资|路費|路费|過路費|etag|計程|计程|小黃|uber|ubike|youbike|加油|機車|机车|停車|停车|油錢|悠遊卡|一卡通|交通|(?:回|去|到|往|搭車到|坐車回)(?:羅東|罗东|礁溪|頭城|头城|蘇澳|苏澳|冬山|五結|三星|壯圍|員山|淡水|板橋|板桥|永和|中和|新店|三重|新莊|新庄|土城|汐止|林口|竹北|中壢|中坜|台大|臺大|台北|臺北|台北市|新北|桃園|桃园|新竹|苗栗|台中|臺中|彰化|南投|雲林|云林|嘉義|嘉义|台南|臺南|高雄|屏東|屏东|宜蘭|宜兰|花蓮|花莲|台東|臺東|基隆|澎湖|金門|金门|馬祖|马祖|家|老家|宿舍|學校|学校|公司)/i;
 KEYS["攀岩"]=/攀岩|岩館|岩馆|抱石|岩鞋|粉袋/;
+KEYS["洗衣服"]=/洗衣|烘衣|洗衣服|自助洗|投幣洗/;
+KEYS["捐款"]=/捐/;
 const SITE_URL=location.origin+location.pathname.replace(/index\.html$/,"");
 const REPO_URL="https://github.com/tim062480-create/family-ledger";
 const JOIN=(new URLSearchParams(location.search).get("join")||"").trim();
@@ -174,10 +176,13 @@ function setupEvents(){
 
 // ---- parsing ----
 function guess(s){
-  const cs=cats();
-  for(const c of cs){if(KEYS[c.name]&&KEYS[c.name].test(s))return c.name}
-  for(const c of cs){if(s.includes(c.name))return c.name}
-  const o=cs.find(c=>["其他","杂项","雜項"].includes(c.name));return o?o.name:(cs[cs.length-1]||{name:"其他"}).name;
+  // 每個類別的關鍵字都比一比，配到最長、最具體的那個；使用者自己的類別名稱直接出現在句子裡最優先
+  const cs=cats(),on=new Set(cs.map(c=>c.name));let best=null,bl=0;
+  for(const name in KEYS){const m=String(s).match(KEYS[name]);if(m&&(m[0].length>bl||(m[0].length===bl&&!on.has(best)&&on.has(name)))){best=name;bl=m[0].length}}
+  for(const c of cs){if(c.name&&String(s).includes(c.name)&&c.name.length+10>bl){best=c.name;bl=c.name.length+10}}
+  if(best&&on.has(best))return best;
+  if(best==="餐飲"&&on.has("食物"))return"食物";
+  const o=cs.find(c=>["其他","杂项","雜項","雜支","其它"].includes(c.name));return o?o.name:(cs[cs.length-1]||{name:"其他"}).name;
 }
 function findDate(t){
   const base=new Date(today()+"T00:00:00Z");
@@ -209,45 +214,71 @@ function preNorm(t){
 }
 const unBrand=(x,keep)=>String(x||"").replace(/\uE000([\uE100-\uE1FF])/g,(m,c)=>keep[c.charCodeAt(0)-0xE100]||"");
 const CNUM={"一":1,"二":2,"兩":2,"两":2,"三":3,"四":4,"五":5,"六":6,"七":7,"八":8,"九":9,"十":10};
+const MEAL_W=/^\s*(早午餐|早餐|午餐|晚餐|宵夜|消夜|下午茶|點心|午茶|早點)(?=\s|$)/;
+const QTY_AFTER=/^(杯|份|個|个|張|张|件|顆|颗|包|瓶|罐|盒|次|人|樓|楼|週|周|號|号|天|入|片|支|條|条|碗|盤|盘|串)/;
+const escRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 function localParse(t0){
   const pn=preNorm(t0),t=pn.t,ub=x=>unBrand(x,pn.keep);
-  const out=[],f=findDate(t);
+  const f=findDate(t);
   if(/新增|拿到|收到|加入|多了/.test(f.rest)&&/券|禮物卡/.test(f.rest)){
     const nums=[...f.rest.matchAll(/(\d+)/g)].map(x=>+x[1]);const cm=f.rest.match(/(\d+|[一二兩两三四五六七八九十])\s*[張张]/);
     const count=cm?(CNUM[cm[1]]||+cm[1]):1,face=nums.find(n=>!cm||n!==+cm[1])||nums[0]||0;
     const store=f.rest.replace(/新增|拿到|收到|加入|多了|了|面額|一共|共/g,"").replace(/\d+\s*(元|塊|块)?/g,"").replace(/[一二兩两三四五六七八九十]?\s*[張张]/g,"").replace(/[,，、。\s]/g,"");
     if(face)return[{category:"cpadd:"+ub(store),face,count,amount:face*count,date:f.date,note:"",remark:""}];
   }
-  const rest=f.rest.replace(/備註|備考|备注|备註/g,"備注");
-  const re=/([^\d]*?)(\d+)\s*(?:元|塊|块)?\s*(?:備注\s*([^\d\s,，、;；。\n]*))?/g;let m;
-  const clean=s=>s.replace(/^[\s元塊块,，、;；。.]+/,"").replace(/NT\$?|花了|(?<![豆雪煙烟蔥葱天])花(?![生枝椰茶卷束園园店蓮莲材瓶])|共|買了|買|還有|然後|以及|和|跟|加上/gi," ").replace(/[,，、;；。.]/g," ").replace(/\s+/g," ").trim();
-  const raw=x=>x.replace(/^[\s,，、;；。.]+|[\s,，、;；。.]+$/g,"");
-  const addRem=(it,x)=>{x=ub(clean(x));if(!x||!it)return;it.remark=it.remark?it.remark+"・"+x:x;if(!String(it.category).startsWith("coupon:")&&it.category===guess(""))it.category=guess(it.note+" "+it.remark)};
-  let lastEnd=0;
-  while((m=re.exec(rest))){
-    let pre=m[1]||"";let desc="",remark="";
-    // 金額後面、下一個分隔符號前的字，算上一筆的備註（例如「活大素食 62 晚餐，捷運 30」）
-    if(out.length){const sp=pre.search(/[,，、;；。\n]/);if(sp>=0){addRem(out[out.length-1],pre.slice(0,sp));pre=pre.slice(sp+1)}}
-    // 沒有逗號時，緊接在金額後面的「下午茶」「午餐」這類字，也算上一筆的備註（例如「豆花 65 下午茶 小時堂 100 午餐」）
-    if(out.length){const mm=pre.match(/^\s*(早午餐|早餐|午餐|晚餐|宵夜|消夜|下午茶|點心|午茶|早點)(?=\s|$)/);if(mm&&pre.slice(mm[0].length).trim()){addRem(out[out.length-1],mm[1]);pre=pre.slice(mm[0].length)}}
-    lastEnd=re.lastIndex;
-    const k=pre.indexOf("備注");
-    const raw=x=>x.replace(/^[\s,，、;；。.]+|[\s,，、;；。.]+$/g,"");
-    if(k>=0){
-      const after=pre.slice(k+2).replace(/^\s+/,""),sp=after.search(/\s/);
-      remark=raw(sp<0?after:after.slice(0,sp));
-      desc=clean(pre.slice(0,k)+" "+(sp<0?"":after.slice(sp)));
-    }else desc=clean(pre);
-    if(m[3]!==undefined&&m[3].trim())remark=raw(m[3]);
-    desc=ub(desc);remark=ub(remark);
-    let cat=guess(desc+" "+remark),nd=desc;
-    if(/券|劵|禮物卡/.test(desc+remark)){const st=desc.replace(/用|使用|付了|付|買了|買/g,"");cat="coupon:"+st;nd=toT(st).replace(CPW,"").trim()||desc}
-    out.push({category:cat,amount:+m[2],date:f.date,note:nd,remark});
-    if(re.lastIndex===m.index)re.lastIndex++;
+  const rest=f.rest.replace(/備註|備考|备注|备註/g,"備注").replace(/NT\s*\$?/gi," ");
+  const SEP=/[,，、;；。\n]/;
+  // 找出金額：數字黏在英文字母後面（iPhone15）、前面是「第」、後面接「杯／份／個…」的，都算描述的一部分，不是金額
+  const ams=[];const AM=/(\d+(?:\.\d+)?)\s*(?:元|塊|块|圓)?/g;let m;
+  while((m=AM.exec(rest))){
+    const s=m.index,e=s+m[0].length,prev=rest[s-1]||"",after=rest.slice(s+m[1].length);
+    if(/[A-Za-z第]/.test(prev)||(!/^\s*(元|塊|块|圓)/.test(after)&&QTY_AFTER.test(after))||+m[1]<=0)continue;
+    ams.push({s,e,v:+m[1]});
   }
-  // 最後一個金額後面剩下的字，也算最後一筆的備註
-  if(out.length){const tail=rest.slice(lastEnd);if(tail&&!/\d/.test(tail))addRem(out[out.length-1],tail.replace(/^\s*備注\s*/,""))}
-  return out;
+  if(!ams.length)return[];
+  const clean=s=>s.replace(/^[\s元塊块,，、;；。.]+/,"").replace(/花了|共花|一共|總共|买了|買了|還有|然後|以及|加上/gi," ").replace(/(^|\s)(花|買|买|共)(?=\s|$)/g," ").replace(/^(花|買|买)(?=\S)/," ").replace(/[,，、;；。.](?!\d)/g," ").replace(/\s+/g," ").trim();
+  const lite=s=>s.replace(/[,，、;；。]/g," ").replace(/\s+/g," ").trim();
+  const it=ams.map(()=>({B:"",A:""}));
+  it[0].B=rest.slice(0,ams[0].s);
+  const amountFirst=!clean(ub(it[0].B)).replace(/備注/g,"");
+  for(let i=0;i<ams.length;i++){
+    const nx=ams[i+1],gap=rest.slice(ams[i].e,nx?nx.s:rest.length);
+    if(!nx){it[i].A=gap;break}
+    const parts=gap.split(SEP);
+    if(parts.length===1){
+      if(amountFirst){it[i].A=gap;continue}
+      const mm=gap.match(MEAL_W);
+      if(mm&&gap.slice(mm[0].length).trim()){it[i].A=mm[1];it[i+1].B=gap.slice(mm[0].length)}
+      else it[i+1].B=gap;
+    }else{
+      it[i].A=parts.slice(0,-1).join(" ");
+      it[i+1].B=parts[parts.length-1];
+    }
+  }
+  const names=cats().map(c=>c.name).filter(Boolean).sort((a,b)=>b.length-a.length);
+  return it.map((x,i)=>{
+    let B=x.B,A=x.A,rem="";
+    // 「備註 xxx」可以寫在任何位置
+    const all=B+"\u0001"+A,k=all.indexOf("備注");
+    if(k>=0){const af=all.slice(k+2).replace(/^\s+/,""),w=(af.match(/^[^\s\u0001,，、;；。]*/)||[""])[0];rem=w;const r2=all.slice(0,k)+" "+af.slice(w.length);[B,A]=r2.split("\u0001");A=A||""}
+    let desc=ub(clean(B)),extra=ub(lite(A.replace(/^\s*(元|塊|块)/,"")));
+    // 沒有寫在金額前面的描述（例如「700 cloud訂閱」）→ 金額後面的字就是描述
+    if(!desc&&extra){desc=extra;extra=""}
+    let remark=[extra,rem?ub(lite(rem)):""].filter(Boolean).join("・");
+    // 句子裡直接寫了類別名稱（例如「150 交通 回宿舍」「娛樂 200 唱歌」）→ 用那個類別，名稱不放進描述
+    let cat=null;
+    for(const n of names){
+      const tok=new RegExp("(^|\\s)"+escRe(n)+"(?=\\s|$)");
+      if(desc===n){cat=n;if(remark){desc=remark;remark=""}break}
+      if(tok.test(desc)){cat=n;desc=desc.replace(tok," ").replace(/\s+/g," ").trim();break}
+      if(remark===n||tok.test(remark)){cat=n;remark=remark.replace(tok," ").replace(/\s+/g," ").trim();break}
+    }
+    if(!desc&&remark){desc=remark;remark=""}
+    if(!cat)cat=guess(desc+" "+remark);
+    let nd=desc;
+    if(/券|劵|禮物卡/.test(desc+remark)){const st=desc.replace(/用|使用|付了|付|買了|買/g,"");cat="coupon:"+st;nd=toT(st).replace(CPW,"").trim()||desc}
+    return{category:cat,amount:ams[i].v,date:f.date,note:nd,remark};
+  });
 }
 function renderPreview(){
   const box=$("preview");box.innerHTML="";
