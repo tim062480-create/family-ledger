@@ -630,3 +630,11 @@ input[type=date],input[type=time]{max-width:100%;box-sizing:border-box}
 .dyother .dypast b{font-size:15px}
 #dyCount{display:block;margin-top:6px;color:var(--muted)}
 #dyBackRow{margin-top:8px}
+
+/* 範例、宣傳影片 */
+.vrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 8px}
+.vfig{margin:0;display:flex;flex-direction:column;gap:6px}
+.vfig video{width:100%;aspect-ratio:9/16;border-radius:16px;background:#000;display:block;object-fit:cover}
+.vfig figcaption{font-size:13px;color:var(--muted);line-height:1.4}
+.vfig figcaption b{display:block;color:var(--ink);font-size:14px}
+@media (max-width:360px){.vrow{grid-template-columns:1fr}}

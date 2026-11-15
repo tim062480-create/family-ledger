@@ -37,6 +37,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   // 1. landing
   await pg.goto(BASE); await wait(400);
   ok(await pg.isVisible("#landing"), "landing page shows when signed out");
+  ok(await pg.isVisible("#lpSkit") && await pg.isVisible("#lpPromo"), "landing page shows the AI skit and promo video");
   ok((await pg.title()).includes("家庭記帳本"), "title has 家庭記帳本");
   await shot("01-landing");
 
@@ -338,6 +339,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#mClose"); await wait(100);
   await tab("#tabSet"); await wait(300); await pg.click("#setMenu .mi:has-text('使用說明與示範')"); await wait(300);
   ok(await pg.isVisible("#guideVid") && (await pg.$$("[data-sub='guide'] details")).length >= 10, "設定 has 使用說明與示範 with the video and a guide");
+  ok(await pg.isVisible("#gdSkit") && await pg.isVisible("#gdPromo"), "guide page also has the AI skit and the promo video");
   await pg.click("#setBack"); await wait(200); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(300);
   await pg.click("#feat_rec"); await wait(200); await pg.click("#feat_bd"); await wait(300);
   ok(await pg.isHidden("#tabRec") && await pg.isHidden("#tabCal") && await pg.isVisible("#tabNote"), "turning off 記帳 and 生日 in 設定 hides their tabs");

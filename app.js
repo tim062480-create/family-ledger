@@ -768,7 +768,7 @@ function renderSet(){
   if(setSub==="feedback")openFeedback();
   if(setSub==="family")renderFamilyPage();
   if(setSub==="account")renderAccount();
-  if(setSub!=="guide"){const gv=$("guideVid");if(gv&&!gv.paused)gv.pause()}
+  if(setSub!=="guide")["guideVid","gdSkit","gdPromo"].forEach(i=>{const gv=$(i);if(gv&&!gv.paused)gv.pause()});
   if(setSub==="look")renderLook();
   if(setSub==="remind")renderReminder();
   if(setSub==="share"){$("privacy").hidden=false;$("shareNoHH").hidden=!!hid;$("shareLevel").disabled=!hid;$("shareLevel").value=(settings&&settings.share)||"none"}

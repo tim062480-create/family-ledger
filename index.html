@@ -23,7 +23,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261115d">
+<link rel="stylesheet" href="style.css?v=20261115e">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -85,6 +85,12 @@
     <div class="drow"><span>10-20</span><span>全聯・媽媽記的</span><b>NT$478</b></div>
   </div>
 
+  <h2 class="lsec">看影片認識家庭記帳本</h2>
+  <div class="vrow">
+    <figure class="vfig"><video id="lpSkit" controls playsinline preload="none" poster="media/skit-poster.jpg"><source src="media/skit.mp4?v=1" type="video/mp4"></video><figcaption><b>AI 短劇《零用錢去哪了？》</b>50 秒，人物由 AI 生成</figcaption></figure>
+    <figure class="vfig"><video id="lpPromo" controls playsinline preload="none" poster="media/promo-poster.jpg"><source src="media/promo.mp4?v=1" type="video/mp4"></video><figcaption><b>宣傳短片</b>20 秒看完重點</figcaption></figure>
+  </div>
+
   <h2 class="lsec">可以做什麼</h2>
   <div class="feats">
     <div class="feat"><span class="fi">說</span><div><h3>說一句話就記帳</h3><p>打「午餐 120、捷運 30」或用語音，一次記好好幾筆，日期、類別自動分好。</p></div></div>
@@ -94,6 +100,9 @@
     <div class="feat"><span class="fi">券</span><div><h3>優惠券另外算</h3><p>禮券、商品券有自己的餘額，用券付的錢不會混進每月收支。</p></div></div>
     <div class="feat"><span class="fi">照</span><div><h3>照片和地點</h3><p>附上吃了什麼的照片，會自動帶入拍照地點，下次點照片就能用 Google 地圖找回那家店。</p></div></div>
     <div class="feat"><span class="fi">曆</span><div><h3>國曆農曆日曆</h3><p>節氣、節日，還有家人朋友的生日（農曆也可以），提前提醒。</p></div></div>
+    <div class="feat"><span class="fi">記</span><div><h3>記事本與總日曆</h3><p>行程、待辦、課表都放這裡，標 ★ 的事會出現在總日曆，今天、明天、後天的事提早提醒。</p></div></div>
+    <div class="feat"><span class="fi">日</span><div><h3>日記</h3><p>每天寫幾句、記心情，可以設密碼，也能翻回過去任何一天。</p></div></div>
+    <div class="feat"><span class="fi">AI</span><div><h3>交給 AI 幫你輸入</h3><p>用免費的 ChatGPT、Claude 或 Gemini，把課表截圖、一長串花費丟給 AI，貼回來一鍵加入。</p></div></div>
     <div class="feat"><span class="fi">存</span><div><h3>家庭存錢目標</h3><p>旅遊基金大家一起存，每個人存了多少都看得到。</p></div></div>
   </div>
 
@@ -306,6 +315,8 @@
   <div class="subpg" data-sub="guide" hidden>
     <section class="card"><h2>示範影片</h2><p class="sub" style="margin:0 0 10px">兩分鐘看完所有功能，有配音和字幕（影片裡是示範用的假資料）。</p>
       <video id="guideVid" controls playsinline preload="none" poster="media/demo-poster.jpg" style="width:100%;max-width:360px;display:block;margin:0 auto;border-radius:18px;background:#000;aspect-ratio:9/16"><source src="media/demo.mp4?v=2" type="video/mp4"></video></section>
+    <section class="card"><h2>範例影片</h2><p class="sub" style="margin:0 0 10px">可以直接分享給家人朋友，讓他們知道這是什麼。</p>
+      <div class="vrow"><figure class="vfig"><video id="gdSkit" controls playsinline preload="none" poster="media/skit-poster.jpg"><source src="media/skit.mp4?v=1" type="video/mp4"></video><figcaption><b>AI 短劇《零用錢去哪了？》</b>人物由 AI 生成</figcaption></figure><figure class="vfig"><video id="gdPromo" controls playsinline preload="none" poster="media/promo-poster.jpg"><source src="media/promo.mp4?v=1" type="video/mp4"></video><figcaption><b>宣傳短片</b>20 秒重點</figcaption></figure></div></section>
     <section class="card guide"><h2>使用說明</h2>
       <details open><summary>✏️ 記一筆</summary><p>在「記帳」頁的框框打一句話，例如「活大素食 62 晚餐，捷運 30」，按「解析」會自動拆成兩筆、分好類別，確認後按「確認記帳」。金額後面的字會變成備註。也可以按「語音」用說的、「附照片」或「讀收據」。</p></details>
       <details><summary>📊 看帳本</summary><p>「每月帳本」點進某個月，可以看各類別花了多少、預算還剩多少，以及每一筆明細。點一筆可以修改或刪除。額度和類別在「設定 → 額度與類別」調整。</p></details>
@@ -490,6 +501,6 @@
 <script src="ai.js?v=20261109a"></script>
 <script src="diary.js?v=20261115d"></script>
 <script src="notes.js?v=20261106e"></script>
-<script src="app.js?v=20261115c"></script>
+<script src="app.js?v=20261115e"></script>
 </body>
 </html>
