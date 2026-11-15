@@ -64,6 +64,9 @@ function render(){
   if(view==="set")renderSet();
   {const v=$("voice");if(view==="month"){if(v.parentElement!==$("vMonth"))$("vMonth").insertBefore(v,$("monthTitle").nextSibling)}else if(v.parentElement!==$("vHome"))$("vHome").insertBefore(v,$("vHome").firstChild)}
   {const hr=$("homeRemind"),vh=$("vHome");if(vh.firstChild!==hr)vh.insertBefore(hr,vh.firstChild)}
+  {const homeish=!["set","cal","bd","note","ai"].includes(view);
+   if(curKey==="me"&&((homeish&&!feat("rec"))||(view==="note"&&!feat("note"))||((view==="cal"||view==="bd")&&!feat("bd")))){const fv=firstView();if(fv!==view&&!(homeish&&fv==="home")){view=fv;if(fv==="note"&&typeof goNotes==="function"){goNotes();return}return render()}}
+   const me1=curKey==="me";$("tabRec").hidden=me1&&!feat("rec");$("tabNote").hidden=me1&&!feat("note");$("tabCal").hidden=me1&&!feat("bd");$("tabAi").hidden=me1&&!feat("rec")&&!feat("note")}
   $("tabbar").hidden=false;requestAnimationFrame(fitQuote);$("tabRec").classList.toggle("on",view!=="set"&&view!=="cal"&&view!=="bd"&&view!=="note"&&view!=="ai");$("tabNote").classList.toggle("on",view==="note");$("tabAi").classList.toggle("on",view==="ai");if(view==="ai")renderAi();if(view==="note")renderNotes();$("homeRemind").hidden=true;$("tabSet").classList.toggle("on",view==="set");$("tabCal").classList.toggle("on",view==="cal"||view==="bd");if(view==="cal")renderCal();if(view==="bd")renderBdList();
   $("app").hidden=false;
   const ex=expenses.filter(e=>e.month===cur).sort((a,b)=>b.date.localeCompare(a.date));
@@ -386,25 +389,35 @@ function renderAcct(){
   $("acctImg").hidden=true;const s=$("acctIni");s.hidden=false;s.innerHTML="";s.appendChild(faceEl(myFace(),myId,"hav"));b.setAttribute("aria-label","換人（"+myName()+"）");
 }
 
+// ---- 功能開關：使用者可以只用記帳、記事本或生日 ----
+const FEATS=[["rec","✏️ 記帳","記下每一筆花費，看每月、各類預算"],["note","📒 記事本","行程、待辦、總日曆、課表"],["bd","🎂 生日","記家人朋友的生日，國曆農曆都算好"]];
+const feat=k=>{const f=curPrefs&&curPrefs.features;return !f||f[k]!==false};
+const firstView=()=>feat("rec")?"home":feat("note")?"note":"cal";
+async function saveFeats(f){if(!prefsRef)return;curPrefs={...(curPrefs||{}),features:f};await prefsRef.set({features:f},{merge:true})}
 // ---- wizard ----
 function showWizard(){
   const fam=curKey==="fam";
-  if(!wz)wz={step:0,allow:"",list:PRESETS.map(([n,e])=>({name:n,emoji:e,on:DEFAULT_ON.includes(n),budget:""})),remind:null,time:"21:00"};
-  const N=fam?3:4,b=$("wzBody");$("wizard").hidden=false;b.innerHTML="";$("wzMsg").textContent="";
+  if(!wz)wz={step:0,allow:"",list:PRESETS.map(([n,e])=>({name:n,emoji:e,on:DEFAULT_ON.includes(n),budget:""})),remind:null,time:"21:00",feat:{rec:true,note:true,bd:true}};
+  const STEPS=fam?["allow","cats","budget"]:(wz.feat.rec?["feat","allow","cats","budget","remind"]:["feat"]);
+  const N=STEPS.length,key=STEPS[wz.step],b=$("wzBody");$("wizard").hidden=false;b.innerHTML="";$("wzMsg").textContent="";
   $("wzStep").textContent=`第 ${wz.step+1} 題 / 共 ${N} 題`;$("wzDots").textContent=Array.from({length:N},(_,i)=>i<=wz.step?"●":"○").join(" ");
   const el=(tag,cls,txt)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(txt!=null)x.textContent=txt;return x};
   const add=x=>{b.appendChild(x);return x};
-  if(wz.step===0){
+  if(key==="feat"){
+    add(el("h2","",`嗨 ${myName()}！你想用哪些功能？`));add(el("p","sub","可以多選。之後想改，到「設定 → 帳號」打開或關掉就好。"));
+    FEATS.forEach(([k,lab,d])=>{const on=wz.feat[k];const x=add(el("button","opt feat"+(on?" on":"")));x.type="button";x.setAttribute("aria-pressed",String(on));
+      x.append(el("b","",(on?"☑ ":"☐ ")+lab),el("small","",d));x.onclick=()=>{wz.feat[k]=!wz.feat[k];showWizard()}});
+  }else if(key==="allow"){
     add(el("h2","",fam?`來設定「${hhName()}」的共同帳：每個月的家用預算大概多少？`:`嗨 ${myName()}！這個月你的額度（零用錢／預算）是多少？`));
     const i=add(el("input"));i.type="number";i.min="0";i.inputMode="numeric";i.placeholder=fam?"例如 30000":"例如 12000";i.value=wz.allow;i.oninput=()=>{wz.allow=i.value};
     add(el("p","sub",fam?"像是伙食、日用品、水電這些全家一起花的錢。不確定可以先空著，之後在「設定」裡改。":"不確定可以先空著，之後在「設定」裡改。"));
-  }else if(wz.step===1){
+  }else if(key==="cats"){
     add(el("h2","",fam?"全家的帳要記哪些類別？":"你想記哪些類別？"));add(el("p","sub","點一下選取或取消，也可以自己新增。"));
     const box=add(el("div"));
     wz.list.forEach(c=>{const x=el("button","chip"+(c.on?" on":""),c.name);x.type="button";x.setAttribute("aria-pressed",String(c.on));x.onclick=()=>{c.on=!c.on;showWizard()};box.appendChild(x)});
     const row=add(el("div","bt"));const ci=el("input");ci.placeholder="自訂類別";const cb=el("button","ghost","新增");cb.type="button";
     cb.onclick=()=>{const n=ci.value.trim();if(!n||wz.list.some(c=>c.name===n))return;wz.list.push({name:n,emoji:"🔖",on:true,budget:""});showWizard()};row.append(ci,cb);
-  }else if(wz.step===2){
+  }else if(key==="budget"){
     add(el("h2","","每個類別每月想花多少？"));add(el("p","sub","不想設預算的就留空。"));
     wz.list.filter(c=>c.on).forEach(c=>{const r=add(el("div","sr"));const l=el("label","",c.name);const i=el("input");i.type="number";i.min="0";i.inputMode="numeric";i.placeholder="預算";i.value=c.budget;i.oninput=()=>{c.budget=i.value};r.append(l,i)});
   }else{
@@ -416,15 +429,17 @@ function showWizard(){
   }
   const nav=add(el("div","bt"));nav.style.marginTop="16px";
   if(wz.step>0){const x=el("button","ghost","← 上一題");x.type="button";x.onclick=()=>{wz.step--;showWizard()};nav.appendChild(x)}
-  const nx=el("button","",wz.step<N-1?"下一題 →":"完成，開始記帳");nx.type="button";
+  const nx=el("button","",wz.step<N-1?"下一題 →":(fam||wz.feat.rec?"完成，開始記帳":"完成，開始使用"));nx.type="button";
   nx.onclick=async()=>{
-    if(wz.step===1&&!wz.list.some(c=>c.on)){$("wzMsg").textContent="請至少選一個類別";return}
-    if(wz.step===3&&wz.remind===null){$("wzMsg").textContent="請選一個";return}
+    if(key==="feat"&&!FEATS.some(([k])=>wz.feat[k])){$("wzMsg").textContent="請至少選一個功能";return}
+    if(key==="cats"&&!wz.list.some(c=>c.on)){$("wzMsg").textContent="請至少選一個類別";return}
+    if(key==="remind"&&wz.remind===null){$("wzMsg").textContent="請選一個";return}
     if(wz.step<N-1){wz.step++;showWizard();window.scrollTo(0,0);return}
     nx.disabled=true;
     const chosen=wz.list.filter(c=>c.on),allow=Math.max(0,+wz.allow||0);
     const data={categories:chosen.map(c=>({name:c.name,budget:Math.max(0,+c.budget||0)})),allowance:{[cur]:allow},defaultAllowance:allow,...(fam?{createdBy:myId}:{share:"none"})};
-    try{await base.set(data);wz=null;view="home";setPicked(true);if(curKey==="me")offerPin()}
+    const fs=fam?null:{...wz.feat};
+    try{if(fs)await saveFeats(fs);await base.set(data);wz=null;view=fam?"home":firstView();setPicked(true);if(curKey==="me")offerPin()}
     catch(e){$("wzMsg").textContent="儲存失敗，請稍後再試";nx.disabled=false}
   };
   nav.appendChild(nx);
@@ -1876,6 +1891,10 @@ function renderAccount(){
   const lo=mkEl("button","ghost","登出");lo.type="button";lo.onclick=()=>{setPicked(false);fbAuth.signOut()};
   const ea=mkEl("button","ghost","換頭像、改稱呼");ea.type="button";ea.onclick=editMe;
   const row=mkEl("div","bt");row.append(ea,lo);c.appendChild(row);
+  c.appendChild(mkEl("div","bdgrp","要用的功能"));
+  c.appendChild(mkEl("p","sub","關掉的功能，下方的分頁就不會出現；資料都還在，隨時可以再打開。")).style.margin="0 0 8px";
+  {const box=mkEl("div","bt featSet");FEATS.forEach(([k,lab])=>{const on=feat(k);const b=mkEl("button",on?"":"ghost",(on?"☑ ":"☐ ")+lab);b.type="button";b.id="feat_"+k;b.setAttribute("aria-pressed",String(on));
+    b.onclick=async()=>{const f={rec:feat("rec"),note:feat("note"),bd:feat("bd")};f[k]=!f[k];if(!FEATS.some(([x])=>f[x])){toast("至少要留一個功能");return}b.disabled=true;try{await saveFeats(f);renderAccount();render()}catch(e){toast("沒有存到，請再試一次");b.disabled=false}};box.appendChild(b)});c.appendChild(box)}
   c.appendChild(mkEl("div","bdgrp","密碼鎖"));
   c.appendChild(mkEl("p","sub",profile&&profile.pinHash?"已設定 🔒：在「選擇使用者」點你的頭像要輸入密碼。":"可以設一組 4–6 位數字的密碼，別人拿到你的手機也不能點進你的帳。")).style.margin="0 0 8px";
   {const pb=mkEl("button","ghost",profile&&profile.pinHash?"更改或取消密碼":"設定密碼");pb.type="button";pb.onclick=editPin;const r3=mkEl("div","bt");r3.appendChild(pb);c.appendChild(r3)}

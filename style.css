@@ -593,3 +593,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:10
 input[type=date],input[type=time]{max-width:100%;box-sizing:border-box}
 #fsFields>*{min-width:0}
 .grid2>*{min-width:0}
+
+.opt.feat{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;margin:0 0 8px;padding:12px 14px}
+.opt.feat b{font-size:17px}.opt.feat small{color:var(--muted);font-size:13px;font-weight:400}
+.featSet button{min-width:0}
