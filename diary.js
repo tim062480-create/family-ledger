@@ -14,7 +14,7 @@ function diarySub(){
   unsubs.push(()=>{if(dyUnsub){dyUnsub();dyUnsub=null}});
 }
 function goDiary(){
-  view="diary";if(!dySel){dySel=today();dyY=+dySel.slice(0,4);dyM=+dySel.slice(5,7)}
+  view="diary";dySel=today();
   render();window.scrollTo(0,0);
 }
 function renderDiary(){
@@ -23,35 +23,30 @@ function renderDiary(){
   $("dyLocked").hidden=!locked;$("dyBody").hidden=locked;
   $("dyLockBtn").textContent=dyHasPin()?"🔒 密碼":"🔓 設密碼";
   if(locked){$("dyPin").value="";$("dyPinMsg").textContent="";return}
-  if(!dySel){dySel=today();dyY=+dySel.slice(0,4);dyM=+dySel.slice(5,7)}
-  renderDiaryCal();renderDiaryEd();
+  if(!dySel)dySel=today();
+  renderDiaryEd();renderDiaryCal();
 }
+// 下方小格：選日期，或點最近寫過的日子
 function renderDiaryCal(){
   if(view!=="diary"||(dyHasPin()&&!dyOpen))return;
-  $("dyMonth").textContent=`${dyY} 年 ${dyM} 月`;
-  $("dyJump").value=dySel||"";$("dyJump").max=today();
-  const g=$("dyGrid");g.innerHTML="";
-  "日一二三四五六".split("").forEach(w=>g.appendChild(mkEl("div","dyw",w)));
-  const first=new Date(Date.UTC(dyY,dyM-1,1)),pad=first.getUTCDay(),days=new Date(Date.UTC(dyY,dyM,0)).getUTCDate(),td=today();
-  for(let i=0;i<pad;i++)g.appendChild(mkEl("div","dyc dye"));
-  let n=0;
-  for(let d=1;d<=days;d++){
-    const k=`${dyY}-${String(dyM).padStart(2,"0")}-${String(d).padStart(2,"0")}`,e=diary[k],has=!!(e&&((e.text||"").trim()||e.mood));
-    if(has)n++;
-    const b=mkEl("button","dyc"+(k===dySel?" sel":"")+(k===td?" td":"")+(has?" has":""));b.type="button";b.dataset.key=k;
-    b.appendChild(mkEl("span","dyn",String(d)));b.appendChild(mkEl("span","dym",has?(e.mood||"•"):""));
-    b.setAttribute("aria-label",`${dyM} 月 ${d} 日${has?"，有寫日記":""}`);
-    if(k>td){b.disabled=true;b.classList.add("fut")}
-    b.onclick=()=>{flushDiary();dySel=k;renderDiaryCal();renderDiaryEd()};
-    g.appendChild(b);
-  }
-  $("dyCount").textContent=n?`這個月寫了 ${n} 天`:"這個月還沒寫";
+  const td=today();$("dyJump").max=td;$("dyJump").value=dySel&&dySel!==td?dySel:"";
+  const keys=Object.keys(diary).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&((diary[k].text||"").trim()||diary[k].mood)&&k!==dySel).sort().reverse();
+  const box=$("dyList");box.innerHTML="";
+  if(!keys.length)box.appendChild(mkEl("p","sub","寫過的日記會列在這裡，也可以用上面的「選日期」翻到任何一天。"));
+  keys.slice(0,dyShowAll?keys.length:5).forEach(k=>{const e=diary[k],r=mkEl("button","dypast");r.type="button";r.dataset.key=k;
+    r.append(mkEl("b",null,`${+k.slice(0,4)!==+td.slice(0,4)?k.slice(0,4)+"/":""}${+k.slice(5,7)}/${+k.slice(8)}（${dyDow(k)}）${k===td?" 今天":""} ${e.mood||""}`),mkEl("span",null,(e.text||"").trim().slice(0,50)||"（只有心情）"));
+    r.onclick=()=>dyGo(k);box.appendChild(r)});
+  if(keys.length>5){const m=mkEl("button","ghost sm",dyShowAll?"收起":`看全部 ${keys.length} 篇`);m.type="button";m.onclick=()=>{dyShowAll=!dyShowAll;renderDiaryCal()};box.appendChild(m)}
+  const mo=td.slice(0,7),n=Object.keys(diary).filter(k=>k.startsWith(mo)&&((diary[k].text||"").trim()||diary[k].mood)).length;
+  $("dyCount").textContent=n?`這個月寫了 ${n} 天`:"";
 }
+let dyShowAll=false;
+function dyGo(k){flushDiary();dySel=k>today()?today():k;renderDiaryEd();renderDiaryCal();window.scrollTo({top:0,behavior:"smooth"})}
 function renderDiaryEd(){
   const k=dySel,e=diary[k]||{};
   $("dyTitle").textContent=`${+k.slice(0,4)!==+today().slice(0,4)?k.slice(0,4)+" 年 ":""}${+k.slice(5,7)} 月 ${+k.slice(8)} 日　星期${dyDow(k)}${k===today()?"（今天）":""}`;
   const t=$("dyText");if(document.activeElement!==t||t.dataset.key!==k){t.value=e.text||"";t.dataset.key=k}
-  $("dySaved").textContent="";
+  $("dySaved").textContent="";$("dyBackRow").hidden=k===today();
   const mb=$("dyMoods");mb.innerHTML="";
   MOODS_DY.forEach(m=>{const b=mkEl("button","dymood"+(e.mood===m?" on":""),m);b.type="button";b.setAttribute("aria-pressed",String(e.mood===m));b.setAttribute("aria-label","心情 "+m);
     b.onclick=()=>{const cur=(diary[k]||{}).mood;saveDiary(k,{mood:cur===m?"":m});renderDiaryEd();renderDiaryCal()};mb.appendChild(b)});
@@ -60,7 +55,7 @@ function renderDiaryEd(){
   const box=$("dyPast");box.innerHTML="";box.hidden=!past.length;
   if(past.length){box.appendChild(mkEl("h2",null,"往年的今天"));past.forEach(x=>{const r=mkEl("button","dypast");r.type="button";
     r.append(mkEl("b",null,`${x.slice(0,4)} 年 ${diary[x].mood||""}`),mkEl("span",null,(diary[x].text||"").trim().slice(0,60)));
-    r.onclick=()=>{flushDiary();dySel=x;dyY=+x.slice(0,4);dyM=+x.slice(5,7);renderDiaryCal();renderDiaryEd();window.scrollTo(0,0)};box.appendChild(r)})}
+    r.onclick=()=>dyGo(x);box.appendChild(r)})}
 }
 async function saveDiary(k,patch){
   if(!diaryRef)return;const now={...(diary[k]||{}),...patch,ts:Date.now()};diary[k]=now;
@@ -70,7 +65,6 @@ function flushDiary(){
   const t=$("dyText");if(!t||!t.dataset.key)return;clearTimeout(dyTimer);dyTimer=null;
   const k=t.dataset.key;if((diary[k]||{}).text===t.value||(!diary[k]&&!t.value))return;saveDiary(k,{text:t.value});
 }
-function dyShift(n){flushDiary();dyM+=n;if(dyM<1){dyM=12;dyY--}if(dyM>12){dyM=1;dyY++}renderDiaryCal()}
 function dyEditPin(){
   const has=dyHasPin();
   openForm({title:has?"日記密碼":"幫日記設密碼",sub:"設了以後，每次打開日記都要輸入這組密碼，別人拿到你的手機也看不到。忘記的話，可以用 Google 帳號重新驗證後清除。",
@@ -95,9 +89,8 @@ async function dyForgot(){
 }
 function initDiary(){
   $("tabDiary").onclick=()=>{if(typeof flushText==="function")flushText();goDiary()};
-  $("dyPrev").onclick=()=>dyShift(-1);$("dyNext").onclick=()=>dyShift(1);
-  $("dyToday").onclick=()=>{flushDiary();dySel=today();dyY=+dySel.slice(0,4);dyM=+dySel.slice(5,7);renderDiaryCal();renderDiaryEd()};
-  $("dyJump").onchange=e=>{const v=e.target.value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return;flushDiary();dySel=v>today()?today():v;dyY=+dySel.slice(0,4);dyM=+dySel.slice(5,7);renderDiaryCal();renderDiaryEd()};
+  $("dyToday").onclick=()=>dyGo(today());
+  $("dyJump").onchange=e=>{const v=e.target.value;if(/^\d{4}-\d{2}-\d{2}$/.test(v))dyGo(v)};
   $("dyText").oninput=()=>{$("dySaved").textContent="…";clearTimeout(dyTimer);dyTimer=setTimeout(flushDiary,800)};
   $("dyText").onblur=flushDiary;
   $("dyLockBtn").onclick=dyEditPin;

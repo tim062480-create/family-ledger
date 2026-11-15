@@ -352,11 +352,15 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.fill("#dyText", "今天去攀岩，手好痠。"); await wait(1200);
   ok(await pg.evaluate(() => Object.entries(__store).some(([k, v]) => /^users\/u1\/diary\//.test(k) && (v.text || "").includes("攀岩"))), "diary text auto-saves");
   await pg.click("#dyMoods .dymood >> nth=0"); await wait(300);
-  ok(await pg.locator("#dyGrid .dyc.sel .dym").innerText() === "😄", "mood shows on the calendar");
+  ok(await pg.evaluate(() => !document.querySelector("#dyGrid")) && (await pg.$$("#vDiary .dyed")).length === 1, "today's editor is on top, no big calendar");
   await pg.fill("#dyJump", "2025-03-14"); await pg.dispatchEvent("#dyJump", "change"); await wait(300);
-  ok((await pg.innerText("#dyMonth")) === "2025 年 3 月" && (await pg.innerText("#dyTitle")).includes("2025 年 3 月 14 日"), "can jump to any past date");
+  ok((await pg.innerText("#dyTitle")).includes("2025 年 3 月 14 日") && await pg.isVisible("#dyToday"), "the small box can open any past date");
   await pg.fill("#dyText", "一年前的日記"); await pg.click("#dyToday"); await wait(1000);
   ok(await pg.evaluate(() => (__store["users/u1/diary/2025-03-14"] || {}).text === "一年前的日記"), "switching days saves what was typed");
+  ok((await pg.innerText("#dyTitle")).includes("今天") && (await pg.innerText("#dyList")).includes("一年前的日記"), "back on today, the other day is listed below");
+  await pg.click("#dyList .dypast >> nth=0"); await wait(300);
+  ok((await pg.innerText("#dyTitle")).includes("2025 年 3 月 14 日"), "tapping a listed day opens it");
+  await pg.click("#dyToday"); await wait(300);
   await pg.click("#dyLockBtn"); await wait(200); await pg.fill("#fs_d1", "2468"); await pg.fill("#fs_d2", "2468"); await pg.click("#fsSave"); await wait(400);
   await pg.evaluate(() => { dyOpen = false; renderDiary(); }); await wait(200);
   ok(await pg.isVisible("#dyLocked") && await pg.isHidden("#dyBody"), "with a password the diary is locked");

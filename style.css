@@ -624,3 +624,9 @@ input[type=date],input[type=time]{max-width:100%;box-sizing:border-box}
 .dypast span{color:var(--muted);font-size:14px}
 .dylock input{width:100%;max-width:260px;font-size:20px;letter-spacing:6px;margin:6px 0 10px}
 #tabbar .tab span{white-space:nowrap}
+.dyohd{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.dyohd h2{margin:0;font-size:17px}
+.dyother .dyjump{margin:0;font-size:14px}
+.dyother .dypast b{font-size:15px}
+#dyCount{display:block;margin-top:6px;color:var(--muted)}
+#dyBackRow{margin-top:8px}
