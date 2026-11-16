@@ -65,6 +65,9 @@ const aiCat=c=>{const cs=cats().map(x=>x.name||x);if(cs.includes(c))return c;con
 const aiTodoCat=c=>/功課|作業|考|課/.test(c||"")?"s":/家/.test(c||"")?"h":"a";
 function aiItem(x){return{id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,7),date:aiDate(x.date),time:aiTime(x.time),title:String(x.title||"").slice(0,80),note:String(x.note||"").slice(0,120),star:x.star===true||(x.star!==false&&autoStar(x.title)),remind:null,ts:Date.now(),...(x.todo===true?{todo:true,done:false,pri:aiTodoCat(x.cat||"功課")}:{})}}
 // 每一筆變成預覽：{ok, text, warn, run}
+// 重複檢查：標題去掉空白、大小寫一樣就算同一件事
+const aiNorm=t=>String(t||"").replace(/[\s　、，,。.]/g,"").toLowerCase();
+const aiTodoHas=t=>{const n=aiNorm(t);return !!n&&notes.some(p=>(p.items||[]).some(i=>(i.todo||p.kind==="todo")&&!i.done&&aiNorm(i.title)===n))};
 function aiPlanOf(acts){
   return acts.map(a=>{const d=String(a&&a.do||"");
     if(d==="addExpense"){const amt=Math.round(+a.amount||0),dt=aiDate(a.date)||today(),c=aiCat(a.category);
@@ -72,15 +75,17 @@ function aiPlanOf(acts){
         run:()=>col.add({...byFields(),date:dt,month:dt.slice(0,7),category:c,amount:amt,note:String(a.note||"").slice(0,60),remark:String(a.remark||"").slice(0,60)})}}
     if(d==="addIncome"){const amt=Math.round(+a.amount||0),dt=aiDate(a.date)||today();
       return{ok:amt>0,text:`💰 收入 ${nMD(dt)}　${a.note||""}　${fmt(amt)}`,warn:amt>0?"":"金額不對",run:()=>incCol.add({...byFields(),date:dt,month:dt.slice(0,7),amount:amt,note:String(a.note||"").slice(0,60)})}}
-    if(d==="addPage"||d==="addItems"){const its=(Array.isArray(a.items)?a.items:[]).map(aiItem).filter(x=>x.title),bad=(a.items||[]).length-its.length;
-      const title=String(a.title||a.page||"").slice(0,40)||"新頁面",ex=notes.find(p=>p.title===title);
+    if(d==="addPage"||d==="addItems"){const title=String(a.title||a.page||"").slice(0,40)||"新頁面",ex=notes.find(p=>p.title===title);
+      const all=(Array.isArray(a.items)?a.items:[]).map(aiItem).filter(x=>x.title),bad=(a.items||[]).length-all.length;
+      const its=ex?all.filter(x=>!(ex.items||[]).some(i=>aiNorm(i.title)===aiNorm(x.title)&&(i.date||"")===(x.date||""))):all,dup=all.length-its.length;
       const star=its.filter(x=>x.star).length;
-      return{ok:!!its.length||d==="addPage",text:`📄 ${ex?"加到":"新頁面"}「${title}」：${its.length} 個行程（${star} 個標 ★）`,warn:bad>0?`${bad} 筆沒有標題，略過`:"",
+      return{ok:!!its.length||d==="addPage",text:`📄 ${ex?"加到":"新頁面"}「${title}」：${its.length} 個行程（${star} 個標 ★）`,warn:[bad>0?`${bad} 筆沒有標題，略過`:"",dup>0?`${dup} 筆已經在這頁了，略過`:""].filter(Boolean).join("；"),
         run:async()=>{const p=notes.find(x=>x.title===title);
           if(p)await notesRef.doc(p.id).update({items:(p.items||[]).concat(its),...(a.text&&!p.text?{text:String(a.text).slice(0,20000)}:{})});
           else await notesRef.add({title,short:String(a.short||"").slice(0,6)||autoShort(title),text:String(a.text||"").slice(0,20000),items:its,ts:Date.now(),order:Date.now()})}}}
     if(d==="addTodo"){const it={...aiItem(a),todo:true,pri:aiTodoCat(a.cat),star:!!aiDate(a.date)};
-      return{ok:!!it.title,text:`✅ 待辦（${PRI_TXT[it.pri]}）：${it.title}${it.date?"　"+nMD(it.date):""}`,warn:it.title?"":"沒有標題",
+      const dupT=aiTodoHas(it.title);
+      return{ok:!!it.title,on:dupT?false:undefined,text:`✅ 待辦（${PRI_TXT[it.pri]}）：${it.title}${it.date?"　"+nMD(it.date):""}`,warn:it.title?(dupT?"待辦裡已經有了，預設不加（要加就勾起來）":""):"沒有標題",
         run:async()=>{const p=notes.find(x=>x.kind==="todo")||notes[0];if(!p){await notesRef.add({title:"待辦",kind:"todo",text:"",items:[it],ts:Date.now(),order:Date.now()});return}await notesRef.doc(p.id).update({items:(p.items||[]).concat([it])})}}}
     if(d==="addMemo"){const tx=String(a.text||"").slice(0,5000);
       return{ok:!!tx,text:`📝 隨手記：${tx.slice(0,40)}${tx.length>40?"…":""}`,warn:"",run:async()=>{const v=(memoText?memoText+"\n\n":"")+tx;memoText=v;await memoRef.set({text:v.slice(0,20000),ts:Date.now()})}}}

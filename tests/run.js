@@ -199,6 +199,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#aiCopy"); await wait(200);
   ok(await pg.isVisible("#aiApps") && (await pg.$$eval("#aiApps a[target=_blank]", b => b.map(x => x.textContent))).join() === "ChatGPT,Claude,Gemini", "after copying, the three AIs appear");
   ok(await pg.evaluate(() => { const it = aiItem({ date: "2026-12-07", title: "完成 E", todo: true, cat: "功課" }); return it.todo === true && !!it.pri; }), "AI items can go straight into 待辦");
+  ok(await pg.evaluate(() => { const p = notes.find(x => x.kind === "todo"); if (!p) return true; const t0 = (p.items || []).find(i => !i.done); if (!t0) return true; const pl = aiPlanOf([{ do: "addTodo", title: " " + t0.title + " ", cat: "雜事" }, { do: "addTodo", title: "全新的事情XYZ", cat: "雜事" }]); return pl[0].on === false && pl[1].on !== false; }), "AI import leaves out to-dos that are already there");
   ok((await pg.evaluate(() => aiPrompt())).includes("family-ledger-ai") && (await pg.evaluate(() => aiPrompt())).includes("期中考"), "prompt includes the format and my pages");
   const aiJson = '好的，整理如下：\n```json\n' + JSON.stringify({ app: "family-ledger-ai", v: 1, actions: [
     { do: "addExpense", date: "2026-11-02", category: "餐飲", amount: 88, note: "AI午餐", remark: "" },
