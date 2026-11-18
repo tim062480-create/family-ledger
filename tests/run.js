@@ -137,6 +137,10 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.isVisible("#ncDayAdd") && await pg.isVisible("#ncAdd"), "add buttons are visible on the calendar and in the day pop-up");
   await pg.click("#ncDay .npx2"); await wait(150);
   ok(await pg.isHidden("#ncDay"), "pop-up closes");
+  await pg.click("#ncNext"); await wait(300);
+  ok(await pg.evaluate(() => { const h = document.querySelector("#nMemoSum h2").textContent, m = ncM; return h.includes(m + " 月的事") && h.includes(m + "/1–"); }), "moving the calendar to next month lists that month from the 1st");
+  await pg.click("#ncToday"); await wait(300);
+  ok((await pg.innerText("#nMemoSum h2")).includes("未來一個月"), "back to today shows the next 30 days again");
   const [nics] = await Promise.all([pg.waitForEvent("download"), pg.click("#nIcs")]);
   const nt = fs.readFileSync(await nics.path(), "utf8");
   ok(/SUMMARY:普化期中考/.test(nt) && /TRIGGER:-PT15H/.test(nt) && /TRIGGER:-P1DT15H/.test(nt) && !/還書/.test(nt), "calendar file holds ★ items with 3-day alarms");

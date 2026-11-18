@@ -441,7 +441,10 @@ async function memoToTodo(o,box){
 function renderMemoSum(){renderMemoSum0();foldCard($("nMemoSum"),"month")}
 function renderMemoSum0(){
   const box=$("nMemoSum");if(!box)return;box.innerHTML="";
-  const t=today(),end=addDays(t,30),inR=k=>k&&k>=t&&k<=end;
+  // 日曆停在這個月：從今天起 30 天；切到別的月份：列出那個月 1 號到月底
+  const td=today(),curM=!ncY||(ncY===+td.slice(0,4)&&ncM===+td.slice(5,7));
+  const mS=curM?td:`${ncY}-${String(ncM).padStart(2,"0")}-01`,mE=curM?addDays(td,30):`${ncY}-${String(ncM).padStart(2,"0")}-${String(new Date(Date.UTC(ncY,ncM,0)).getUTCDate()).padStart(2,"0")}`;
+  const t=mS,end=mE,inR=k=>k&&k>=t&&k<=end,label=curM?"未來一個月":`${ncM} 月的事`;
   const seen=new Set(),rows=[];
   noteItems().forEach(it=>{if(!inR(it.date))return;if(it.star||it.todo||nHasRm(it)){seen.add(it.pid+"/"+it.id);rows.push({it,date:it.date,time:it.time||""})}});
   parseMemo($("nMemo").value||memoText).forEach(sec=>sec.items.forEach(txt=>{
@@ -452,17 +455,17 @@ function renderMemoSum0(){
     rows.push({memo:true,txt,date,time:memoTime(txt),sec});
   }));
   rows.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
-  const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,`未來一個月 <small class="nct"></small>`.replace(/<.*/,"")));
+  const hd=mkEl("div","lhead");hd.appendChild(mkEl("h2",null,label+" "));
   hd.firstChild.appendChild(mkEl("small","nct",`${nMD(t)}–${nMD(end)}・${rows.length} 件`));box.appendChild(hd);
   {const tp=notes.find(x=>x.kind==="todo");box.appendChild(mkEl("p","sub",`總日曆上的事和隨手記裡寫了日期的事都在這裡；勾「待辦」就會同時放進${tp?`「${tp.title}」頁`:"上面的待辦"}。`))}
   box.hidden=false;
-  if(!rows.length){box.appendChild(mkEl("p","sub","未來一個月沒有排事情 🎉"));return}
-  const mon0=nMon(t);let lastW=null;
+  if(!rows.length){box.appendChild(mkEl("p","sub",curM?"未來一個月沒有排事情 🎉":`${ncM} 月還沒有排事情`));return}
+  const mon0=nMon(td);let lastW=null;
   rows.forEach(o=>{
     const w=nMon(o.date);if(w!==lastW){lastW=w;const k=Math.round((new Date(w+"T00:00:00Z")-new Date(mon0+"T00:00:00Z"))/(7*864e5));
-      box.appendChild(mkEl("div","nmh",k===0?"這週":k===1?"下週":`${nMD(w)}–${nMD(addDays(w,6))}`))}
-    const it=o.it,d=nDays(o.date),r=mkEl("div","msr"+(d<=2?" soon":"")+(it&&it.done?" done":""));
-    const dt=mkEl("span","md");dt.append(mkEl("b",null,nMD(o.date)),mkEl("small",null,d<=2?nRel(d):`週${nDow(o.date)}`));
+      box.appendChild(mkEl("div","nmh",k===0?"這週":k===1?"下週":k===-1?"上週":`${nMD(w)}–${nMD(addDays(w,6))}`))}
+    const it=o.it,d=nDays(o.date),near=d>=0&&d<=2,r=mkEl("div","msr"+(near?" soon":"")+(it&&it.done?" done":""));
+    const dt=mkEl("span","md");dt.append(mkEl("b",null,nMD(o.date)),mkEl("small",null,near?nRel(d):`週${nDow(o.date)}`));
     const tx=mkEl("button","mt");tx.type="button";
     if(it){if(it.ptag)tx.appendChild(mkEl("span","ptag",it.ptag));tx.appendChild(document.createTextNode((it.star?"★ ":"")+it.title));const sub=[it.time&&!(it.note||"").includes(it.time)?it.time:"",it.note].filter(Boolean).join("・");if(sub)tx.appendChild(mkEl("small",null,sub));
       tx.onclick=()=>{const p=notes.find(x=>x.id===it.pid);if(p)editItem(p,p.items.find(x=>x.id===it.id))}}
@@ -540,10 +543,10 @@ function initNotes(){
     for(const f of fs.slice(0,room)){try{const t=await shrink(f);await notesRef.doc(pid).collection("imgs").add({t,ts:Date.now()});ok++}catch(err){bad++}}
     msg.textContent=(bad?`有 ${bad} 張沒辦法讀取。`:"")+(fs.length>room?`每頁最多 ${NOTE_IMG_MAX} 張。`:"");
   };
-  $("ncPrev").onclick=()=>{closeDayPop();ncM--;if(ncM<1){ncM=12;ncY--}renderNoteCal()};
-  $("ncNext").onclick=()=>{closeDayPop();ncM++;if(ncM>12){ncM=1;ncY++}renderNoteCal()};
+  $("ncPrev").onclick=()=>{closeDayPop();ncM--;if(ncM<1){ncM=12;ncY--}renderNoteCal();renderMemoSum()};
+  $("ncNext").onclick=()=>{closeDayPop();ncM++;if(ncM>12){ncM=1;ncY++}renderNoteCal();renderMemoSum()};
   $("ncAdd").onclick=e=>{e.stopPropagation();closeDayPop();newItemOn(ncSel||today(),{star:true})};
-  $("ncToday").onclick=()=>{closeDayPop();const t=today();ncY=+t.slice(0,4);ncM=+t.slice(5,7);ncSel=t;renderNoteCal()};
+  $("ncToday").onclick=()=>{closeDayPop();const t=today();ncY=+t.slice(0,4);ncM=+t.slice(5,7);ncSel=t;renderNoteCal();renderMemoSum()};
   document.addEventListener("click",e=>{if(!ncOpen)return;const b=$("ncDay");if(b.contains(e.target)||e.target.closest("#fsheet,#sheetBg,#toast"))return;closeDayPop()});
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ncOpen)closeDayPop()});
   $("nIcs").onclick=()=>{const r=notesICS(),m=$("nIcsMsg");
