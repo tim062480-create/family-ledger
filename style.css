@@ -638,3 +638,11 @@ input[type=date],input[type=time]{max-width:100%;box-sizing:border-box}
 .vfig figcaption{font-size:13px;color:var(--muted);line-height:1.4}
 .vfig figcaption b{display:block;color:var(--ink);font-size:14px}
 @media (max-width:360px){.vrow{grid-template-columns:1fr}}
+
+.dysv{margin-top:8px;align-items:center}
+#dySave{min-width:96px}
+#dyText{min-height:150px}
+#dyEntries{margin-top:14px}
+.dyent{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;text-align:left;background:color-mix(in srgb,var(--accent) 7%,transparent);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:0 0 8px;color:var(--ink)}
+.dyent small{color:var(--muted);font-size:13px}
+.dyent span{white-space:pre-wrap;line-height:1.65;font-size:15px}

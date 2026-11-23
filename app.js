@@ -836,7 +836,7 @@ function openForm(cfg){
     const l=document.createElement("label");if(f.full)l.className="full";l.append(document.createTextNode(f.label));
     let inp;
     if(f.options){inp=document.createElement("select");f.options.forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;inp.appendChild(o)})}
-    else if(f.textarea){inp=document.createElement("textarea");inp.rows=4;inp.maxLength=400;if(f.placeholder)inp.placeholder=f.placeholder}
+    else if(f.textarea){inp=document.createElement("textarea");inp.rows=f.max>400?8:4;inp.maxLength=f.max||400;if(f.placeholder)inp.placeholder=f.placeholder}
     else{inp=document.createElement("input");inp.type=f.type||"text";if(f.type==="number"){inp.min="0";inp.inputMode="numeric"}if(f.inputmode)inp.inputMode=f.inputmode;if(f.placeholder)inp.placeholder=f.placeholder;if(f.type==="password")inp.autocomplete="off"}
     inp.id="fs_"+f.key;inp.value=f.value==null?"":f.value;
     if(f.list){const dl=document.createElement("datalist");dl.id="dl_"+f.key;f.list.forEach(v=>{const o=document.createElement("option");o.value=v;dl.appendChild(o)});inp.setAttribute("list",dl.id);l.appendChild(dl)}
