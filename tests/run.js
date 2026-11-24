@@ -353,6 +353,12 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await tab("#tabSet"); await wait(200); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(300);
   await pg.click("#feat_rec"); await wait(200); await pg.click("#feat_bd"); await wait(300);
   ok(await pg.isVisible("#tabRec") && await pg.isVisible("#tabCal"), "turning them back on shows the tabs again");
+  // 已移除的類別一鍵搬家
+  await pg.evaluate(async () => { await col.add({ ...byFields(), date: cur + "-03", month: cur, category: "舊類別甲", amount: 77, note: "測試搬家" }); }); await wait(400);
+  await pg.evaluate(() => openCat(ownCat("", true))); await wait(300);
+  ok(await pg.isVisible("#csMove"), "removed-category sheet offers to move them");
+  await pg.selectOption("#csMoveTo", await pg.evaluate(() => cats()[0].name)); await pg.click("#csMove"); await wait(600);
+  ok(await pg.evaluate(() => Object.values(__store).some(v => v.note === "測試搬家" && v.category === cats()[0].name)), "moving puts them into the chosen category");
   // 日記
   await tab("#tabDiary"); await wait(400);
   ok(await pg.isVisible("#vDiary") && (await pg.innerText("#dyTitle")).includes("今天") && await pg.isDisabled("#dySave"), "日記 opens on today with a 儲存 button");

@@ -646,3 +646,7 @@ input[type=date],input[type=time]{max-width:100%;box-sizing:border-box}
 .dyent{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;text-align:left;background:color-mix(in srgb,var(--accent) 7%,transparent);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:0 0 8px;color:var(--ink)}
 .dyent small{color:var(--muted);font-size:13px}
 .dyent span{white-space:pre-wrap;line-height:1.65;font-size:15px}
+
+.csmove{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 2px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--accent) 10%,transparent);font-size:14px}
+.csmove select{min-width:0;flex:1 1 110px}
+.csmove small{flex-basis:100%;color:var(--muted)}

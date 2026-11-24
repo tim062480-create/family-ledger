@@ -510,6 +510,19 @@ function renderCat(){
   meta.textContent=[`共 ${items.length} 筆`,tot&&sum?`佔本月支出 ${Math.round(sum/tot*100)}%`:""].filter(Boolean).join("・");
   if(bud){const left=bud-sum,sp=document.createElement("span");if(left<0)sp.className="neg";sp.textContent="・"+(left<0?"超支 "+fmt(-left):"剩 "+fmt(left));meta.appendChild(sp)}
   s.appendChild(meta);
+  // 已移除的類別：一鍵把這些花費（所有月份）改到現在的某個類別
+  if(c.own&&c.title==="已移除的類別"&&c.edit&&items.length){
+    const olds=[...new Set(items.map(x=>x.cat).filter(Boolean))],row=document.createElement("div");row.className="csmove";
+    const lab=document.createElement("span");lab.textContent=`把「${olds.join("、")}」全部改到`;
+    const sel=document.createElement("select");sel.id="csMoveTo";sel.setAttribute("aria-label","改到哪個類別");cats().forEach(k=>{const o=document.createElement("option");o.value=o.textContent=k.name;sel.appendChild(o)});
+    const g=guess(olds.join(" "));if(cats().some(k=>k.name===g))sel.value=g;
+    const bt=document.createElement("button");bt.type="button";bt.className="sm";bt.id="csMove";bt.textContent="改過去";
+    bt.onclick=async()=>{bt.disabled=true;bt.textContent="改中…";let n=0;
+      try{for(const o of olds){const sn=await col.where("category","==",o).get();for(const d of sn.docs){await d.ref.update({category:sel.value});n++}}toast(`已把 ${n} 筆改到「${sel.value}」`);closeCat()}
+      catch(e){bt.disabled=false;bt.textContent="改過去";toast("沒有改成功，請再試一次")}};
+    const hint=document.createElement("small");hint.textContent="所有月份的都會一起改。";
+    row.append(lab,sel,bt,hint);s.appendChild(row);
+  }
   $("csSort").hidden=items.length<2;
   [...$("csSort").children].forEach(b=>b.classList.toggle("on",b.dataset.k===csSort));
   const list=$("csList");list.innerHTML="";

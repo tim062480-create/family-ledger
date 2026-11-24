@@ -11,7 +11,7 @@
   const save=()=>{try{localStorage.setItem(LS,JSON.stringify(store))}catch(e){}};
   // like Firestore, listeners hear about writes asynchronously, not inside the write call
   let pending=false;const notify=()=>{save();if(pending)return;pending=true;setTimeout(()=>{pending=false;subs.slice().forEach(f=>{try{f()}catch(e){console.error(e)}})},0)};
-  function snapDoc(path){const ex=path in store;return{exists:ex,id:path.split("/").pop(),data:()=>ex?dec(enc(store[path])):undefined}}
+  function snapDoc(path){const ex=path in store;return{exists:ex,id:path.split("/").pop(),ref:mkdoc(path),data:()=>ex?dec(enc(store[path])):undefined}}
   function docsOf(p){const n=p.split("/").length+1;return Object.keys(store).filter(k=>k.startsWith(p+"/")&&k.split("/").length===n).sort().map(snapDoc)}
   const listen=f=>{subs.push(f);setTimeout(f,0);return()=>{const i=subs.indexOf(f);if(i>=0)subs.splice(i,1)}};
   let n=0;const rid=()=>"m"+(++n).toString(36)+Math.random().toString(36).slice(2,8);
@@ -25,7 +25,10 @@
   function mkcol(p){return{path:p,doc:id=>mkdoc(p+"/"+(id||rid())),
     add:async d=>{const r=mkdoc(p+"/"+rid());await r.set(d);return r},
     get:async()=>({docs:docsOf(p)}),
+    where:(f,op,v)=>mkq(p,[[f,v]]),
     onSnapshot:(next)=>listen(()=>next({docs:docsOf(p)}))}}
+  function mkq(p,fs){const run=()=>docsOf(p).filter(d=>fs.every(([f,v])=>(d.data()||{})[f]===v));
+    return{where:(f,op,v)=>mkq(p,fs.concat([[f,v]])),get:async()=>{const docs=run();return{docs,size:docs.length,empty:!docs.length}},onSnapshot:next=>listen(()=>next({docs:run()}))}}
   const batch=()=>{const ops=[];return{set:(r,d,o)=>ops.push(()=>r.set(d,o)),update:(r,d)=>ops.push(()=>r.update(d)),delete:r=>ops.push(()=>r.delete()),commit:async()=>{for(const f of ops)await f()}}};
   const db={doc:mkdoc,collection:mkcol,batch,settings(){},enablePersistence:async()=>{}};
   const ls=[];
