@@ -52,7 +52,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.isVisible("#wizard"), "picking yourself goes back to setup");
   ok((await pg.isVisible("#fsheet")) && (await pg.innerText("#fsheet")).includes("要幫你的帳設密碼嗎"), "new account is asked once whether to set a password");
   await pg.click("#fsCancel"); await wait(200);
-  ok((await pg.innerText("#wzBody")).includes("你想用哪些功能") && (await pg.$$("#wzBody .opt.feat.on")).length === 4, "first question asks which features to use (all on by default)");
+  ok((await pg.innerText("#wzBody")).includes("你想用哪些功能") && (await pg.$$("#wzBody .opt.feat.on")).length === 5, "first question asks which features to use (all on by default)");
   await pg.click("#wizard button:has-text('下一題')"); await wait(100);
   await pg.fill("#wzBody input", "14000"); await pg.click("#wizard button:has-text('下一題')");
   await wait(100); await pg.click("#wizard button:has-text('下一題')"); await wait(100);
@@ -190,7 +190,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await tab("#tabCal"); await wait(300);
   ok((await pg.$$eval("#calGrid .l.plan", ls => ls.length)) === 0, "birthday calendar does not show notebook items");
   ok((await pg.innerText("#vCal .vhd h2")) === "朋友和家人生日", "birthday page has its heading");
-  ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "日記", "生日", "AI 輸入", "設定"]), "tab order 記帳・記事本・日記・生日・AI 輸入・設定");
+  ok(JSON.stringify(await pg.$$eval("#tabbar .tab span", s => s.map(x => x.textContent))) === JSON.stringify(["記帳", "記事本", "日記", "讀經", "生日", "AI 輸入", "設定"]), "tab order 記帳・記事本・日記・讀經・生日・AI 輸入・設定");
   await tab("#tabRec"); await wait(300);
   ok(await pg.isHidden("#homeRemind"), "home page no longer shows the 3-day reminder");
   ok(await pg.isVisible("#appTitle"), "app title shows on the home page");
@@ -359,6 +359,22 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.isVisible("#csMove"), "removed-category sheet offers to move them");
   await pg.selectOption("#csMoveTo", await pg.evaluate(() => cats()[0].name)); await pg.click("#csMove"); await wait(600);
   ok(await pg.evaluate(() => Object.values(__store).some(v => v.note === "測試搬家" && v.category === cats()[0].name)), "moving puts them into the chosen category");
+  // 讀經
+  await tab("#tabRead"); await wait(800);
+  ok((await pg.$$("#rdMain .rdbook")).length === 3 && await pg.isVisible("#rdHelp") && !(await pg.innerText("#rdHelp")).includes("簡琮諺"), "讀經 shelf shows three books with a short note");
+  await pg.click("#rdMain .rdbook[data-id='wls']"); await wait(300);
+  ok((await pg.$$("#rdMain .rdr")).length === 30 && (await pg.$$("#rdMain .rdep")).length === 20, "book page has 1–20, 21–40 … and 20 episodes");
+  await pg.click("#rdMain .rdr >> nth=1"); await wait(200);
+  ok((await pg.innerText("#rdMain .rdep >> nth=4")).startsWith("25"), "choosing 21–40 lists episodes 21–40");
+  await pg.click("#rdMain .rdep >> nth=4"); await wait(800);
+  ok(await pg.isVisible("#rdOver") && (await pg.innerText("#rdTitle")).includes("第 25 集") && (await pg.$$("#rdText p")).length > 5, "tapping an episode opens the reader");
+  await pg.click("#rdSetBtn"); await pg.click("#rdThemes button[data-t='night']"); await pg.click("#rdBigger"); await wait(200);
+  ok(await pg.evaluate(() => document.getElementById("rdOver").dataset.theme === "night" && rdPref().size === 20), "reader theme and font size can change");
+  await pg.click("#rdSetBtn"); await pg.evaluate(() => document.getElementById("rdNext").click()); await wait(800);
+  ok((await pg.innerText("#rdTitle")).includes("第 26 集"), "next episode button works");
+  await pg.click("#rdClose"); await wait(300);
+  ok(await pg.isHidden("#rdOver") && (await pg.innerText("#rdContinue")).includes("第 26 集"), "closing remembers where you were");
+  await pg.click("#rdBack"); await wait(200);
   // 日記
   await tab("#tabDiary"); await wait(400);
   ok(await pg.isVisible("#vDiary") && (await pg.innerText("#dyTitle")).includes("今天") && await pg.isDisabled("#dySave"), "日記 opens on today with a 儲存 button");
