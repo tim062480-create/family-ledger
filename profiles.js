@@ -18,7 +18,10 @@ const myFace=()=>({name:myName(),avatar:(profile&&profile.avatar)||"",avc:profil
 function devProfiles(){try{const v=JSON.parse(localStorage.getItem(DEV_KEY)||"[]");return Array.isArray(v)?v.filter(x=>x&&x.uid):[]}catch(e){return[]}}
 function saveDevProfiles(list){try{localStorage.setItem(DEV_KEY,JSON.stringify(list.slice(0,6)))}catch(e){}}
 function rememberMe(){if(!myId)return;const l=devProfiles().filter(x=>x.uid!==myId);l.unshift({uid:myId,name:myName(),avatar:(profile&&profile.avatar)||"",avc:profile&&profile.avc,email:(me&&me.email)||""});saveDevProfiles(l)}
-const picked=()=>{try{return sessionStorage.getItem("fl_picked")===myId}catch(e){return true}};
+// 「預設直接進入」：這台裝置記住某個帳號，打開網站就不用再點頭像（設了密碼的帳號還是要選、要輸入密碼）
+const autoWho=()=>{try{return localStorage.getItem("fl_autowho")===myId}catch(e){return false}};
+function setAutoWho(v){try{if(v)localStorage.setItem("fl_autowho",myId);else localStorage.removeItem("fl_autowho")}catch(e){}}
+const picked=()=>{try{if(sessionStorage.getItem("fl_picked")===myId)return true}catch(e){return true}return autoWho()&&!whoAsk&&!(profile&&profile.pinHash)};
 function setPicked(v){if(v)whoAsk=false;try{if(v)sessionStorage.setItem("fl_picked",myId);else sessionStorage.removeItem("fl_picked")}catch(e){}}
 const needWho=()=>!!(me&&curKey&&loaded&&(settings||whoAsk)&&!picked()&&!joinInfo);let whoAsk=false;
 
@@ -52,6 +55,8 @@ function renderWho(mode){
   const pend=(household&&household.pending)||[];
   if(!whoEdit&&pend.length){const b=mkEl("button","whoAll","📨 一鍵邀請");b.type="button";b.onclick=inviteAll;c.appendChild(b)}
   if(!locked&&!whoEdit){const h=mkEl("button","ghost sm whoLock","不用再新增了");h.type="button";h.onclick=lockWho;c.appendChild(h)}
+  if(!whoEdit&&mode==="in"&&!(profile&&profile.pinHash)){const on=autoWho(),ab=mkEl("button","ghost sm whoAuto",(on?"☑ ":"☐ ")+`以後直接進入「${myName()}」，不用再選`);ab.type="button";ab.id="whoAuto";ab.setAttribute("aria-pressed",String(on));
+    ab.onclick=()=>{setAutoWho(!autoWho());if(autoWho()){whoAsk=false;setPicked(true);toast(`好，以後打開就直接進入「${myName()}」，想換人點右上角頭像`);render()}else render()};c.appendChild(ab)}
   if(!whoEdit){const sw=mkEl("button","ghost sm whoSw","🔄 換別的 Google 帳號");sw.type="button";sw.id="whoSwitch";sw.onclick=()=>{try{sessionStorage.removeItem("fl_picked")}catch(e){}login()};c.appendChild(sw)}
 }
 // 一個連結邀請全家：傳到 LINE 群組，每個人點開後選「我是哪一位」

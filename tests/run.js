@@ -48,6 +48,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#acctBtn"); await wait(300);
   ok(await pg.isVisible("#who") && await pg.isHidden("#wizard"), "account button works even before setup is finished");
   ok(await pg.isVisible("#whoSwitch"), "picker offers switching to another Google account");
+  ok(await pg.isVisible("#whoAuto"), "picker offers to skip it next time");
   await pg.click("#whoBtns .tile >> nth=0"); await wait(300);
   ok(await pg.isVisible("#wizard"), "picking yourself goes back to setup");
   ok((await pg.isVisible("#fsheet")) && (await pg.innerText("#fsheet")).includes("要幫你的帳設密碼嗎"), "new account is asked once whether to set a password");
@@ -359,6 +360,12 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.isVisible("#csMove"), "removed-category sheet offers to move them");
   await pg.selectOption("#csMoveTo", await pg.evaluate(() => cats()[0].name)); await pg.click("#csMove"); await wait(600);
   ok(await pg.evaluate(() => Object.values(__store).some(v => v.note === "測試搬家" && v.category === cats()[0].name)), "moving puts them into the chosen category");
+  // 預設直接進入
+  await pg.evaluate(() => { setAutoWho(true); sessionStorage.removeItem("fl_picked"); whoAsk = false; render(); }); await wait(300);
+  ok(await pg.evaluate(() => !needWho()) && await pg.isHidden("#who"), "with 直接進入 on, opening the site skips the picker");
+  await pg.evaluate(() => { whoEdit = false; whoAsk = true; setPicked(false); render(); }); await wait(300);
+  ok(await pg.isVisible("#who"), "the avatar button still opens the picker");
+  await pg.evaluate(() => { setAutoWho(false); setPicked(true); render(); }); await wait(300);
   // 讀經
   await tab("#tabRead"); await wait(800);
   ok((await pg.$$("#rdMain .rdbook")).length === 4 && await pg.isVisible("#rdHelp") && !(await pg.innerText("#rdHelp")).includes("簡琮諺"), "讀經 shelf shows four books with a short note");
@@ -373,7 +380,13 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.click("#rdSetBtn"); await pg.evaluate(() => document.getElementById("rdNext").click()); await wait(800);
   ok((await pg.innerText("#rdTitle")).includes("第 26 集"), "next episode button works");
   await pg.click("#rdClose"); await wait(300);
-  ok(await pg.isHidden("#rdOver") && (await pg.innerText("#rdContinue")).includes("第 26 集"), "closing remembers where you were");
+  await pg.click("#rdContinue"); await wait(900);
+  await pg.evaluate(() => { const o = document.getElementById("rdOver"); o.scrollTop = (o.scrollHeight - o.clientHeight) * 0.4; }); await wait(300);
+  await pg.evaluate(() => closeEp()); await wait(300);
+  ok(await pg.isHidden("#rdOver") && /第 26 集（4\d%）/.test(await pg.innerText("#rdContinue")), "closing remembers the episode and how far you read");
+  await pg.click("#rdContinue"); await wait(900);
+  ok(await pg.evaluate(() => { const o = document.getElementById("rdOver"); const f = o.scrollTop / (o.scrollHeight - o.clientHeight); return f > 0.35 && f < 0.45; }), "reopening jumps back to the same spot");
+  await pg.evaluate(() => closeEp()); await wait(300);
   await pg.click("#rdBack"); await wait(200);
   // 日記
   await tab("#tabDiary"); await wait(400);

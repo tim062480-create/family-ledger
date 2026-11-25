@@ -1914,6 +1914,8 @@ function renderAccount(){
   c.appendChild(mkEl("div","bdgrp","選人畫面"));
   {const lk=!!(profile&&profile.whoLocked);c.appendChild(mkEl("p","sub",lk?"「新增」和「編輯」已經收起來了。":"「誰要記帳？」畫面上有「新增」和「編輯」，可以新增家人、換頭像。")).style.margin="0 0 8px";
    const b=mkEl("button","ghost",lk?"重新顯示「新增」和「編輯」":"收起「新增」和「編輯」");b.type="button";b.onclick=lk?unlockWho:lockWho;const r4=mkEl("div","bt");r4.appendChild(b);c.appendChild(r4)}
+  {const on=autoWho(),pin=!!(profile&&profile.pinHash);c.appendChild(mkEl("p","sub",pin?"你設了密碼，所以每次打開還是會先問誰要記帳、輸入密碼。":on?"這台裝置打開網站時，會直接進入你的帳。":"這台裝置打開網站時，會先問「誰要記帳？」。")).style.margin="10px 0 8px";
+   if(!pin){const b=mkEl("button","ghost",on?"改回每次先問誰要記帳":`以後直接進入「${myName()}」`);b.type="button";b.id="autoWhoSet";b.onclick=()=>{setAutoWho(!on);toast(on?"以後打開會先問誰要記帳":"以後打開就直接進入你的帳");renderAccount()};const r5=mkEl("div","bt");r5.appendChild(b);c.appendChild(r5)}}
   c.appendChild(mkEl("div","bdgrp","刪除帳號"));
   c.appendChild(mkEl("p","sub","會刪除你的帳、照片、生日名單和設定，並離開所有家庭。刪除後不能復原；想留著資料，先到「匯出與備份」下載備份檔。")).style.margin="0 0 8px";
   const del=mkEl("button","ghost","刪除我的帳號和資料");del.type="button";const msg=mkEl("small","m");
