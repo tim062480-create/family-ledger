@@ -1,11 +1,11 @@
 // ---- 讀經：像小說 App 的書架、選集數、沉浸式閱讀 ----
 // 經文文字在 books/（由下載的 PDF 轉出，只調整換行，不改任何字）；閱讀進度與版面設定存在 prefs/ui.read
 let rdIdx=null,rdBook=null,rdRange=0,rdCur=null,rdBar=true,rdSaveT=null;
-const RD_COVER={gy:["#7a1f1f","#c0392b","太上感應篇"],dzg:["#1f5c55","#2f8f83","弟子規"],wls:["#2b3a67","#b08d3c","無量壽經"]};
+const RD_COVER={gy:["#7a1f1f","#c0392b","太上感應篇"],dzg:["#1f5c55","#2f8f83","弟子規"],wls:["#2b3a67","#b08d3c","無量壽經"],sx:["#4a3a6b","#8a6fb5","十善業道經"]};
 const RD_THEMES=[["paper","米黃"],["white","白"],["green","護眼綠"],["night","夜間"]];
 const rdPref=()=>Object.assign({size:19,lh:1.9,theme:"paper",font:"serif",prog:{}},(curPrefs&&curPrefs.read)||{});
 async function rdSet(patch){const r={...rdPref(),...patch};curPrefs={...(curPrefs||{}),read:r};clearTimeout(rdSaveT);rdSaveT=setTimeout(()=>{if(prefsRef)prefsRef.set({read:r},{merge:true}).catch(()=>{})},800)}
-async function rdLoadIdx(){if(rdIdx)return rdIdx;const r=await fetch("books/index.json?v=1");rdIdx=await r.json();return rdIdx}
+async function rdLoadIdx(){if(rdIdx)return rdIdx;const r=await fetch("books/index.json?v=2");rdIdx=await r.json();return rdIdx}
 const rdWan=n=>n>=10000?(n/10000).toFixed(1)+" 萬字":n+" 字";
 function rdCover(id,small){const c=RD_COVER[id]||["#555","#888",""];const d=mkEl("div","rdcover"+(small?" sm":""));d.style.background=`linear-gradient(160deg,${c[1]},${c[0]})`;d.appendChild(mkEl("span",null,c[2]));return d}
 function goRead(){view="read";rdBook=null;render();window.scrollTo(0,0)}
@@ -18,20 +18,21 @@ async function renderRead(){
 function renderShelf(){
   const box=$("rdMain");box.innerHTML="";const pr=rdPref().prog||{};
   rdIdx.books.forEach(b=>{
-    const words=b.eps.reduce((t,e)=>t+(e[2]||0),0),have=b.eps.length,done=have>=b.total,p=pr[b.id];
+    const words=b.eps.reduce((t,e)=>t+(e[2]||0),0),have=b.eps.length,done=!!b.total&&have>=b.total,p=pr[b.id];
     const r=mkEl("button","rdbook");r.type="button";r.dataset.id=b.id;
     const info=mkEl("div","rdinfo");
     info.append(mkEl("h3",null,b.name),mkEl("p","rdau","主講："+b.author));
     const tags=mkEl("div","rdtags");tags.append(mkEl("span","t1",rdWan(words)),mkEl("span","t2",done?"全集":"更新中"));info.appendChild(tags);
-    info.appendChild(mkEl("p","rdlast",p&&p.n?`讀到：第 ${p.n} 集`:`共 ${b.total} 集${done?"":`・已收 ${have} 集`}`));
+    info.appendChild(mkEl("p","rdlast",p&&p.n?`讀到：第 ${p.n} 集`:(b.total?`共 ${b.total} 集${done?"":`・已收 ${have} 集`}`:`已收 ${have} 集`)));
     r.append(rdCover(b.id),info);r.onclick=()=>{rdBook=b.id;rdRange=0;renderRead();window.scrollTo(0,0)};box.appendChild(r);
   });
 }
 function renderBook(){
-  const b=rdIdx.books.find(x=>x.id===rdBook),box=$("rdMain");box.innerHTML="";if(!b){rdBook=null;return renderShelf()}
+  const b0=rdIdx.books.find(x=>x.id===rdBook),box=$("rdMain");box.innerHTML="";if(!b0){rdBook=null;return renderShelf()}
+  const b={...b0,total:b0.total||Math.max(0,...b0.eps.map(e=>e[0]))};
   const pr=(rdPref().prog||{})[b.id],have=new Set(b.eps.map(e=>e[0])),dates={};b.eps.forEach(e=>{dates[e[0]]=e[1]});
   const top=mkEl("div","rdbhead");const back=mkEl("button","ghost sm","‹ 書架");back.type="button";back.id="rdBack";back.onclick=()=>{rdBook=null;renderRead()};
-  const hi=mkEl("div","rdinfo");hi.append(mkEl("h3",null,b.name),mkEl("p","rdau",`主講：${b.author}・共 ${b.total} 集`));
+  const hi=mkEl("div","rdinfo");hi.append(mkEl("h3",null,b.name),mkEl("p","rdau",`主講：${b.author}・${b0.total?"共":"已收"} ${b.total} 集`));
   top.append(rdCover(b.id,true),hi);box.append(back,top);
   const go=mkEl("button","rdgo",pr&&pr.n?`繼續閱讀　第 ${pr.n} 集`:"從第 1 集開始讀");go.type="button";go.id="rdContinue";go.onclick=()=>openEp(b.id,pr&&pr.n||b.eps[0][0]);box.appendChild(go);
   box.appendChild(mkEl("h2","rdsec","選集數"));
@@ -48,7 +49,7 @@ function rdApply(){const p=rdPref(),o=$("rdOver");o.dataset.theme=p.theme;o.styl
   $("rdSizeV").textContent=p.size;document.querySelectorAll("#rdThemes button").forEach(b=>b.classList.toggle("on",b.dataset.t===p.theme));
   document.querySelectorAll("#rdFonts button").forEach(b=>b.classList.toggle("on",b.dataset.f===p.font));document.querySelectorAll("#rdLh button").forEach(b=>b.classList.toggle("on",+b.dataset.l===p.lh))}
 async function openEp(id,n){
-  const b=rdIdx.books.find(x=>x.id===id);const o=$("rdOver"),tx=$("rdText");
+  const b0=rdIdx.books.find(x=>x.id===id),b={...b0,total:b0.total||Math.max(0,...b0.eps.map(e=>e[0]))};const o=$("rdOver"),tx=$("rdText");
   o.hidden=false;document.body.classList.add("rdlock");rdApply();rdBar=true;o.classList.add("rdui");$("rdSet").hidden=true;
   $("rdTitle").textContent=`${b.name}・第 ${n} 集`;tx.innerHTML="";tx.appendChild(mkEl("p","rdload","載入中…"));
   let j;try{const r=await fetch(`books/${id}/${n}.json?v=1`);j=await r.json()}catch(e){tx.innerHTML="";tx.appendChild(mkEl("p","rdload","讀不到這一集，請檢查網路後再試一次。"));return}

@@ -361,7 +361,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.evaluate(() => Object.values(__store).some(v => v.note === "測試搬家" && v.category === cats()[0].name)), "moving puts them into the chosen category");
   // 讀經
   await tab("#tabRead"); await wait(800);
-  ok((await pg.$$("#rdMain .rdbook")).length === 3 && await pg.isVisible("#rdHelp") && !(await pg.innerText("#rdHelp")).includes("簡琮諺"), "讀經 shelf shows three books with a short note");
+  ok((await pg.$$("#rdMain .rdbook")).length === 4 && await pg.isVisible("#rdHelp") && !(await pg.innerText("#rdHelp")).includes("簡琮諺"), "讀經 shelf shows four books with a short note");
   await pg.click("#rdMain .rdbook[data-id='wls']"); await wait(300);
   ok((await pg.$$("#rdMain .rdr")).length === 30 && (await pg.$$("#rdMain .rdep")).length === 20, "book page has 1–20, 21–40 … and 20 episodes");
   await pg.click("#rdMain .rdr >> nth=1"); await wait(200);
