@@ -2,6 +2,9 @@
 // 經文文字在 books/（由下載的 PDF 轉出，只調整換行，不改任何字）；閱讀進度與版面設定存在 prefs/ui.read
 let rdIdx=null,rdBook=null,rdRange=0,rdCur=null,rdBar=true,rdSaveT=null,rdRestoring=false;
 const RD_COVER={gy:["#7a1f1f","#c0392b","太上感應篇"],dzg:["#1f5c55","#2f8f83","弟子規"],wls:["#2b3a67","#b08d3c","無量壽經"],sx:["#4a3a6b","#8a6fb5","十善業道經"]};
+// 每本書的講經影片（YouTube 播放清單）
+const RD_VIDEO={wls:"https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q4LAmJ7x70Vf9u28UNIlgQ8",sx:"https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q70HliQ7hzTAoVdYCd9FdkT",gy:"https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q4KrFdPBEjx9HkikG1OePDX",dzg:"https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q6gtkQ7K6chU3M3cidBKF8N"};
+const rdVidLink=(id,cls,label)=>{if(!RD_VIDEO[id])return null;const a=mkEl("a",cls,label);a.href=RD_VIDEO[id];a.target="_blank";a.rel="noopener noreferrer";return a};
 const RD_THEMES=[["paper","米黃"],["white","白"],["green","護眼綠"],["night","夜間"]];
 const rdPref=()=>{const c=(curPrefs&&curPrefs.read)||{};let l={};try{l=JSON.parse(localStorage.getItem("fl_read_"+myId)||"{}")}catch(e){}
   const prog={...(c.prog||{})};for(const k in (l.prog||{}))if(!prog[k]||(l.prog[k].ts||0)>(prog[k].ts||0))prog[k]=l.prog[k];
@@ -38,6 +41,7 @@ function renderBook(){
   const hi=mkEl("div","rdinfo");hi.append(mkEl("h3",null,b.name),mkEl("p","rdau",`主講：${b.author}・${b0.total?"共":"已收"} ${b.total} 集`));
   top.append(rdCover(b.id,true),hi);box.append(back,top);
   const go=mkEl("button","rdgo",pr&&pr.n?`繼續閱讀　第 ${pr.n} 集${pr.pos>0.01?`（${Math.round(pr.pos*100)}%）`:""}`:"從第 1 集開始讀");go.type="button";go.id="rdContinue";go.onclick=()=>openEp(b.id,pr&&pr.n||b.eps[0][0]);box.appendChild(go);
+  {const v=rdVidLink(b.id,"rdvid","▶ 看講經影片（YouTube 播放清單）");if(v){v.id="rdVideo";box.appendChild(v)}}
   box.appendChild(mkEl("h2","rdsec","選集數"));
   const rg=mkEl("div","rdranges");const N=Math.ceil(b.total/20);
   for(let i=0;i<N;i++){const a=i*20+1,z=Math.min(b.total,a+19),c=mkEl("button","rdr"+(i===rdRange?" on":""),`${a}–${z}`);c.type="button";c.onclick=()=>{rdRange=i;renderBook()};rg.appendChild(c)}
@@ -62,6 +66,7 @@ async function openEp(id,n){
   const nav=mkEl("div","rdnav"),pv=mkEl("button","ghost",n>1?"‹ 上一集":"已是第一集"),nx=mkEl("button",null,n<b.total?"下一集 ›":"已經讀完了");pv.type=nx.type="button";
   const has=k=>b.eps.some(e=>e[0]===k);pv.disabled=!has(n-1);nx.disabled=!has(n+1);pv.id="rdPrev";nx.id="rdNext";
   pv.onclick=()=>openEp(id,n-1);nx.onclick=()=>openEp(id,n+1);nav.append(pv,nx);tx.appendChild(nav);
+  {const v=rdVidLink(id,"rdvid2","▶ 看這部經的講經影片");if(v)tx.appendChild(v)}
   tx.appendChild(mkEl("p","rdsrc",`文字來源：淨空老法師專集網 amtb.tw（${j.code}）`));
   const pr=rdPref().prog||{},last=pr[id];const pos=last&&last.n===n?last.pos||0:0;
   rdRestoring=true;o.scrollTop=0;

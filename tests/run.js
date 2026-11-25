@@ -344,7 +344,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(errs.length === e1 && (await pg.innerText("#mQ")).includes("綠袖子"), "民謠 plays too");
   await pg.click("#mClose"); await wait(100);
   await tab("#tabSet"); await wait(300); await pg.click("#setMenu .mi:has-text('使用說明與示範')"); await wait(300);
-  ok(await pg.isVisible("#guideVid") && (await pg.$$("[data-sub='guide'] details")).length >= 10, "設定 has 使用說明與示範 with the video and a guide");
+  ok(await pg.isVisible("#guideVid") && (await pg.$$("[data-sub='guide'] details")).length >= 15, "設定 has 使用說明與示範 with the video and a guide");
   ok(await pg.isVisible("#gdSkit") && await pg.isVisible("#gdPromo"), "guide page also has the AI skit and the promo video");
   await pg.click("#setBack"); await wait(200); await pg.click("#setMenu .mi:has-text('帳號')"); await wait(300);
   await pg.click("#feat_rec"); await wait(200); await pg.click("#feat_bd"); await wait(300);
@@ -371,6 +371,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok((await pg.$$("#rdMain .rdbook")).length === 4 && await pg.isVisible("#rdHelp") && !(await pg.innerText("#rdHelp")).includes("簡琮諺"), "讀經 shelf shows four books with a short note");
   await pg.click("#rdMain .rdbook[data-id='wls']"); await wait(300);
   ok((await pg.$$("#rdMain .rdr")).length === 30 && (await pg.$$("#rdMain .rdep")).length === 20, "book page has 1–20, 21–40 … and 20 episodes");
+  ok(await pg.getAttribute("#rdVideo", "href") === "https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q4LAmJ7x70Vf9u28UNIlgQ8" && await pg.getAttribute("#rdVideo", "target") === "_blank", "book page links to its YouTube playlist");
   await pg.click("#rdMain .rdr >> nth=1"); await wait(200);
   ok((await pg.innerText("#rdMain .rdep >> nth=4")).startsWith("25"), "choosing 21–40 lists episodes 21–40");
   await pg.click("#rdMain .rdep >> nth=4"); await wait(800);
