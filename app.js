@@ -15,7 +15,7 @@ const KEYS={
  "人情禮物":/禮|紅包|送禮|份子/,
  "捐款":/捐/
 };
-KEYS["餐飲"]=/飯|饭|麵|面|早餐|午餐|晚餐|宵夜|消夜|餐|吃|喝|飲|饮|茶|咖啡|便當|便当|零食|麥當勞|麦当劳|素食|吐司|豆花|甜點|甜点|蛋糕|蛋餅|蛋饼|飯糰|饭团|麵包|面包|雞排|鸡排|鹹酥雞|滷味|卤味|火鍋|火锅|壽司|寿司|漢堡|汉堡|披薩|披萨|點心|点心|豆漿|豆浆|粥|燒肉|烧肉|牛排|小吃|冰|珍奶|奶茶|水餃|水饺|鍋貼|锅贴|肉圓|蚵仔煎|臭豆腐|鬆餅|松饼|可頌|三明治|沙拉|拉麵|拉面|丼|咖哩|便利商店|超商|7-?11|全家|請客|請吃|聚餐|飲料|手搖|萊爾富|摩斯|肯德基|星巴克|路易莎/i;
+KEYS["餐飲"]=/飯|饭|麵|面|早餐|午餐|晚餐|宵夜|消夜|餐|吃|喝|飲|饮|茶|咖啡|便當|便当|零食|麥當勞|麦当劳|素食|吐司|豆花|甜點|甜点|蛋糕|蛋餅|蛋饼|飯糰|饭团|麵包|面包|蘿蔔糕|萝卜糕|包子|饅頭|馒头|燒餅|烧饼|油條|油条|蔥油餅|水煎包|煎餃|湯|汤|粥|雞腿|鸡腿|排骨|米漿|果汁|水果|甜甜圈|麻糬|滷肉|卤肉|肉粥|粿|粽|米粉|冬粉|河粉|雞排|鸡排|鹹酥雞|滷味|卤味|火鍋|火锅|壽司|寿司|漢堡|汉堡|披薩|披萨|點心|点心|豆漿|豆浆|粥|燒肉|烧肉|牛排|小吃|冰|珍奶|奶茶|水餃|水饺|鍋貼|锅贴|肉圓|蚵仔煎|臭豆腐|鬆餅|松饼|可頌|三明治|沙拉|拉麵|拉面|丼|咖哩|便利商店|超商|7-?11|全家|請客|請吃|聚餐|飲料|手搖|萊爾富|摩斯|肯德基|星巴克|路易莎/i;
 KEYS["食物"]=KEYS["餐飲"];
 KEYS["交通"]=/捷運|捷运|公車|公车|火車|火车|高鐵|高铁|台鐵|臺鐵|台铁|區間車|自強號|莒光號|客運|客运|統聯|统联|國光|国光|車票|车票|機票|机票|船票|車錢|车钱|車資|车资|路費|路费|過路費|etag|計程|计程|小黃|uber|ubike|youbike|加油|機車|机车|停車|停车|油錢|悠遊卡|一卡通|交通|(?:回|去|到|往|搭車到|坐車回)(?:羅東|罗东|礁溪|頭城|头城|蘇澳|苏澳|冬山|五結|三星|壯圍|員山|淡水|板橋|板桥|永和|中和|新店|三重|新莊|新庄|土城|汐止|林口|竹北|中壢|中坜|台大|臺大|台北|臺北|台北市|新北|桃園|桃园|新竹|苗栗|台中|臺中|彰化|南投|雲林|云林|嘉義|嘉义|台南|臺南|高雄|屏東|屏东|宜蘭|宜兰|花蓮|花莲|台東|臺東|基隆|澎湖|金門|金门|馬祖|马祖|家|老家|宿舍|學校|学校|公司)/i;
 KEYS["攀岩"]=/攀岩|岩館|岩馆|抱石|岩鞋|粉袋/;
@@ -244,6 +244,7 @@ function localParse(t0){
   const it=ams.map(()=>({B:"",A:""}));
   it[0].B=rest.slice(0,ams[0].s);
   const amountFirst=!clean(ub(it[0].B)).replace(/備注/g,"");
+  const mealFirst=MEAL_W.test(it[0].B)&&it[0].B.replace(MEAL_W,"").trim()!=="";
   for(let i=0;i<ams.length;i++){
     const nx=ams[i+1],gap=rest.slice(ams[i].e,nx?nx.s:rest.length);
     if(!nx){it[i].A=gap;break}
@@ -251,13 +252,17 @@ function localParse(t0){
     if(parts.length===1){
       if(amountFirst){it[i].A=gap;continue}
       const mm=gap.match(MEAL_W);
-      if(mm&&gap.slice(mm[0].length).trim()){it[i].A=mm[1];it[i+1].B=gap.slice(mm[0].length)}
+      if(mm&&gap.slice(mm[0].length).trim()&&!mealFirst){it[i].A=mm[1];it[i+1].B=gap.slice(mm[0].length)}
       else it[i+1].B=gap;
     }else{
       it[i].A=parts.slice(0,-1).join(" ");
       it[i+1].B=parts[parts.length-1];
     }
   }
+  // 一筆通常只配一個「早餐／午餐…」：前一筆後面跟了兩個，第二個就是下一筆的（例如「蛋炒飯100 晚餐 早餐 蘿蔔糕50」）
+  const MEALS=/早午餐|早餐|午餐|晚餐|宵夜|消夜|下午茶|點心/g,hasMeal=t=>/早午餐|早餐|午餐|晚餐|宵夜|消夜|下午茶|點心/.test(t);
+  for(let i=0;i<it.length-1;i++){const am=it[i].A.match(MEALS)||[];
+    if(am.length>=2&&!hasMeal(it[i+1].B+it[i+1].A)){const last=am[am.length-1],k=it[i].A.lastIndexOf(last);it[i].A=it[i].A.slice(0,k)+it[i].A.slice(k+last.length);it[i+1].B=last+" "+it[i+1].B}}
   const names=cats().map(c=>c.name).filter(Boolean).sort((a,b)=>b.length-a.length);
   return it.map((x,i)=>{
     let B=x.B,A=x.A,rem="";
@@ -268,6 +273,10 @@ function localParse(t0){
     // 沒有寫在金額前面的描述（例如「700 cloud訂閱」）→ 金額後面的字就是描述
     if(!desc&&extra){desc=extra;extra=""}
     let remark=[extra,rem?ub(lite(rem)):""].filter(Boolean).join("・");
+    // 寫在前面的「早餐 蘿蔔糕」：早餐當備註，描述留蘿蔔糕（只有「早餐」兩個字就保留當描述）
+    {const mm=desc.match(/^(早午餐|早餐|午餐|晚餐|宵夜|消夜|下午茶)(?:\s+(.+)|([^\s店吧].+))$/)||desc.match(/^(.+?)\s+(早午餐|早餐|午餐|晚餐|宵夜|消夜|下午茶)$/);
+     if(mm){const meal=/早午餐|早餐|午餐|晚餐|宵夜|消夜|下午茶/.test(mm[1])&&mm[1].length<=3?mm[1]:mm[2],rest=(mm[1]===meal?(mm[2]||mm[3]):mm[1]).trim();
+       if(rest&&rest.length>=1){desc=rest;remark=remark?(remark.includes(meal)?remark:meal+"・"+remark):meal}}}
     // 句子裡直接寫了類別名稱（例如「150 交通 回宿舍」「娛樂 200 唱歌」）→ 用那個類別，名稱不放進描述
     let cat=null;
     for(const n of names){
