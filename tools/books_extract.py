@@ -3,7 +3,8 @@ import os,re,json,subprocess,sys,glob
 ROOT=os.path.expanduser("~/mnt/經文"); OUT=os.path.expanduser("~/work/books")
 BOOKS=[("gy","太上感應篇","淨空法師","太上感應篇_淨空法師","19-012",195),
        ("dzg","弟子規","蔡禮旭老師","弟子規_蔡禮旭老師","52-116",41),
-       ("wls","無量壽經（淨土大經解演義）","淨空法師","無量壽經_淨土大經解演義_淨空法師","02-039",600)]
+       ("wls","無量壽經（淨土大經解演義）","淨空法師","無量壽經_淨土大經解演義_淨空法師","02-039",600),
+       ("sx","十善業道經","淨空法師","十善業道經_淨空法師","19-014",0)]
 def parse(pdf,code):
     t=subprocess.run(["pdftotext",pdf,"-"],capture_output=True,text=True).stdout
     t=t.replace("\r","")
@@ -20,7 +21,7 @@ def parse(pdf,code):
     date=(re.search(r"\d{4}/\d{1,2}/\d{1,2}",hj) or [None])[0]
     frags=[]
     for h in head:
-        if re.search(r"檔名|\d{4}/\d|第.{1,4}集|^（|^\(|主講|講座|大經解|感應篇|弟子規|^[\d\-]+$|^）",h):continue
+        if re.search(r"檔名|\d{4}/\d|第.{1,4}集|^（|^\(|主講|講座|大經解|感應篇|弟子規|業道經|^[\d\-]+$|^）",h):continue
         frags.append(h)
     frags.sort(key=lambda x:1 if re.search(r"(會|院|館|心|堂|林|寺|苑)$",x) else 0)
     place=re.sub(r"檔.{0,2}[:：]?\s*[\d\-]+","","".join(frags))[:30]
