@@ -744,3 +744,6 @@ body.rdlock{overflow:hidden}
 .rdintro h4{margin:0 0 6px;font-size:15px}
 .rdintro p{margin:0 0 8px;font-size:14.5px;line-height:1.75;color:var(--ink)}
 .rdintro p:last-child{margin:0}
+/* 閱讀器的集數標題不要套用背景照片模式的深色底 */
+.hasbg .rdtext .rdhd h1,.rdtext .rdhd h1{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:0;border-radius:0;color:var(--rdfg);text-align:center;font-weight:700;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;letter-spacing:.25em}
+.rdtext .rdhd h1::after{content:"";display:block;width:36px;height:2px;margin:.45em auto 0;background:var(--accent);border-radius:2px;opacity:.7}
