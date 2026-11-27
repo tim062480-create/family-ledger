@@ -53,7 +53,7 @@ function renderBook(){
 }
 // ---- 閱讀畫面 ----
 function rdApply(){const p=rdPref(),o=$("rdOver");o.dataset.theme=p.theme;o.style.setProperty("--rdsize",p.size+"px");o.style.setProperty("--rdlh",p.lh);o.dataset.font=p.font;
-  $("rdSizeV").textContent=p.size;document.querySelectorAll("#rdThemes button").forEach(b=>b.classList.toggle("on",b.dataset.t===p.theme));
+  $("rdSizeV").textContent=p.size;{const br=p.bright||100;$("rdBright").value=br;$("rdBrightV").textContent=br+"%";$("rdDim").style.opacity=(100-br)/100}document.querySelectorAll("#rdThemes button").forEach(b=>b.classList.toggle("on",b.dataset.t===p.theme));
   document.querySelectorAll("#rdFonts button").forEach(b=>b.classList.toggle("on",b.dataset.f===p.font));document.querySelectorAll("#rdLh button").forEach(b=>b.classList.toggle("on",+b.dataset.l===p.lh))}
 async function openEp(id,n){
   const b0=rdIdx.books.find(x=>x.id===id),b={...b0,total:b0.total||Math.max(0,...b0.eps.map(e=>e[0]))};const o=$("rdOver"),tx=$("rdText");
@@ -65,7 +65,8 @@ async function openEp(id,n){
   j.p.forEach(s=>tx.appendChild(mkEl("p",null,s)));
   const nav=mkEl("div","rdnav"),pv=mkEl("button","ghost",n>1?"‹ 上一集":"已是第一集"),nx=mkEl("button",null,n<b.total?"下一集 ›":"已經讀完了");pv.type=nx.type="button";
   const has=k=>b.eps.some(e=>e[0]===k);pv.disabled=!has(n-1);nx.disabled=!has(n+1);pv.id="rdPrev";nx.id="rdNext";
-  pv.onclick=()=>openEp(id,n-1);nx.onclick=()=>openEp(id,n+1);nav.append(pv,nx);tx.appendChild(nav);
+  pv.onclick=()=>openEp(id,n-1);nx.onclick=()=>openEp(id,n+1);
+  $("rdChPrev").disabled=!has(n-1);$("rdChNext").disabled=!has(n+1);nav.append(pv,nx);tx.appendChild(nav);
   {const v=rdVidLink(id,"rdvid2","▶ 看這部經的講經影片");if(v)tx.appendChild(v)}
   tx.appendChild(mkEl("p","rdsrc",`文字來源：淨空老法師專集網 amtb.tw（${j.code}）`));
   const pr=rdPref().prog||{},last=pr[id];const pos=last&&last.n===n?last.pos||0:0;
@@ -76,13 +77,20 @@ async function openEp(id,n){
 }
 function rdProg(){const o=$("rdOver");const f=o.scrollHeight>o.clientHeight?o.scrollTop/(o.scrollHeight-o.clientHeight):1;$("rdBarFill").style.width=Math.round(f*100)+"%";$("rdPct").textContent=Math.round(f*100)+"%";return f}
 function closeEp(){rdFlush();$("rdOver").hidden=true;document.body.classList.remove("rdlock");rdCur=null;if(view==="read")renderRead()}
+let rdKeep=0;
 function initRead(){
   $("tabRead").onclick=()=>{if(typeof flushText==="function")flushText();if(typeof flushDiary==="function")flushDiary();goRead()};
   const o=$("rdOver");
-  o.addEventListener("scroll",()=>{const f=rdProg();if(rdCur&&!rdRestoring){const pr=rdPref().prog||{};rdSet({prog:{...pr,[rdCur.id]:{n:rdCur.n,pos:Math.round(f*1000)/1000,ts:Date.now()}}})}if(rdBar&&!$("rdSet").hidden)return;if(rdBar){rdBar=false;o.classList.remove("rdui")}},{passive:true});
+  o.addEventListener("scroll",()=>{const f=rdProg();if(rdCur&&!rdRestoring){const pr=rdPref().prog||{};rdSet({prog:{...pr,[rdCur.id]:{n:rdCur.n,pos:Math.round(f*1000)/1000,ts:Date.now()}}})}if(rdBar&&!$("rdSet").hidden)return;if(Date.now()-rdKeep<900)return;if(rdBar){rdBar=false;o.classList.remove("rdui")}},{passive:true});
   $("rdText").onclick=e=>{if(e.target.closest("button"))return;rdBar=!rdBar;o.classList.toggle("rdui",rdBar);if(!rdBar)$("rdSet").hidden=true};
   $("rdClose").onclick=closeEp;
-  $("rdSetBtn").onclick=()=>{$("rdSet").hidden=!$("rdSet").hidden};
+  $("rdSetBtn").onclick=()=>{$("rdSet").classList.remove("low");$("rdSet").hidden=!$("rdSet").hidden};
+  $("rdSetBtn2").onclick=()=>{const s=$("rdSet");s.classList.add("low");s.hidden=!s.hidden};
+  // 下方工具列：翻頁時不要把工具列收起來，方便連續按
+  const page=d=>{rdKeep=Date.now();$("rdSet").hidden=true;o.scrollBy({top:d*(o.clientHeight-110),behavior:"smooth"})};
+  $("rdPgPrev").onclick=()=>page(-1);$("rdPgNext").onclick=()=>page(1);
+  $("rdChPrev").onclick=()=>{if(rdCur)openEp(rdCur.id,rdCur.n-1)};$("rdChNext").onclick=()=>{if(rdCur)openEp(rdCur.id,rdCur.n+1)};
+  $("rdBright").oninput=e=>{rdSet({bright:+e.target.value});rdApply()};
   $("rdSmaller").onclick=()=>{rdSet({size:Math.max(14,rdPref().size-1)});rdApply()};
   $("rdBigger").onclick=()=>{rdSet({size:Math.min(30,rdPref().size+1)});rdApply()};
   document.querySelectorAll("#rdThemes button").forEach(b=>b.onclick=()=>{rdSet({theme:b.dataset.t});rdApply()});

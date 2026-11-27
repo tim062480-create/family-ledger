@@ -725,3 +725,17 @@ body.rdlock{overflow:hidden}
 .rdvid{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;box-sizing:border-box;padding:12px;border-radius:14px;margin:0 0 6px;background:#fff0ee;color:#c4302b;font-weight:700;text-decoration:none;border:1px solid #f3c9c4}
 .rdtext .rdvid2{display:block;text-align:center;font-size:.8em;color:#c4302b;margin:0 0 1em;text-decoration:none}
 .rdover[data-theme=night] .rdtext .rdvid2{color:#ff8a80}
+
+/* 閱讀器下方工具列 */
+.rdfoot{flex-direction:column;align-items:stretch;gap:8px;padding:10px 12px calc(8px + env(safe-area-inset-bottom))}
+.rdprog{display:flex;align-items:center;gap:10px;padding:0 4px}
+.rdctl{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.rdctl button{background:none;border:0;color:var(--rdfg);display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 0;border-radius:10px;min-height:48px}
+.rdctl button b{font-size:20px;line-height:1.1}.rdctl button small{font-size:11.5px;color:var(--rdmut)}
+.rdctl button:active{background:rgba(0,0,0,.08)}
+.rdctl button:disabled{opacity:.3}
+.rdtext{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
+.rdset.low{top:auto;bottom:calc(112px + env(safe-area-inset-bottom))}
+.rddim{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:5}
+.rdrow input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
+.rdrow b{font-size:13px;min-width:36px;text-align:center}

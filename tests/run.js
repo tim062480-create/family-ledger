@@ -380,6 +380,16 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   ok(await pg.evaluate(() => document.getElementById("rdOver").dataset.theme === "night" && rdPref().size === 20), "reader theme and font size can change");
   await pg.click("#rdSetBtn"); await pg.evaluate(() => document.getElementById("rdNext").click()); await wait(800);
   ok((await pg.innerText("#rdTitle")).includes("第 26 集"), "next episode button works");
+  await pg.evaluate(() => { const o = document.getElementById("rdOver"); o.classList.add("rdui"); rdBar = true; o.scrollTop = 0; }); await wait(300);
+  await pg.click("#rdPgNext"); await wait(900);
+  ok(await pg.evaluate(() => document.getElementById("rdOver").scrollTop > 200 && document.getElementById("rdOver").classList.contains("rdui")), "下一頁 scrolls a page and keeps the toolbar open");
+  await pg.click("#rdSetBtn2"); await wait(200);
+  ok(await pg.isVisible("#rdBright"), "bottom 設定 opens the settings with brightness");
+  await pg.evaluate(() => { const r = document.getElementById("rdBright"); r.value = 60; r.dispatchEvent(new Event("input")); }); await wait(100);
+  ok(await pg.evaluate(() => Math.abs(+getComputedStyle(document.getElementById("rdDim")).opacity - 0.4) < 0.01 && rdPref().bright === 60), "brightness dims the reader");
+  await pg.click("#rdSetBtn2"); await pg.click("#rdChPrev"); await wait(900);
+  ok((await pg.innerText("#rdTitle")).includes("第 25 集"), "上一集 in the bottom toolbar works");
+  await pg.evaluate(() => document.getElementById("rdChNext").click()); await wait(900);
   await pg.click("#rdClose"); await wait(300);
   await pg.click("#rdContinue"); await wait(900);
   await pg.evaluate(() => { const o = document.getElementById("rdOver"); o.scrollTop = (o.scrollHeight - o.clientHeight) * 0.4; }); await wait(300);

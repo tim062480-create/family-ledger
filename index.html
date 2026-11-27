@@ -23,7 +23,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="家庭記帳本">
-<link rel="stylesheet" href="style.css?v=20261125d">
+<link rel="stylesheet" href="style.css?v=20261127a">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebApplication","name":"家庭記帳本","url":"https://tim062480-create.github.io/family-ledger/","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"zh-TW","description":"免費的家庭記帳網頁 App：Google 帳號登入、邀請家人、每人一本帳加全家共同帳。","offers":{"@type":"Offer","price":"0","priceCurrency":"TWD"}},
@@ -514,6 +514,7 @@
 <div id="rdOver" class="rdover" hidden data-theme="paper">
   <div class="rdtop"><button type="button" id="rdClose" class="rdib" aria-label="回到目錄">‹</button><b id="rdTitle"></b><button type="button" id="rdSetBtn" class="rdib" aria-label="閱讀設定">Aa</button></div>
   <div class="rdset" id="rdSet" hidden>
+    <div class="rdrow"><span>亮度</span><input type="range" id="rdBright" min="35" max="100" step="5" aria-label="亮度"><b id="rdBrightV">100%</b></div>
     <div class="rdrow"><span>字級</span><button type="button" id="rdSmaller">A−</button><b id="rdSizeV">19</b><button type="button" id="rdBigger">A＋</button></div>
     <div class="rdrow" id="rdLh"><span>行距</span><button type="button" data-l="1.6">緊</button><button type="button" data-l="1.9">適中</button><button type="button" data-l="2.3">寬</button></div>
     <div class="rdrow" id="rdFonts"><span>字體</span><button type="button" data-f="serif">明體</button><button type="button" data-f="sans">黑體</button></div>
@@ -521,7 +522,15 @@
   </div>
   <article id="rdText" class="rdtext"></article>
   <div class="rdresume" id="rdResume" hidden></div>
-  <div class="rdfoot"><div class="rdbar"><i id="rdBarFill"></i></div><span id="rdPct">0%</span></div>
+  <div class="rddim" id="rdDim"></div>
+  <div class="rdfoot"><div class="rdprog"><div class="rdbar"><i id="rdBarFill"></i></div><span id="rdPct">0%</span></div>
+    <div class="rdctl">
+      <button type="button" id="rdChPrev"><b>‹‹</b><small>上一集</small></button>
+      <button type="button" id="rdPgPrev"><b>‹</b><small>上一頁</small></button>
+      <button type="button" id="rdSetBtn2"><b>Aa</b><small>設定</small></button>
+      <button type="button" id="rdPgNext"><b>›</b><small>下一頁</small></button>
+      <button type="button" id="rdChNext"><b>››</b><small>下一集</small></button>
+    </div></div>
 </div>
 <nav id="tabbar" hidden>
   <button type="button" id="tabRec" class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg><span>記帳</span></button>
@@ -539,7 +548,7 @@
 <script src="profiles.js?v=20261125c"></script>
 <script src="ai.js?v=20261117a"></script>
 <script src="diary.js?v=20261123a"></script>
-<script src="read.js?v=20261125d"></script>
+<script src="read.js?v=20261127a"></script>
 <script src="notes.js?v=20261119a"></script>
 <script src="app.js?v=20261125e"></script>
 </body>
