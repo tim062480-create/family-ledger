@@ -33,6 +33,17 @@ function renderShelf(){
     r.append(rdCover(b.id),info);r.onclick=()=>{rdBook=b.id;rdRange=p&&p.n?Math.floor((p.n-1)/20):0;renderRead();window.scrollTo(0,0)};box.appendChild(r);
   });
 }
+// 書本頁的介紹（依第 1 集內容整理）
+const RD_INTRO={
+  wls:["「淨土大經」就是《無量壽經》。這套講記用的是夏蓮居老居士會集的經本，加上他的學生黃念祖老居士的註解（書名的「解」），再由淨空法師逐段講解（「演義」）。",
+       "第 1 集先講這部經的來歷：它在中國前後翻譯了十二次，是譯本最多的經，可見佛陀當年講了不只一次，非常重要。法師也談到自己年輕時以為佛教是迷信，後來經方東美先生、章嘉大師的引導，才從經典裡重新認識佛法。2010 年清明節在香港開講。"],
+  gy:["《太上感應篇》原是道教的勸善書，講的是「種善因得善果、造惡因得惡報」的感應道理。",
+      "淨空法師在第 1 集說明佛門為什麼要講它：印光大師一生極力提倡這本書和《了凡四訓》、《安士全書》，因為書中每一句都在講五戒十善，是斷惡修善最好的教材。1999 年在新加坡淨宗學會，利用每天早上半小時講述。"],
+  dzg:["《弟子規》是清朝李毓秀依《論語》「弟子入則孝，出則弟」編成的三字一句生活規範，講孝順、待人、做事的基本道理。",
+       "這套是蔡禮旭老師 2005 年在台南「幸福人生講座」的課程。第 1 集從「人生最難的不是奮鬥，而是抉擇」談起，提醒家長教孩子不能只看分數，做人做事的態度、孝心與責任心，才是一生幸福的根本。講課輕鬆、常和台下互動，很適合入門。"],
+  sx:["《十善業道經》講的是「十善」：身不殺生、不偷盜、不邪淫；口不妄語、不兩舌、不惡口、不綺語；意不貪、不瞋、不痴，是學佛做人的根本。",
+      "淨空法師 2000 年在新加坡講完《感應篇》後，隔天接著開講這部經。第 1 集的重點是「放下自私自利」，把心量打開、為大眾服務，並說社會安定要靠教育，釋迦牟尼佛就是一生義務教學的老師。"]
+};
 function renderBook(){
   const b0=rdIdx.books.find(x=>x.id===rdBook),box=$("rdMain");box.innerHTML="";if(!b0){rdBook=null;return renderShelf()}
   const b={...b0,total:b0.total||Math.max(0,...b0.eps.map(e=>e[0]))};
@@ -40,8 +51,8 @@ function renderBook(){
   const top=mkEl("div","rdbhead");const back=mkEl("button","ghost sm","‹ 書架");back.type="button";back.id="rdBack";back.onclick=()=>{rdBook=null;renderRead()};
   const hi=mkEl("div","rdinfo");hi.append(mkEl("h3",null,b.name),mkEl("p","rdau",`主講：${b.author}・${b0.total?"共":"已收"} ${b.total} 集`));
   top.append(rdCover(b.id,true),hi);box.append(back,top);
+  if(RD_INTRO[b.id]){const it=mkEl("div","rdintro");it.id="rdIntro";it.appendChild(mkEl("h4",null,"關於這部經"));RD_INTRO[b.id].forEach(t=>it.appendChild(mkEl("p",null,t)));box.appendChild(it)}
   const go=mkEl("button","rdgo",pr&&pr.n?`繼續閱讀　第 ${pr.n} 集${pr.pos>0.01?`（${Math.round(pr.pos*100)}%）`:""}`:"從第 1 集開始讀");go.type="button";go.id="rdContinue";go.onclick=()=>openEp(b.id,pr&&pr.n||b.eps[0][0]);box.appendChild(go);
-  {const v=rdVidLink(b.id,"rdvid","▶ 看講經影片（YouTube 播放清單）");if(v){v.id="rdVideo";box.appendChild(v)}}
   box.appendChild(mkEl("h2","rdsec","選集數"));
   const rg=mkEl("div","rdranges");const N=Math.ceil(b.total/20);
   for(let i=0;i<N;i++){const a=i*20+1,z=Math.min(b.total,a+19),c=mkEl("button","rdr"+(i===rdRange?" on":""),`${a}–${z}`);c.type="button";c.onclick=()=>{rdRange=i;renderBook()};rg.appendChild(c)}
@@ -50,6 +61,7 @@ function renderBook(){
   for(let n=a;n<=z;n++){const ok=have.has(n),c=mkEl("button","rdep"+(pr&&pr.n===n?" on":"")+(ok?"":" off"));c.type="button";c.dataset.n=n;
     c.append(mkEl("b",null,String(n)),mkEl("small",null,ok?(dates[n]||""):"還沒收錄"));c.disabled=!ok;c.onclick=()=>openEp(b.id,n);g.appendChild(c)}
   box.appendChild(g);
+  {const v=rdVidLink(b.id,"rdvid","▶ 看講經影片（YouTube 播放清單）");if(v){v.id="rdVideo";box.appendChild(v)}}
 }
 // ---- 閱讀畫面 ----
 function rdApply(){const p=rdPref(),o=$("rdOver");o.dataset.theme=p.theme;o.style.setProperty("--rdsize",p.size+"px");o.style.setProperty("--rdlh",p.lh);o.dataset.font=p.font;

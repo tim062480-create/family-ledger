@@ -739,3 +739,8 @@ body.rdlock{overflow:hidden}
 .rddim{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:5}
 .rdrow input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 .rdrow b{font-size:13px;min-width:36px;text-align:center}
+
+.rdintro{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px;color:var(--ink)}
+.rdintro h4{margin:0 0 6px;font-size:15px}
+.rdintro p{margin:0 0 8px;font-size:14.5px;line-height:1.75;color:var(--ink)}
+.rdintro p:last-child{margin:0}
