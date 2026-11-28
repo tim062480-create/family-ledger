@@ -368,7 +368,7 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   await pg.evaluate(() => { setAutoWho(false); setPicked(true); render(); }); await wait(300);
   // 讀經
   await tab("#tabRead"); await wait(800);
-  ok((await pg.$$("#rdMain .rdbook")).length === 4 && await pg.isVisible("#rdHelp") && !(await pg.innerText("#rdHelp")).includes("簡琮諺"), "讀經 shelf shows four books with a short note");
+  ok((await pg.$$("#rdMain .rdbook")).length === 5 && await pg.isVisible("#rdHelp") && !(await pg.innerText("#rdHelp")).includes("簡琮諺"), "讀經 shelf shows five books with a short note");
   await pg.click("#rdMain .rdbook[data-id='wls']"); await wait(300);
   ok((await pg.$$("#rdMain .rdr")).length === 30 && (await pg.$$("#rdMain .rdep")).length === 20, "book page has 1–20, 21–40 … and 20 episodes");
   ok(await pg.getAttribute("#rdVideo", "href") === "https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q4LAmJ7x70Vf9u28UNIlgQ8" && await pg.getAttribute("#rdVideo", "target") === "_blank", "book page links to its YouTube playlist");

@@ -1,7 +1,7 @@
 // ---- 讀經：像小說 App 的書架、選集數、沉浸式閱讀 ----
 // 經文文字在 books/（由下載的 PDF 轉出，只調整換行，不改任何字）；閱讀進度與版面設定存在 prefs/ui.read
 let rdIdx=null,rdBook=null,rdRange=0,rdCur=null,rdBar=true,rdSaveT=null,rdRestoring=false;
-const RD_COVER={gy:["#7a1f1f","#c0392b","太上感應篇"],dzg:["#1f5c55","#2f8f83","弟子規"],wls:["#2b3a67","#b08d3c","無量壽經"],sx:["#4a3a6b","#8a6fb5","十善業道經"]};
+const RD_COVER={gy:["#7a1f1f","#c0392b","太上感應篇"],dzg:["#1f5c55","#2f8f83","弟子規"],wls:["#2b3a67","#b08d3c","無量壽經"],sx:["#4a3a6b","#8a6fb5","十善業道經"],lf:["#6b4a2b","#b07d48","了凡四訓"]};
 // 每本書的講經影片（YouTube 播放清單）
 const RD_VIDEO={wls:"https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q4LAmJ7x70Vf9u28UNIlgQ8",sx:"https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q70HliQ7hzTAoVdYCd9FdkT",gy:"https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q4KrFdPBEjx9HkikG1OePDX",dzg:"https://www.youtube.com/playlist?list=PLj3-6Dw0D3Q6gtkQ7K6chU3M3cidBKF8N"};
 const rdVidLink=(id,cls,label)=>{if(!RD_VIDEO[id])return null;const a=mkEl("a",cls,label);a.href=RD_VIDEO[id];a.target="_blank";a.rel="noopener noreferrer";return a};
@@ -42,7 +42,9 @@ const RD_INTRO={
   dzg:["《弟子規》是清朝李毓秀依《論語》「弟子入則孝，出則弟」編成的三字一句生活規範，講孝順父母、友愛兄弟、待人接物和讀書做事的基本道理。",
        "這套是蔡禮旭老師 2005 年在台南「幸福人生講座」的課程。從「人生最難的不是奮鬥，而是抉擇」談起，提醒家長教孩子不能只看分數，做人做事的態度、孝心與責任心，才是一生幸福的根本；也舉企業找不到人才的例子，說明誠實、謙虛、有責任感的人才真正受用。講課輕鬆、常和台下互動，很適合入門。"],
   sx:["《十善業道經》講的是「十善」：身不殺生、不偷盜、不邪淫；口不妄語、不兩舌、不惡口、不綺語；意不貪、不瞋、不痴，是學佛做人的根本。",
-      "淨空法師 2000 年在新加坡講完《感應篇》後，隔天接著開講這部經。重點是「放下自私自利」，把心量打開、為大眾服務；並勸人樂於布施、財富要流通，不要囤積。法師也說社會安定、世界和平要靠教育，釋迦牟尼佛就是一生義務教學的老師。"]
+      "淨空法師 2000 年在新加坡講完《感應篇》後，隔天接著開講這部經。重點是「放下自私自利」，把心量打開、為大眾服務；並勸人樂於布施、財富要流通，不要囤積。法師也說社會安定、世界和平要靠教育，釋迦牟尼佛就是一生義務教學的老師。"],
+  lf:["《了凡四訓》是明朝袁了凡（名黃，字坤儀，江南吳江人，生於 1535 年）寫給兒子的四篇家訓：立命之學、改過之法、積善之方、謙德之效，用自己的一生說明「命運可以改變」。",
+      "了凡先生十五歲遇到孔先生替他算命，往後的考試、做官、壽命一一應驗，他便認定命中注定；後來遇到雲谷禪師，才明白「命由我作，福自己求」，從此斷惡修善，命運跟著改變。淨空法師說這是他二十六歲剛接觸佛法時讀的第一本書，影響了他一生。2001 年應鳳凰衛視邀請在中國深圳講述。"]
 };
 function renderBook(){
   const b0=rdIdx.books.find(x=>x.id===rdBook),box=$("rdMain");box.innerHTML="";if(!b0){rdBook=null;return renderShelf()}

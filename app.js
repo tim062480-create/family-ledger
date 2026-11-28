@@ -399,7 +399,7 @@ function renderAcct(){
 }
 
 // ---- 功能開關：使用者可以只用記帳、記事本或生日 ----
-const FEATS=[["rec","✏️ 記帳","記下每一筆花費，看每月、各類預算"],["note","📒 記事本","行程、待辦、總日曆、課表"],["bd","🎂 生日","記家人朋友的生日，國曆農曆都算好"],["diary","📔 日記","每天寫幾句、記心情，可以設密碼，也能翻回過去的日子"],["read","📖 讀經","太上感應篇、弟子規、無量壽經講記，像小說 App 一樣好讀"]];
+const FEATS=[["rec","✏️ 記帳","記下每一筆花費，看每月、各類預算"],["note","📒 記事本","行程、待辦、總日曆、課表"],["bd","🎂 生日","記家人朋友的生日，國曆農曆都算好"],["diary","📔 日記","每天寫幾句、記心情，可以設密碼，也能翻回過去的日子"],["read","📖 讀經","無量壽經、了凡四訓、弟子規等講記，像小說 App 一樣好讀"]];
 const feat=k=>{const f=curPrefs&&curPrefs.features;return !f||f[k]!==false};
 const firstView=()=>feat("rec")?"home":feat("note")?"note":feat("bd")?"cal":feat("diary")?"diary":"read";
 async function saveFeats(f){if(!prefsRef)return;curPrefs={...(curPrefs||{}),features:f};await prefsRef.set({features:f},{merge:true})}
