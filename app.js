@@ -889,7 +889,8 @@ function editAllowance(){
 function wallets(){
   const w={};
   coupons.forEach(c=>{const k=c.store||"優惠券";(w[k]=w[k]||{store:k,added:0,used:0,logs:[]});if(c.type==="add")w[k].added+=(+c.amount||0);else w[k].used+=(+c.amount||0);w[k].logs.push(c)});
-  return Object.values(w).map(x=>({...x,balance:x.added-x.used,logs:x.logs.sort((a,b)=>String(b.date).localeCompare(String(a.date))||(b.ts||0)-(a.ts||0))})).sort((a,b)=>b.balance-a.balance);
+  const td=today();
+  return Object.values(w).map(x=>({...x,exp:(x.added-x.used>0)?(x.logs.filter(l=>l.type==="add"&&l.exp).map(l=>l.exp).sort().find(e=>e>=td)||x.logs.filter(l=>l.type==="add"&&l.exp).map(l=>l.exp).sort().pop()||""):"",balance:x.added-x.used,logs:x.logs.sort((a,b)=>String(b.date).localeCompare(String(a.date))||(b.ts||0)-(a.ts||0))})).sort((a,b)=>b.balance-a.balance);
 }
 let cpOpen=null;
 function renderCoupons(){
@@ -910,10 +911,12 @@ function renderCoupons(){
     const bar=document.createElement("div");bar.className="gbar";const fill=document.createElement("i");fill.style.width=(w.added?Math.max(0,Math.min(100,w.balance/w.added*100)):0)+"%";bar.appendChild(fill);
     const meta=document.createElement("div");meta.className="meta";meta.textContent=`共 ${fmt(w.added)}・已用 ${fmt(w.used)}`+(cpOpen===w.store?"":"　點店名看紀錄");
     row.append(top,bar,meta);
+    if(w.exp){const dl=Math.round((new Date(w.exp)-new Date(today()))/864e5),e=document.createElement("div");e.className="cpexp"+(dl<=7?" warn":"");
+      e.textContent=dl<0?`⚠️ ${w.exp.slice(5).replace("-","/")} 已過期`:`${dl<=7?"⚠️ ":"⏳ "}${w.exp.slice(5).replace("-","/")} 到期（${dl===0?"今天":"剩 "+dl+" 天"}）`;row.appendChild(e)}
     if(cpOpen===w.store){
       const lg=document.createElement("div");lg.className="cplog";
       w.logs.forEach(x=>{const r=document.createElement("div");r.className="rc";const s1=document.createElement("span");
-        s1.textContent=`${String(x.date||"").slice(5).replace("-","/")}　${x.type==="add"?("新增"+(x.count>1?` ${fmt(x.face)}×${x.count}`:"")):(x.note||"使用")}`;
+        s1.textContent=`${String(x.date||"").slice(5).replace("-","/")}　${x.type==="add"?("新增"+(x.count>1?` ${fmt(x.face)}×${x.count}`:"")+(x.note?" "+x.note:"")+(x.exp?`（${x.exp.slice(5).replace("-","/")} 到期）`:"")):(x.note||"使用")}`;
         const s2=document.createElement("span");s2.textContent=(x.type==="add"?"+":"−")+fmt(x.amount);s2.className=x.type==="add"?"pos":"";
         r.append(s1,s2);if(canWrite){r.style.cursor="pointer";r.onclick=()=>editCouponLog(x)}lg.appendChild(r)});
       if(canWrite){const hint=document.createElement("div");hint.className="meta";hint.style.marginTop="4px";hint.textContent="點一筆可以修改或刪除";lg.appendChild(hint)}
@@ -923,12 +926,12 @@ function renderCoupons(){
   });
 }
 function addCoupon(store){
-  openForm({title:"新增優惠券",sub:"例如全聯禮券 500 元 3 張，就填面額 500、張數 3。",fields:[
+  openForm({title:"新增優惠券",sub:"例如全聯禮券 500 元 3 張，就填面額 500、張數 3。LINE 禮物這種有期限的券，記得填到期日；用過一部分的，面額填「剩餘」金額。",fields:[
     {key:"store",label:"店家／名稱",value:store,placeholder:"例如 全聯",list:wallets().map(w=>w.store),full:true},
     {key:"face",label:"面額",type:"number",placeholder:"500"},{key:"count",label:"張數",type:"number",value:1},
-    {key:"date",label:"日期",type:"date",value:today()},{key:"note",label:"備註",placeholder:"可空，例如 生日禮物"}],
+    {key:"date",label:"日期",type:"date",value:today()},{key:"exp",label:"到期日（可空）",type:"date",value:""},{key:"note",label:"備註",placeholder:"可空，例如 郭J送的",full:true}],
     validate:()=>!fv("store")?"請填店家":(+fv("face")>0&&+fv("count")>0?"":"請填面額和張數"),
-    onSave:()=>{const face=Math.round(+fv("face")),count=Math.round(+fv("count")),d=fv("date")||today();return cpCol.add({...byFields(),store:fv("store"),type:"add",face,count,amount:face*count,date:d,month:d.slice(0,7),note:fv("note"),ts:Date.now()})}});
+    onSave:()=>{const face=Math.round(+fv("face")),count=Math.round(+fv("count")),d=fv("date")||today();return cpCol.add({...byFields(),store:fv("store"),type:"add",face,count,amount:face*count,date:d,month:d.slice(0,7),exp:fv("exp")||"",note:fv("note"),ts:Date.now()})}});
 }
 function useCoupon(store){
   const w=wallets().find(x=>x.store===store),bal=w?w.balance:0;
@@ -939,11 +942,11 @@ function useCoupon(store){
 }
 function editCouponLog(x){
   const isAdd=x.type==="add";
-  const fields=isAdd?[{key:"face",label:"面額",type:"number",value:x.face||x.amount},{key:"count",label:"張數",type:"number",value:x.count||1},{key:"date",label:"日期",type:"date",value:x.date},{key:"note",label:"備註",value:x.note||""}]
+  const fields=isAdd?[{key:"face",label:"面額",type:"number",value:x.face||x.amount},{key:"count",label:"張數",type:"number",value:x.count||1},{key:"date",label:"日期",type:"date",value:x.date},{key:"exp",label:"到期日（可空）",type:"date",value:x.exp||""},{key:"note",label:"備註",value:x.note||""}]
     :[{key:"amount",label:"金額",type:"number",value:x.amount},{key:"date",label:"日期",type:"date",value:x.date},{key:"note",label:"買了什麼",value:x.note||"",full:true}];
   openForm({title:(isAdd?"修改新增的":"修改使用的")+x.store+"優惠券",fields,
     validate:()=>isAdd?(+fv("face")>0&&+fv("count")>0?"":"請填面額和張數"):(+fv("amount")>0?"":"請輸入金額"),
-    onSave:()=>{const d=fv("date")||x.date;if(isAdd){const face=Math.round(+fv("face")),count=Math.round(+fv("count"));return cpCol.doc(x.id).update({face,count,amount:face*count,date:d,month:d.slice(0,7),note:fv("note")})}
+    onSave:()=>{const d=fv("date")||x.date;if(isAdd){const face=Math.round(+fv("face")),count=Math.round(+fv("count"));return cpCol.doc(x.id).update({face,count,amount:face*count,date:d,month:d.slice(0,7),exp:fv("exp")||"",note:fv("note")})}
       return cpCol.doc(x.id).update({amount:Math.round(+fv("amount")),date:d,month:d.slice(0,7),note:fv("note")})},
     onDelete:()=>cpCol.doc(x.id).delete()});
 }

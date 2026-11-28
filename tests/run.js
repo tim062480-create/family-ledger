@@ -343,6 +343,14 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
   const e1 = errs.length; await pg.click("#mGenre button[data-g='folk']"); await wait(600);
   ok(errs.length === e1 && (await pg.innerText("#mQ")).includes("綠袖子"), "民謠 plays too");
   await pg.click("#mClose"); await wait(100);
+  { const exp = await pg.evaluate(() => { const d = new Date(Date.now() + 5 * 864e5); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); });
+    await pg.evaluate(() => addCoupon("")); await wait(200);
+    ok(await pg.isVisible("#fsFields input[type=date] >> nth=1"), "新增優惠券 has a 到期日 field");
+    await pg.evaluate(e => { const ins = [...document.querySelectorAll("#fsFields input")]; const set = (el, v) => { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); };
+      set(ins[0], "星巴克"); set(ins[1], "175"); set(ins[2], "1"); set(document.querySelectorAll("#fsFields input[type=date]")[1], e); }, exp);
+    await pg.click("#fsSave"); await wait(500);
+    const tx = await pg.innerText("#cpCard");
+    ok(tx.includes("星巴克") && tx.includes("剩 5 天") && (await pg.$("#cpCard .cpexp.warn")) !== null, "coupon shows its expiry and warns when ≤7 days: " + tx.replace(/\n/g, " | ").slice(0, 120)); }
   await tab("#tabSet"); await wait(300); await pg.click("#setMenu .mi:has-text('使用說明與示範')"); await wait(300);
   ok(await pg.isVisible("#guideVid") && (await pg.$$("[data-sub='guide'] details")).length >= 15, "設定 has 使用說明與示範 with the video and a guide");
   ok(await pg.isVisible("#gdSkit") && await pg.isVisible("#gdPromo"), "guide page also has the AI skit and the promo video");

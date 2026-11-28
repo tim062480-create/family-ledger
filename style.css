@@ -747,3 +747,6 @@ body.rdlock{overflow:hidden}
 /* 閱讀器的集數標題不要套用背景照片模式的深色底 */
 .hasbg .rdtext .rdhd h1,.rdtext .rdhd h1{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:0;border-radius:0;color:var(--rdfg);text-align:center;font-weight:700;font-family:"Noto Serif TC","Songti TC","PMingLiU",serif;letter-spacing:.25em}
 .rdtext .rdhd h1::after{content:"";display:block;width:36px;height:2px;margin:.45em auto 0;background:var(--accent);border-radius:2px;opacity:.7}
+
+.cpexp{font-size:13px;color:var(--muted);margin-top:4px}
+.cpexp.warn{color:#c0392b;font-weight:700}
