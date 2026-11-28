@@ -351,6 +351,8 @@ const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) { proce
     await pg.click("#fsSave"); await wait(500);
     const tx = await pg.innerText("#cpCard");
     ok(tx.includes("星巴克") && tx.includes("剩 5 天") && (await pg.$("#cpCard .cpexp.warn")) !== null, "coupon shows its expiry and warns when ≤7 days: " + tx.replace(/\n/g, " | ").slice(0, 120)); }
+  await pg.fill("#vtext", "新增 發發券 188 12/31到期 葉承燁送的\nLINE禮物券 287"); await pg.click("#parse"); await wait(150); await pg.click("#confirm"); await wait(500);
+  { const tx = await pg.innerText("#cpCard"); ok(tx.includes("發發") && tx.includes("12/31 到期") && tx.includes("LINE禮物") && tx.includes("287"), "記一筆 adds several coupons at once with expiry: " + tx.replace(/\n/g, " | ").slice(0, 200)); }
   await tab("#tabSet"); await wait(300); await pg.click("#setMenu .mi:has-text('使用說明與示範')"); await wait(300);
   ok(await pg.isVisible("#guideVid") && (await pg.$$("[data-sub='guide'] details")).length >= 15, "設定 has 使用說明與示範 with the video and a guide");
   ok(await pg.isVisible("#gdSkit") && await pg.isVisible("#gdPromo"), "guide page also has the AI skit and the promo video");

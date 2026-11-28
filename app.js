@@ -222,6 +222,24 @@ const QTY_AFTER=/^(杯|份|個|个|張|张|件|顆|颗|包|瓶|罐|盒|次|人|�
 const escRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 function localParse(t0){
   const pn=preNorm(t0),t=pn.t,ub=x=>unBrand(x,pn.keep);
+  // 新增優惠券（可一次好幾張、每行一張；可寫「12/30到期」「郭J送的」）
+  if(/新增|拿到|收到|加入|多了/.test(t)&&/券|劵|禮物卡|LINE禮物|LINE 禮物/i.test(t)){
+    const td=today(),out=[];
+    for(let seg of t.split(/[\n；;]+/)){seg=seg.trim();if(!seg)continue;
+      let exp="",note="";
+      const em=seg.match(/(?:到期日?|期限|有效期限?)\s*[:：]?\s*(?:(\d{4})\s*[\/\-年.]\s*)?(\d{1,2})\s*[\/\-月.]\s*(\d{1,2})\s*日?|(?:(\d{4})\s*[\/\-年.]\s*)?(\d{1,2})\s*[\/\-月.]\s*(\d{1,2})\s*日?\s*(?:前)?\s*(?:到期|截止|過期|前用完|前使用)/);
+      if(em){const y=em[1]||em[4],mo=+(em[2]||em[5]),d=+(em[3]||em[6]);let yy=y?+y:+td.slice(0,4);
+        let iso=`${yy}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;if(!y&&iso<td)iso=`${yy+1}${iso.slice(4)}`;exp=iso;seg=seg.replace(em[0]," ")}
+      const nm=seg.match(/([^\s,，、。\d]{1,10}?)\s*送的?/);if(nm){note=nm[1]+"送的";seg=seg.replace(nm[0]," ")}
+      const fd=findDate(seg),r=fd.rest;
+      const nums=[...r.matchAll(/(\d+)/g)].map(x=>+x[1]);const cm=r.match(/(\d+|[一二兩两三四五六七八九十])\s*[張张]/);
+      const count=cm?(CNUM[cm[1]]||+cm[1]):1,face=nums.find(n=>!cm||n!==+cm[1])||nums[0]||0;
+      const store=r.replace(/新增|拿到|收到|加入|多了|了|面額|剩餘|剩下|剩|一共|共|LINE\s*禮物|的/gi,"").replace(/\d+\s*(元|塊|块)?/g,"").replace(/[一二兩两三四五六七八九十]?\s*[張张]/g,"").replace(/[,，、。\s$＄]/g,"");
+      const st2=toT(ub(store)).replace(CPW,"").trim()||(/LINE/i.test(seg)?"LINE禮物":"");
+      if(face)out.push({category:"cpadd:"+st2,face,count,amount:face*count,date:fd.date||findDate(t).date,exp,note,remark:""});
+    }
+    if(out.length)return out;
+  }
   const f=findDate(t);
   if(/新增|拿到|收到|加入|多了/.test(f.rest)&&/券|禮物卡/.test(f.rest)){
     const nums=[...f.rest.matchAll(/(\d+)/g)].map(x=>+x[1]);const cm=f.rest.match(/(\d+|[一二兩两三四五六七八九十])\s*[張张]/);
@@ -302,7 +320,7 @@ function renderPreview(){
     {const all=wallets(),opts=all.filter(w=>w.balance>0||("coupon:"+w.store)===it.category).map(w=>["coupon:"+w.store,`用${w.store}優惠券（剩 ${fmt(w.balance)}）`]);
      const cs=String(it.category);
      if(cs.startsWith("coupon:")&&!all.some(w=>"coupon:"+w.store===cs))opts.push([cs,`用${cs.slice(7)}優惠券（還沒新增）`]);
-     if(cs.startsWith("cpadd:"))opts.push([cs,`新增${cs.slice(6)}優惠券`+(it.count>1?`（${fmt(it.face)}×${it.count}）`:"")]);
+     if(cs.startsWith("cpadd:"))opts.push([cs,`新增${cs.slice(6)}優惠券`+(it.count>1?`（${fmt(it.face)}×${it.count}）`:"")+(it.exp?`・${it.exp.slice(5).replace("-","/")} 到期`:"")]);
      if(opts.length){const g=document.createElement("optgroup");g.label="優惠券（不算進每月收支）";opts.forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;if(v===cs)o.selected=true;g.appendChild(o)});sel.appendChild(g)}}
     sel.onchange=()=>{const was=isCp(it.category);it.category=sel.value;if(was!==isCp(it.category))renderPreview()};
     const am=document.createElement("input");am.type="number";am.min="1";am.value=it.amount;am.oninput=()=>{it.amount=+am.value;if(String(it.category).startsWith("cpadd:")){it.face=it.amount;it.count=1}};
@@ -351,7 +369,7 @@ function setupVoice(){
       for(const it of order){const d=it.date||$("vdate").value||today(),c=String(it.category),nt=[(it.note||"").trim(),(it.remark||"").trim()].filter(Boolean).join("・");
         if(c.startsWith("cpadd:")){const st=c.slice(6);if(!st){keep.push(it);probs.push("新增優惠券要寫店家");continue}
           const count=Math.max(1,Math.round(+it.count||1)),face=Math.round(+it.face||0)||Math.round(it.amount/count);
-          await cpCol.add({...byFields(),store:st,type:"add",face,count,amount:face*count,date:d,month:d.slice(0,7),note:nt,ts:Date.now()});bal[st]=(bal[st]||0)+face*count;it.done=true;done++}
+          await cpCol.add({...byFields(),store:st,type:"add",face,count,amount:face*count,date:d,month:d.slice(0,7),exp:/^\d{4}-\d{2}-\d{2}$/.test(it.exp||"")?it.exp:"",note:nt,ts:Date.now()});bal[st]=(bal[st]||0)+face*count;it.done=true;done++}
         else if(c.startsWith("coupon:")){const st=c.slice(7);
           if(!st||!(st in bal)){keep.push(it);probs.push(`還沒有${st||"這家"}的優惠券，可以說「新增${st||"全聯"}禮券 500 三張」，或在優惠券卡片按＋新增`);continue}
           if(bal[st]<it.amount){keep.push(it);probs.push(`${st}優惠券只剩 ${fmt(bal[st])}，不夠扣 ${fmt(it.amount)}`);continue}
@@ -983,7 +1001,7 @@ function normItems(arr){
     if(!cat.startsWith("cpadd:")){const sm=splitMeal(note,remark);nNote=sm[0];nRem=sm[1];
       if(sm[2]&&!/^(coupon|cpadd):/.test(cat)&&["杂项","雜項","其他"].includes(cat)){const f=cats().find(c=>/食物|餐飲|餐饮/.test(c.name));if(f)cat=f.name}}
     const note2=nNote,remark2=nRem;
-    return{category:cat,amount,face,count,note:note2,remark:remark2,date:/^\d{4}-\d{2}-\d{2}$/.test(a.date||"")?a.date:($("vdate").value||today())}
+    return{category:cat,amount,face,count,exp:/^\d{4}-\d{2}-\d{2}$/.test(a.exp||"")?a.exp:"",note:note2,remark:remark2,date:/^\d{4}-\d{2}-\d{2}$/.test(a.date||"")?a.date:($("vdate").value||today())}
   }).filter(a=>a.amount>0);
 }
 $("photoBtn").onclick=()=>{$("photoTip").hidden=!$("photoTip").hidden;$("vmsg").textContent=""};
